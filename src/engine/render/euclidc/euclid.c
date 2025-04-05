@@ -604,7 +604,7 @@ void startrender(unsigned int eh){
     renderPassInfo.renderArea.extent.width = euclid.handle[eh].resolutionX;
     renderPassInfo.renderArea.extent.height = euclid.handle[eh].resolutionY;
     VkClearValue clearValues[2] = {0};
-    clearValues[0].color.float32[0] = 0.5;
+    clearValues[0].color.float32[0] = 0.0;
     clearValues[0].color.float32[1] = 0.0;
     clearValues[0].color.float32[2] = 0.0;
     clearValues[0].color.float32[3] = 1.0;
@@ -681,6 +681,8 @@ unsigned int new(){
     createCommandBuffer(eh);
     createSyncObjects(eh);
     euclid.handle[eh].currentFrame = 0;
+    euclid.handle[eh].imageIndex = 0;
+    euclid.handle[eh].totalFrames = 0;
     return eh;
 }
 
@@ -693,5 +695,32 @@ unsigned int loopcont(unsigned int eh){
 }
 
 void destroy(unsigned int eh){
+    vkDeviceWaitIdle(euclid.handle[eh].device); 
+    for(int i = 0; i != MAX_FRAMES_IN_FLIGHT; i++){
+        vkDestroySemaphore(euclid.handle[eh].device, euclid.handle[eh].imageAvailableSemaphores[i], NULL);
+        vkDestroySemaphore(euclid.handle[eh].device, euclid.handle[eh].renderFinishedSemaphores[i], NULL);
+        vkDestroyFence(euclid.handle[eh].device, euclid.handle[eh].inFlightFences[i], NULL);
+    }
+    vkFreeCommandBuffers(euclid.handle[eh].device, euclid.handle[eh].commandPool, MAX_FRAMES_IN_FLIGHT, euclid.handle[eh].commandBuffers);
+    vkDestroyCommandPool(euclid.handle[eh].device, euclid.handle[eh].commandPool, NULL);
+    for(int i = 0; i != euclid.handle[eh].swapChainImageCount; i++){
+        vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].swapChainFramebuffers[i], NULL);
+    }
+    vkDestroyRenderPass(euclid.handle[eh].device, euclid.handle[eh].renderPass, NULL);
+    for(int i = 0; i != euclid.handle[eh].swapChainImageCount; i++){
+        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].swapChainImageViews[i], NULL);
+    }
+    vkDestroySwapchainKHR(euclid.handle[eh].device, euclid.handle[eh].swapChain, NULL);
+    vkDestroySurfaceKHR(euclid.handle[eh].instance, euclid.handle[eh].surface, NULL);
+    vkDestroyDevice(euclid.handle[eh].device, NULL);
+    vkDestroyInstance(euclid.handle[eh].instance, NULL);
+    free(euclid.handle[eh].swapChainFramebuffers);
+    free(euclid.handle[eh].swapChainImageViews);
+    free(euclid.handle[eh].swapChainImages);
+    free(euclid.handle[eh].imageAvailableSemaphores);
+    free(euclid.handle[eh].renderFinishedSemaphores);
+    free(euclid.handle[eh].inFlightFences);
+    free(euclid.handle[eh].commandBuffers);
+    free(euclid.handle[eh].physicalDevices);
     printf("\e[1;36mEuclidVK\e[0;37m: Destroyed handle by id = %d\n", eh);
 }
