@@ -6,6 +6,8 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
 typedef struct euclidh{
     VkInstance instance;
     VkPhysicalDevice *physicalDevices;
@@ -34,6 +36,14 @@ typedef struct euclidh{
     VkImageView depthImageView;
     VkDeviceMemory depthImageMemory;
     VkFramebuffer *swapChainFramebuffers;
+    VkCommandBuffer *commandBuffers;
+    VkCommandPool commandPool;
+    VkSemaphore *imageAvailableSemaphores;
+    VkSemaphore *renderFinishedSemaphores;
+    VkFence *inFlightFences;
+    uint32_t currentFrame;
+    uint32_t imageIndex;
+    uint32_t totalFrames;
 } euclidh;
 
 struct euclidVK{
@@ -55,7 +65,7 @@ uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, u
 
 void createInstance(unsigned int eh){
     VkApplicationInfo appinfo = {0};
-    appinfo.apiVersion = VK_API_VERSION_1_0;
+    appinfo.apiVersion = VK_API_VERSION_1_3;
     appinfo.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
     appinfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
     appinfo.pApplicationName = "Schnellwerke3n";
@@ -231,6 +241,9 @@ void createDevice(unsigned int eh){
     VkDeviceCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.queueCreateInfoCount = 2;
+    if(euclid.handle[eh].chosenqueuefam == euclid.handle[eh].chosenpresentqueue){
+        createInfo.queueCreateInfoCount = 1;
+    }
     createInfo.pQueueCreateInfos = queueCreateInfo;
     createInfo.pEnabledFeatures = &deviceFeatures;
     createInfo.enabledExtensionCount = extensionCount;
@@ -442,7 +455,7 @@ void createFrameBuffers(unsigned int eh){
     depthCreateInfo.extent.height = euclid.handle[eh].resolutionY;
     depthCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     depthCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    depthCreateInfo.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depthCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkResult result = vkCreateImage(euclid.handle[eh].device, &depthCreateInfo, NULL, &euclid.handle[eh].depthImage);
     printf("\e[1;36mEuclidVK\e[0;37m: depth image created with result = %d\n", result);
 
@@ -498,6 +511,144 @@ void createFrameBuffers(unsigned int eh){
     }
 }
 
+void createCommandPool(unsigned int eh){
+    VkCommandPoolCreateInfo poolInfo = {0};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = euclid.handle[eh].chosenqueuefam;
+
+    VkResult result = vkCreateCommandPool( euclid.handle[eh].device, &poolInfo, NULL, & euclid.handle[eh].commandPool);
+    printf("\e[1;36mEuclidVK\e[0;37m: Command pool created with result = %d\n", result);
+}
+
+void createCommandBuffer(unsigned int eh){
+    euclid.handle[eh].commandBuffers = malloc(sizeof(VkCommandBuffer)*MAX_FRAMES_IN_FLIGHT);
+    for(int i = 0; i != MAX_FRAMES_IN_FLIGHT; i++){
+        VkCommandBufferAllocateInfo allocInfo = {0};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool =  euclid.handle[eh].commandPool;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = 1;
+
+        VkResult result = vkAllocateCommandBuffers( euclid.handle[eh].device, &allocInfo, & euclid.handle[eh].commandBuffers[i]);
+        printf("\e[1;36mEuclidVK\e[0;37m: Command buffer created with result = %d\n", result);
+    }
+}
+
+void createSyncObjects(unsigned int eh){
+    euclid.handle[eh].imageAvailableSemaphores = malloc(sizeof(VkSemaphore)*MAX_FRAMES_IN_FLIGHT);
+    euclid.handle[eh].renderFinishedSemaphores = malloc(sizeof(VkSemaphore)*MAX_FRAMES_IN_FLIGHT);
+    euclid.handle[eh].inFlightFences = malloc(sizeof(VkFence)*MAX_FRAMES_IN_FLIGHT);
+
+    for(int i = 0; i != MAX_FRAMES_IN_FLIGHT; i++){
+        VkSemaphoreCreateInfo semaphoreInfo = {0};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        VkFenceCreateInfo fenceInfo = {0};
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+        VkResult result = vkCreateSemaphore(euclid.handle[eh].device, &semaphoreInfo, NULL, &euclid.handle[eh].imageAvailableSemaphores[i]);
+        printf("\e[1;36mEuclidVK\e[0;37m: imageAvailableSemaphore created with result = %d\n", result);
+        result = vkCreateSemaphore(euclid.handle[eh].device, &semaphoreInfo, NULL, &euclid.handle[eh].renderFinishedSemaphores[i]);
+        printf("\e[1;36mEuclidVK\e[0;37m: renderFinishedSemaphore created with result = %d\n", result);
+        result = vkCreateFence(euclid.handle[eh].device, &fenceInfo, NULL, &euclid.handle[eh].inFlightFences[i]);
+        printf("\e[1;36mEuclidVK\e[0;37m: inFlightFence created with result = %d\n", result);
+    }
+}
+
+void recreateSwapChain(unsigned int eh){
+    vkDeviceWaitIdle(euclid.handle[eh].device);
+    for(int i = 0; i != euclid.handle[eh].swapChainImageCount; i++){
+        vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].swapChainFramebuffers[i], NULL);
+    }
+    for(int i = 0; i != euclid.handle[eh].swapChainImageCount; i++){
+        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].swapChainImageViews[i], NULL);
+    }
+    free(euclid.handle[eh].swapChainFramebuffers);
+    free(euclid.handle[eh].swapChainImageViews);
+    free(euclid.handle[eh].swapChainImages);
+    vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].depthImageView, NULL);
+    vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].depthImage, NULL);
+    vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].depthImageMemory, NULL);
+    vkDestroySwapchainKHR(euclid.handle[eh].device, euclid.handle[eh].swapChain, NULL);
+    createSwapChain(eh);
+    createSwapChainImageViews(eh);
+    createFrameBuffers(eh);
+}
+
+void startrender(unsigned int eh){
+    vkWaitForFences(euclid.handle[eh].device, 1, &euclid.handle[eh].inFlightFences[euclid.handle[eh].currentFrame], VK_TRUE, UINT64_MAX);
+    vkResetFences(euclid.handle[eh].device, 1, &euclid.handle[eh].inFlightFences[euclid.handle[eh].currentFrame]);
+
+    VkResult result = vkAcquireNextImageKHR(euclid.handle[eh].device, euclid.handle[eh].swapChain, UINT64_MAX, euclid.handle[eh].imageAvailableSemaphores[euclid.handle[eh].currentFrame], VK_NULL_HANDLE, &euclid.handle[eh].imageIndex);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || euclid.handle[eh].oldx != euclid.handle[eh].resolutionX || euclid.handle[eh].oldy != euclid.handle[eh].resolutionY) {
+        printf("\e[1;36mEuclidVk\e[0;37m: Resolution changed from %dx%d to %dx%d\n", euclid.handle[eh].oldx, euclid.handle[eh].oldy, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionY);
+        recreateSwapChain(eh);
+        euclid.handle[eh].oldx = euclid.handle[eh].resolutionX;
+        euclid.handle[eh].oldy = euclid.handle[eh].resolutionY;
+    }
+
+    vkResetCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0);
+
+    VkCommandBufferBeginInfo beginInfo = {0};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = 0;
+    beginInfo.pInheritanceInfo = NULL;
+    vkBeginCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &beginInfo);
+
+    VkRenderPassBeginInfo renderPassInfo = {0};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = euclid.handle[eh].renderPass;
+    renderPassInfo.framebuffer = euclid.handle[eh].swapChainFramebuffers[euclid.handle[eh].imageIndex];
+    renderPassInfo.renderArea.offset.x = 0;
+    renderPassInfo.renderArea.offset.y = 0;
+    renderPassInfo.renderArea.extent.width = euclid.handle[eh].resolutionX;
+    renderPassInfo.renderArea.extent.height = euclid.handle[eh].resolutionY;
+    VkClearValue clearValues[2] = {0};
+    clearValues[0].color.float32[0] = 0.5;
+    clearValues[0].color.float32[1] = 0.0;
+    clearValues[0].color.float32[2] = 0.0;
+    clearValues[0].color.float32[3] = 1.0;
+    clearValues[1].depthStencil.depth = 1.0;
+    clearValues[1].depthStencil.stencil = 0.0;    
+    renderPassInfo.clearValueCount = 2;
+    renderPassInfo.pClearValues = clearValues;
+    vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void endrender(unsigned int eh){
+    vkCmdEndRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame]);
+    vkEndCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame]);
+
+    VkSubmitInfo submitInfo = {0};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = &euclid.handle[eh].imageAvailableSemaphores[euclid.handle[eh].currentFrame];
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame];
+
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &euclid.handle[eh].renderFinishedSemaphores[euclid.handle[eh].currentFrame];
+    vkQueueSubmit(euclid.handle[eh].graphicsQueue, 1, &submitInfo, euclid.handle[eh].inFlightFences[euclid.handle[eh].currentFrame]);
+
+    VkPresentInfoKHR presentInfo = {0};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &euclid.handle[eh].renderFinishedSemaphores[euclid.handle[eh].currentFrame];
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &euclid.handle[eh].swapChain;
+    presentInfo.pImageIndices = &euclid.handle[eh].imageIndex;
+    presentInfo.pResults = NULL;
+
+    vkQueuePresentKHR(euclid.handle[eh].presentQueue, &presentInfo);
+    euclid.handle[eh].currentFrame = (euclid.handle[eh].currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    euclid.handle[eh].totalFrames++;
+}
+
 unsigned int new(){
     unsigned int eh = euclid.size;
     if(euclid.size != 0){
@@ -518,8 +669,7 @@ unsigned int new(){
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     euclid.handle[eh].window = glfwCreateWindow(800, 600, "Schnellwerke 3", NULL, NULL);
-    euclid.handle[eh].resolutionX = 800;
-    euclid.handle[eh].resolutionY = 600;
+    glfwGetFramebufferSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
     glfwCreateWindowSurface(euclid.handle[eh].instance, euclid.handle[eh].window, NULL, &euclid.handle[eh].surface);
     getPresentFamily(eh);
     createDevice(eh);
@@ -527,13 +677,21 @@ unsigned int new(){
     createSwapChainImageViews(eh);
     createRenderPass(eh);
     createFrameBuffers(eh);
+    createCommandPool(eh);
+    createCommandBuffer(eh);
+    createSyncObjects(eh);
+    euclid.handle[eh].currentFrame = 0;
     return eh;
 }
 
 unsigned int loopcont(unsigned int eh){
+    glfwGetFramebufferSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
+    startrender(eh);
+    endrender(eh);
     glfwPollEvents();
     return !glfwWindowShouldClose(euclid.handle[eh].window);
 }
 
 void destroy(unsigned int eh){
+    printf("\e[1;36mEuclidVK\e[0;37m: Destroyed handle by id = %d\n", eh);
 }

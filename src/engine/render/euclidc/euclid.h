@@ -3,5 +3,6 @@
 
 unsigned int new();
 unsigned int loopcont(unsigned int eh);
+void destroy(unsigned int eh);
 
 #endif

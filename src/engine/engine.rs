@@ -13,4 +13,7 @@ impl Engine{
     pub fn work(&mut self) -> bool{
         return self.render.continue_loop();
     }
+    pub fn end(&mut self){
+        self.render.destroy();
+    }
 }
