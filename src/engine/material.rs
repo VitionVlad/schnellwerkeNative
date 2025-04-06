@@ -1,13 +1,13 @@
-use super::{engine::Engine, render::render::{CullMode, Materialc}};
+use super::{engine::Engine, render::render::{CullMode, MaterialShaders}};
 
 pub struct Material{
-    pub material: Materialc,
+    pub material_shaders: MaterialShaders,
 }
 
 impl Material{
     pub fn new(eng: Engine, vert: Vec<u8>, frag: Vec<u8>, cullmode: CullMode) -> Material{
         Material{
-            material: Materialc::new(eng.render, vert, frag, cullmode),
+            material_shaders: MaterialShaders::new(eng.render, vert, frag, cullmode),
         }
     }
 }

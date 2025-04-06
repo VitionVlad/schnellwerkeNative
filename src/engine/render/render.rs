@@ -38,13 +38,13 @@ pub enum CullMode {
 }
 
 #[derive(Copy, Clone)]
-pub struct Materialc{
+pub struct MaterialShaders{
     pub materialid: u32,
 }
 
-impl Materialc{
-    pub fn new(ren: Render, vert: Vec<u8>, frag: Vec<u8>, cullmode: CullMode) -> Materialc{
-        Materialc { 
+impl MaterialShaders{
+    pub fn new(ren: Render, vert: Vec<u8>, frag: Vec<u8>, cullmode: CullMode) -> MaterialShaders{
+        MaterialShaders { 
             materialid: unsafe{
                 newmaterial(ren.euclid, vert.as_ptr() as *mut u32, frag.as_ptr() as *mut u32, vert.len() as u32, frag.len() as u32, cullmode as u32)
             }
