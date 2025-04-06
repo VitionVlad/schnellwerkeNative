@@ -1,5 +1,6 @@
 use super::render::render::Render;
 
+#[derive(Copy, Clone)]
 pub struct Engine{
     pub render: Render,
 }
