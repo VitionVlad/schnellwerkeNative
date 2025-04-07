@@ -54,11 +54,19 @@ typedef struct euclidmaterial{
     float lineWidth;
 } euclidmaterial;
 
+typedef struct euclidmodel{
+    VkDeviceMemory vertexBufferMemory;
+    VkBuffer vertexBuffer;
+    uint32_t vertnum;
+} euclidmodel;
+
 struct euclidVK{
     euclidh *handle;
     int size;
     euclidmaterial *materials;
     int msize;
+    euclidmodel *models;
+    int mosize;
 } euclid;
 
 uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, uint32_t eh) {
@@ -737,6 +745,101 @@ uint32_t newmaterial(uint32_t eh, uint32_t *vert, uint32_t *frag, uint32_t svert
     euclid.materials[em].polygonMode = VK_POLYGON_MODE_FILL;
     euclid.materials[em].lineWidth = 1.0;
 
+    printf("\e[1;36mEuclidMT\e[0;37m: Shader module created by id = %d\n", em);
+    return em;
+}
+
+uint32_t createmodel(uint32_t eh, float *vertices, float *uv, float *normals, uint32_t size){
+    uint32_t em = euclid.mosize;
+    if(euclid.mosize != 0){
+        euclidh *tmp = malloc(sizeof(euclidmodel)*euclid.mosize);
+        memcpy(tmp, euclid.models, sizeof(euclidmodel)*euclid.mosize);
+        free(euclid.models);
+        euclid.mosize++;
+        euclid.models = malloc(sizeof(euclidmodel)*euclid.mosize);
+        memcpy(euclid.models, tmp, sizeof(euclidmodel)*(euclid.mosize-1));
+        free(tmp);
+    }else{
+        euclid.mosize++;
+        euclid.models = malloc(sizeof(euclidmodel)*euclid.mosize);
+    }
+
+    float *tg = malloc(sizeof(float)*size*3);
+    float *ctg = malloc(sizeof(float)*size*3);
+    for (uint32_t i = 0, u = 0; i < size*3; i+=9, u+=6){
+        float v0[] = { vertices[i], vertices[i+1], vertices[i+2] };
+        float v1[] = { vertices[i+3], vertices[i+4], vertices[i+5] };
+        float v2[] = { vertices[i+6], vertices[i+7], vertices[i+8] };
+        float uv0[] = { uv[u], uv[u+1]+1.0f };
+        float uv1[] = { uv[u+2], uv[u+3]+1.0f };
+        float uv2[] = { uv[u+4], uv[u+5]+1.0f };
+        float deltapos1[] = { v1[0]-v0[0], v1[1]-v0[1], v1[2]-v0[2]};
+        float deltapos2[] = { v2[0]-v0[0], v2[1]-v0[1], v2[2]-v0[2]};
+        float delta_uv1[] = {uv1[0]-uv0[0], uv1[1]-uv0[1]};
+        float delta_uv2[] = {uv2[0]-uv0[0], uv2[1]-uv0[1]};
+        float r = 1.0 / (delta_uv1[0] * delta_uv2[1] - delta_uv1[1] * delta_uv2[0]);
+        tg[i] = (deltapos1[0] * delta_uv2[1] - deltapos2[0] * delta_uv1[1])*r;
+        tg[i+1] = (deltapos1[1] * delta_uv2[1] - deltapos2[1] * delta_uv1[1])*r;
+        tg[i+2] = (deltapos1[2] * delta_uv2[1] - deltapos2[2] * delta_uv1[1])*r;
+        tg[i+3] = (deltapos1[0] * delta_uv2[1] - deltapos2[0] * delta_uv1[1])*r;
+        tg[i+4] = (deltapos1[1] * delta_uv2[1] - deltapos2[1] * delta_uv1[1])*r;
+        tg[i+5] = (deltapos1[2] * delta_uv2[1] - deltapos2[2] * delta_uv1[1])*r;
+        tg[i+6] = (deltapos1[0] * delta_uv2[1] - deltapos2[0] * delta_uv1[1])*r;
+        tg[i+7] = (deltapos1[1] * delta_uv2[1] - deltapos2[1] * delta_uv1[1])*r;
+        tg[i+8] = (deltapos1[2] * delta_uv2[1] - deltapos2[2] * delta_uv1[1])*r;
+        ctg[i] = (deltapos2[0] * delta_uv1[0] - deltapos1[0] * delta_uv2[0])*r;
+        ctg[i+1] = (deltapos2[1] * delta_uv1[0] - deltapos1[1] * delta_uv2[0])*r;
+        ctg[i+2] = (deltapos2[2] * delta_uv1[0] - deltapos1[2] * delta_uv2[0])*r;
+        ctg[i+3] = (deltapos2[0] * delta_uv1[0] - deltapos1[0] * delta_uv2[0])*r;
+        ctg[i+4] = (deltapos2[1] * delta_uv1[0] - deltapos1[1] * delta_uv2[0])*r;
+        ctg[i+5] = (deltapos2[2] * delta_uv1[0] - deltapos1[2] * delta_uv2[0])*r;
+        ctg[i+6] = (deltapos2[0] * delta_uv1[0] - deltapos1[0] * delta_uv2[0])*r;
+        ctg[i+7] = (deltapos2[1] * delta_uv1[0] - deltapos1[1] * delta_uv2[0])*r;
+        ctg[i+8] = (deltapos2[2] * delta_uv1[0] - deltapos1[2] * delta_uv2[0])*r;
+    }
+    float *res = malloc(sizeof(float)*size*14);
+    for(uint32_t i = 0, v = 0, u = 0; i < size*14; i+=14, v+=3, u+=2){
+        res[i] = vertices[v];
+        res[i+1] = vertices[v+1];
+        res[i+2] = vertices[v+2];
+        res[i+3] = uv[u];
+        res[i+4] = uv[u+1];
+        res[i+5] = normals[v];
+        res[i+6] = normals[v+1];
+        res[i+7] = normals[v+2];
+        res[i+8] = tg[v];
+        res[i+9] = tg[v+1];
+        res[i+10] = tg[v+2];
+        res[i+11] = ctg[v];
+        res[i+12] = ctg[v+1];
+        res[i+13] = ctg[v+2];
+    }
+
+    euclid.models[em].vertnum = size;
+    VkBufferCreateInfo bufferInfo = {0};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(res[0]) * size*14;
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkResult result = vkCreateBuffer(euclid.handle[eh].device, &bufferInfo, NULL, &euclid.models[em].vertexBuffer);
+    printf("\e[1;36mEuclidMD\e[0;37m: Vertex buffer created with result = %d\n", result);
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(euclid.handle[eh].device, euclid.models[em].vertexBuffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo = {0};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, eh);
+
+    vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &euclid.models[em].vertexBufferMemory);
+    vkBindBufferMemory(euclid.handle[eh].device, euclid.models[em].vertexBuffer, euclid.models[em].vertexBufferMemory, 0);
+    void* data;
+    vkMapMemory(euclid.handle[eh].device, euclid.models[em].vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+        memcpy(data, res, (size_t) bufferInfo.size);
+    vkUnmapMemory(euclid.handle[eh].device, euclid.models[em].vertexBufferMemory);
+    free(tg);
+    free(ctg);
+    free(res);
     return em;
 }
 
