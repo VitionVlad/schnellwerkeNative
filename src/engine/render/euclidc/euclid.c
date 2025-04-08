@@ -666,7 +666,7 @@ void endrender(uint32_t eh){
     euclid.handle[eh].totalFrames++;
 }
 
-uint32_t new(){
+uint32_t neweng(){
     uint32_t eh = euclid.size;
     if(euclid.size != 0){
         euclidh *tmp = malloc(sizeof(euclidh)*euclid.size);
@@ -749,7 +749,7 @@ uint32_t newmaterial(uint32_t eh, uint32_t *vert, uint32_t *frag, uint32_t svert
     return em;
 }
 
-uint32_t createmodel(uint32_t eh, float *vertices, float *uv, float *normals, uint32_t size){
+uint32_t newmodel(uint32_t eh, float *vertices, float *uv, float *normals, uint32_t size){
     uint32_t em = euclid.mosize;
     if(euclid.mosize != 0){
         euclidh *tmp = malloc(sizeof(euclidmodel)*euclid.mosize);
