@@ -1,9 +1,10 @@
 unsafe extern "C"{
     fn neweng() -> cty::uint32_t;
-    fn loopcont(eh: cty::uint32_t) -> cty::uint32_t;
     fn destroy(eh: cty::uint32_t);
     fn newmaterial(eh: cty::uint32_t, vert: *mut cty::uint32_t, frag: *mut cty::uint32_t, svert: cty::uint32_t, sfrag: cty::uint32_t, cullmode: cty::uint32_t) -> cty::uint32_t;
     fn newmodel(eh: cty::uint32_t, vert: *mut cty::c_float, uv: *mut cty::c_float, normals: *mut cty::c_float, size: cty::uint32_t) -> cty::uint32_t;
+    fn newmesh(eh: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t) -> cty::uint32_t;
+    fn loopcont(eh: cty::uint32_t) -> cty::uint32_t;
 }
 
 
@@ -76,6 +77,21 @@ impl Model{
         Model { 
             modelid: unsafe{
                 newmodel(ren.euclid, v.as_ptr() as *mut f32, u.as_ptr() as *mut f32, n.as_ptr() as *mut f32, size as u32)
+            }
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct Mesh{
+    pub meshid: u32,
+}
+
+impl Mesh{
+    pub fn new(ren: Render, model: Model, material: MaterialShaders) -> Mesh{
+        Mesh { 
+            meshid: unsafe{
+                newmesh(ren.euclid, material.materialid, model.modelid)
             }
         }
     }
