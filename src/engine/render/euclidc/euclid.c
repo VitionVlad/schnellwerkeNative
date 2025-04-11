@@ -1187,6 +1187,10 @@ uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em){
     return eme;
 }
 
+void setmeshbuf(uint32_t eme, uint32_t i, float val){
+    euclid.meshes[eme].lub[i+4] = val;
+}
+
 uint32_t loopcont(uint32_t eh){
     glfwGetFramebufferSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
     startrender(eh);
