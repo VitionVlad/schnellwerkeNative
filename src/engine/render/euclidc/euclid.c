@@ -61,6 +61,12 @@ typedef struct euclidmodel{
     uint32_t vertnum;
 } euclidmodel;
 
+typedef struct euclidtexture{
+    VkImage texture;
+    VkDeviceMemory textureImageMemory;
+    VkImageView textureImageView;
+} euclidtexture;
+
 typedef struct euclidmesh{
     uint32_t euclidid;
     VkDescriptorSetLayout descriptorSetLayout;
@@ -78,13 +84,15 @@ typedef struct euclidmesh{
 
 struct euclidVK{
     euclidh *handle;
-    int size;
+    uint32_t size;
     euclidmaterial *materials;
-    int msize;
+    uint32_t msize;
     euclidmodel *models;
-    int mosize;
+    uint32_t mosize;
     euclidmesh *meshes;
-    int mesize;
+    uint32_t mesize;
+    euclidtexture *textures;
+    uint32_t tsize;
 } euclid;
 
 uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, uint32_t eh) {
@@ -1204,8 +1212,199 @@ uint32_t loopcont(uint32_t eh){
     return !glfwWindowShouldClose(euclid.handle[eh].window);
 }
 
+VkCommandBuffer beginSingleTimeCommands(uint32_t eh) {
+    VkCommandBufferAllocateInfo allocInfo = {0};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = euclid.handle[eh].commandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(euclid.handle[eh].device, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo = {0};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    return commandBuffer;
+}
+
+void endSingleTimeCommands(uint32_t eh, VkCommandBuffer commandBuffer) {
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo = {0};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(euclid.handle[eh].graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(euclid.handle[eh].graphicsQueue);
+
+    vkFreeCommandBuffers(euclid.handle[eh].device, euclid.handle[eh].commandPool, 1, &commandBuffer);
+}
+
+uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize, char *pixels){
+    uint32_t te = euclid.tsize;
+    if(euclid.tsize != 0){
+        euclidh *tmp = malloc(sizeof(euclidtexture)*euclid.tsize);
+        memcpy(tmp, euclid.textures, sizeof(euclidtexture)*euclid.tsize);
+        free(euclid.textures);
+        euclid.tsize++;
+        euclid.textures = malloc(sizeof(euclidtexture)*euclid.tsize);
+        memcpy(euclid.textures, tmp, sizeof(euclidtexture)*(euclid.tsize-1));
+        free(tmp);
+    }else{
+        euclid.tsize++;
+        euclid.textures = malloc(sizeof(euclidtexture)*euclid.tsize);
+    }
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    VkDeviceSize imageSize = xsize * ysize * zsize * 4;
+
+    VkBufferCreateInfo bufferInfo = {0};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = imageSize;
+    bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkResult result = vkCreateBuffer(euclid.handle[eh].device, &bufferInfo, NULL, &stagingBuffer);
+    printf("\e[1;36mEuclidTEX\e[0;37m: Staging buffer created with result = %d\n", result);
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(euclid.handle[eh].device, stagingBuffer, &memRequirements);
+    VkMemoryAllocateInfo allocInfo = {0};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, eh);
+    vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &stagingBufferMemory);
+
+    void* data;
+    vkMapMemory(euclid.handle[eh].device, stagingBufferMemory, 0, imageSize, 0, &data);
+        memcpy(data, pixels, imageSize);
+    vkUnmapMemory(euclid.handle[eh].device, stagingBufferMemory);
+
+    vkBindBufferMemory(euclid.handle[eh].device, stagingBuffer, stagingBufferMemory, 0);
+
+    VkImageCreateInfo imageInfo = {0};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = xsize;
+    imageInfo.extent.height = ysize;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = zsize;
+    imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.flags = 0;
+    result = vkCreateImage(euclid.handle[eh].device, &imageInfo, NULL, &euclid.textures[te].texture);
+    printf("\e[1;36mEuclidTEX\e[0;37m: Texture created with result = %d\n", result);
+
+    VkMemoryRequirements memRequirementsi;
+    vkGetImageMemoryRequirements(euclid.handle[eh].device, euclid.textures[te].texture, &memRequirementsi);
+    
+    VkMemoryAllocateInfo allocInfoi = {0};
+    allocInfoi.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfoi.allocationSize = memRequirementsi.size;
+    allocInfoi.memoryTypeIndex = findMemoryType(memRequirementsi.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, eh);
+    
+    result = vkAllocateMemory(euclid.handle[eh].device, &allocInfoi, NULL, &euclid.textures[te].textureImageMemory);
+    printf("\e[1;36mEuclidTEX\e[0;37m: Texture memory alocated with result = %d\n", result);
+
+    vkBindImageMemory(euclid.handle[eh].device, euclid.textures[te].texture, euclid.textures[te].textureImageMemory, 0);
+
+    VkImageMemoryBarrier barrier = {0};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = euclid.textures[te].texture;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = zsize;
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands(eh);
+
+    vkCmdPipelineBarrier(
+        commandBuffer,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0,
+        0, NULL,
+        0, NULL,
+        1, &barrier
+    );
+
+    endSingleTimeCommands(eh, commandBuffer);
+    
+    VkBufferImageCopy region = {0};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = zsize;
+
+    region.imageOffset.x = 0;
+    region.imageOffset.y = 0;
+    region.imageOffset.z = 0;
+    region.imageExtent.width = xsize;
+    region.imageExtent.height = ysize;
+    region.imageExtent.depth = 1;
+
+    commandBuffer = beginSingleTimeCommands(eh);
+    
+    vkCmdCopyBufferToImage(
+        commandBuffer,
+        stagingBuffer,
+        euclid.textures[te].texture,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &region
+    );
+
+    endSingleTimeCommands(eh, commandBuffer);
+
+    vkDestroyBuffer(euclid.handle[eh].device, stagingBuffer, NULL);
+    vkFreeMemory(euclid.handle[eh].device, stagingBufferMemory, NULL);
+
+    return te;
+}
+
 void destroy(uint32_t eh){
-    vkDeviceWaitIdle(euclid.handle[eh].device); 
+    vkDeviceWaitIdle(euclid.handle[eh].device);
+    for(uint32_t i = 0; i != euclid.mesize; i++){
+        vkDestroyPipeline(euclid.handle[eh].device, euclid.meshes[i].graphicsPipeline, NULL);
+        vkDestroyDescriptorSetLayout(euclid.handle[eh].device, euclid.meshes[i].descriptorSetLayout, NULL);
+        vkDestroyPipelineLayout(euclid.handle[eh].device, euclid.meshes[i].pipelineLayout, NULL);
+        for(uint32_t j = 0; j != MAX_FRAMES_IN_FLIGHT; j++){
+            vkDestroyBuffer(euclid.handle[eh].device, euclid.meshes[i].uniformBuffers[j], NULL);
+            vkFreeMemory(euclid.handle[eh].device, euclid.meshes[i].uniformBuffersMemory[j], NULL);
+        }
+        free(euclid.meshes[i].uniformBuffers);
+        free(euclid.meshes[i].uniformBuffersMemory);
+        free(euclid.meshes[i].uniformBuffersMapped);
+        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[i].descriptorPool, NULL);
+        free(euclid.meshes[i].descriptorSets);
+    }
+    for(uint32_t i = 0; i != euclid.mosize; i++){
+        vkDestroyBuffer(euclid.handle[eh].device, euclid.models[i].vertexBuffer, NULL);
+        vkFreeMemory(euclid.handle[eh].device, euclid.models[i].vertexBufferMemory, NULL);
+    }
+    for(uint32_t i = 0; i != euclid.msize; i++){
+        vkDestroyShaderModule(euclid.handle[eh].device, euclid.materials[i].fragModule, NULL);
+        vkDestroyShaderModule(euclid.handle[eh].device, euclid.materials[i].vertModule, NULL);
+    }
     for(int i = 0; i != MAX_FRAMES_IN_FLIGHT; i++){
         vkDestroySemaphore(euclid.handle[eh].device, euclid.handle[eh].imageAvailableSemaphores[i], NULL);
         vkDestroySemaphore(euclid.handle[eh].device, euclid.handle[eh].renderFinishedSemaphores[i], NULL);

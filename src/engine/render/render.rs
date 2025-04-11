@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+
 unsafe extern "C"{
     fn neweng() -> cty::uint32_t;
     fn destroy(eh: cty::uint32_t);
@@ -5,17 +8,16 @@ unsafe extern "C"{
     fn newmodel(eh: cty::uint32_t, vert: *mut cty::c_float, uv: *mut cty::c_float, normals: *mut cty::c_float, size: cty::uint32_t) -> cty::uint32_t;
     fn setmeshbuf(eme: cty::uint32_t, i: cty::uint32_t, val: cty::c_float);
     fn newmesh(eh: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t) -> cty::uint32_t;
+    fn newtexture(eh: cty::uint32_t, xsize: cty::uint32_t, ysize: cty::uint32_t, zsize: cty::uint32_t, pixels: *mut cty::c_char) -> cty::uint32_t;
     fn loopcont(eh: cty::uint32_t) -> cty::uint32_t;
 }
 
-#[warn(dead_code)]
 #[derive(Copy, Clone)]
 pub struct Render{
     pub euclid: u32,
 }
 
 impl Render{
-    #[warn(dead_code)]
     pub fn new() -> Render{
         Render { 
             euclid: unsafe {
@@ -23,11 +25,9 @@ impl Render{
             } 
         }
     }
-    #[warn(dead_code)]
     pub fn continue_loop(&self) -> bool{
         return unsafe { loopcont(self.euclid) } == 1;
     }
-    #[warn(dead_code)]
     pub fn destroy(&self){
         unsafe{
             destroy(self.euclid);
@@ -35,7 +35,6 @@ impl Render{
     }
 }
 
-#[warn(dead_code)]
 #[derive(Copy, Clone)]
 pub enum CullMode {
     CullModeNone = 0,
@@ -44,14 +43,12 @@ pub enum CullMode {
     CullModeFrontAndBack = 0x00000003,
 }
 
-#[warn(dead_code)]
 #[derive(Copy, Clone)]
 pub struct MaterialShaders{
     pub materialid: u32,
 }
 
 impl MaterialShaders{
-    #[warn(dead_code)]
     pub fn new(ren: Render, vert: Vec<u8>, frag: Vec<u8>, cullmode: CullMode) -> MaterialShaders{
         MaterialShaders { 
             materialid: unsafe{
@@ -61,14 +58,12 @@ impl MaterialShaders{
     }
 }
 
-#[warn(dead_code)]
 #[derive(Copy, Clone)]
 pub struct Vertexes{
     pub modelid: u32,
 }
 
 impl Vertexes{
-    #[warn(dead_code)]
     pub fn new(ren: Render, vertices: Vec<f32>) -> Vertexes{
         let size = vertices.len()/8;
         let mut v: Vec<f32> = vec![];
@@ -91,7 +86,21 @@ impl Vertexes{
     }
 }
 
-#[warn(dead_code)]
+#[derive(Copy, Clone)]
+pub struct Texture{
+    pub texid: u32,
+}
+
+impl Texture {
+    pub fn new(render: Render, xs: u32, ys: u32, texnm: u32, data: Vec<i8>) -> Texture{
+        Texture { 
+            texid: unsafe {
+                newtexture(render.euclid, xs, ys, texnm, data.as_ptr() as *mut i8)
+            }
+        }
+    }
+}
+
 #[derive(Copy, Clone)]
 pub struct Mesh{
     pub meshid: u32,
@@ -99,7 +108,6 @@ pub struct Mesh{
 }
 
 impl Mesh{
-    #[warn(dead_code)]
     pub fn new(ren: Render, model: Vertexes, material: MaterialShaders) -> Mesh{
         Mesh { 
             meshid: unsafe{
@@ -108,7 +116,7 @@ impl Mesh{
             ubo: [1.0; 20]
         }
     }
-    #[warn(dead_code)]
+
     pub fn exec(&self){
         for i in 0..20{
             unsafe {
