@@ -9,20 +9,19 @@ fn main() {
     let img: Vec<i8> = vec![
         0, 0, 0, 127,
         127, 127, 127, 127,
+        127, 127, 127, 127,
+        0, 0, 0, 127,
+
+        127, 127, 127, 127,
+        0, 0, 0, 127,
         0, 0, 0, 127,
         127, 127, 127, 127,
-
-        0, 127, 0, 127,
-        0, 0, 0, 127,
-        127, 0, 127, 127,
-        0, 0, 0, 127,
     ];
-
-    let _tex = Texture::new(eng.render, 2, 2, 2, img);
 
     let vert = fs::read("shaders/vert").unwrap();
     let frag = fs::read("shaders/frag").unwrap();
-    let mat = Material::new(eng, vert, frag, engine::render::render::CullMode::CullModeNone);
+    let mut mat = Material::new(eng, vert, frag, engine::render::render::CullMode::CullModeNone);
+    mat.textures.push(Texture::new(eng.render, 2, 2, 2, img));
 
     let vert = vec![
         0.0f32, -0.5f32, 0f32, 

@@ -8,7 +8,7 @@ pub struct Object{
 impl Object {
     pub fn new(engine: Engine, model: Model, material: Material) -> Object{
         Object { 
-            mesh: Mesh::new(engine.render, model.vertexbuf, material.material_shaders) 
+            mesh: Mesh::new(engine.render, model.vertexbuf, material.material_shaders, material.textures[material.used_texture]) 
         }
     }
     pub fn exec(&self){

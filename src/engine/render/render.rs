@@ -7,7 +7,7 @@ unsafe extern "C"{
     fn newmaterial(eh: cty::uint32_t, vert: *mut cty::uint32_t, frag: *mut cty::uint32_t, svert: cty::uint32_t, sfrag: cty::uint32_t, cullmode: cty::uint32_t) -> cty::uint32_t;
     fn newmodel(eh: cty::uint32_t, vert: *mut cty::c_float, uv: *mut cty::c_float, normals: *mut cty::c_float, size: cty::uint32_t) -> cty::uint32_t;
     fn setmeshbuf(eme: cty::uint32_t, i: cty::uint32_t, val: cty::c_float);
-    fn newmesh(eh: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t) -> cty::uint32_t;
+    fn newmesh(eh: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t, te: cty::uint32_t) -> cty::uint32_t;
     fn newtexture(eh: cty::uint32_t, xsize: cty::uint32_t, ysize: cty::uint32_t, zsize: cty::uint32_t, pixels: *mut cty::c_char) -> cty::uint32_t;
     fn loopcont(eh: cty::uint32_t) -> cty::uint32_t;
 }
@@ -108,10 +108,10 @@ pub struct Mesh{
 }
 
 impl Mesh{
-    pub fn new(ren: Render, model: Vertexes, material: MaterialShaders) -> Mesh{
+    pub fn new(ren: Render, model: Vertexes, material: MaterialShaders, texture: Texture) -> Mesh{
         Mesh { 
             meshid: unsafe{
-                newmesh(ren.euclid, material.materialid, model.modelid)
+                newmesh(ren.euclid, material.materialid, model.modelid, texture.texid)
             },
             ubo: [1.0; 20]
         }

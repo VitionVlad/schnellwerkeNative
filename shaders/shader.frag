@@ -10,6 +10,8 @@ layout(binding = 0) uniform UniformBufferObject {
     vec4 adddata;
 } ubo;
 
+layout(binding = 1) uniform sampler2DArray texSampler;
+
 void main() {
-    outColor = vec4(uv, sin(ubo.resolutions.w), 1.0);
+    outColor = vec4(texture(texSampler, vec3(uv, 0)).rgb, 1.0);
 }
