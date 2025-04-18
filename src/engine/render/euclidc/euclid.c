@@ -455,21 +455,21 @@ void createShadowData(uint32_t eh){
     depthCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     depthCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     depthCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkResult result = vkCreateImage(euclid.handle[eh].device, &depthCreateInfo, NULL, &euclid.handle[eh].depthImage);
+    VkResult result = vkCreateImage(euclid.handle[eh].device, &depthCreateInfo, NULL, &euclid.handle[eh].shadowImage);
     printf("\e[1;36mEuclidVK\e[0;37m: depth image created with result = %d\n", result);
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].depthImage, &memRequirements);
+    vkGetImageMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].shadowImage, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, eh);
 
-    result = vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &euclid.handle[eh].depthImageMemory);
+    result = vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &euclid.handle[eh].shadowImageMemory);
     printf("\e[1;36mEuclidVK\e[0;37m: depth image memory allocated with result = %d\n", result);
 
-    vkBindImageMemory(euclid.handle[eh].device, euclid.handle[eh].depthImage, euclid.handle[eh].depthImageMemory, 0);
+    vkBindImageMemory(euclid.handle[eh].device, euclid.handle[eh].shadowImage, euclid.handle[eh].shadowImageMemory, 0);
 
     VkImageViewCreateInfo dicreateInfo = {0};
     dicreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
