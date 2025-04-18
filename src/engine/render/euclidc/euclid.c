@@ -46,6 +46,13 @@ typedef struct euclidh{
     uint32_t imageIndex;
     uint32_t totalFrames;
     uint32_t shadowMapResolution;
+    float resolutionScale;
+    uint32_t shadowMapsCount;
+    uint32_t oldshadowMapsCount;
+    VkImage shadowImage;
+    VkImageView shadowImageView;
+    VkDeviceMemory shadowImageMemory;
+    VkFramebuffer shadowFramebuffers[100];
 } euclidh;
 
 typedef struct euclidmaterial{
@@ -216,62 +223,7 @@ void createDevice(uint32_t eh){
     queueCreateInfo[1].flags = 0;
     queueCreateInfo[1].pNext = NULL;
 
-    VkPhysicalDeviceFeatures deviceFeatures;
-    deviceFeatures.robustBufferAccess = VK_FALSE;
-    deviceFeatures.fullDrawIndexUint32 = VK_FALSE;
-    deviceFeatures.imageCubeArray = VK_FALSE;
-    deviceFeatures.independentBlend = VK_FALSE;
-    deviceFeatures.geometryShader = VK_FALSE;
-    deviceFeatures.tessellationShader = VK_FALSE;
-    deviceFeatures.sampleRateShading = VK_FALSE;
-    deviceFeatures.dualSrcBlend = VK_FALSE;
-    deviceFeatures.logicOp = VK_FALSE;
-    deviceFeatures.multiDrawIndirect = VK_FALSE;
-    deviceFeatures.drawIndirectFirstInstance = VK_FALSE;
-    deviceFeatures.depthClamp = VK_FALSE;
-    deviceFeatures.depthBiasClamp = VK_FALSE;
-    deviceFeatures.fillModeNonSolid = VK_FALSE;
-    deviceFeatures.depthBounds = VK_FALSE;
-    deviceFeatures.wideLines = VK_FALSE;
-    deviceFeatures.largePoints = VK_FALSE;
-    deviceFeatures.alphaToOne = VK_FALSE;
-    deviceFeatures.multiViewport = VK_FALSE;
-    deviceFeatures.samplerAnisotropy = VK_FALSE;
-    deviceFeatures.textureCompressionETC2 = VK_FALSE;
-    deviceFeatures.textureCompressionASTC_LDR = VK_FALSE;
-    deviceFeatures.textureCompressionBC = VK_FALSE;
-    deviceFeatures.occlusionQueryPrecise = VK_FALSE;
-    deviceFeatures.pipelineStatisticsQuery = VK_FALSE;
-    deviceFeatures.vertexPipelineStoresAndAtomics = VK_FALSE;
-    deviceFeatures.fragmentStoresAndAtomics = VK_FALSE;
-    deviceFeatures.shaderTessellationAndGeometryPointSize = VK_FALSE;
-    deviceFeatures.shaderImageGatherExtended = VK_FALSE;
-    deviceFeatures.shaderStorageImageExtendedFormats = VK_FALSE;
-    deviceFeatures.shaderStorageImageMultisample = VK_FALSE;
-    deviceFeatures.shaderStorageImageReadWithoutFormat = VK_FALSE;
-    deviceFeatures.shaderStorageImageWriteWithoutFormat = VK_FALSE;
-    deviceFeatures.shaderUniformBufferArrayDynamicIndexing = VK_FALSE;
-    deviceFeatures.shaderSampledImageArrayDynamicIndexing = VK_FALSE;
-    deviceFeatures.shaderStorageBufferArrayDynamicIndexing = VK_FALSE;
-    deviceFeatures.shaderStorageImageArrayDynamicIndexing = VK_FALSE;
-    deviceFeatures.shaderClipDistance = VK_FALSE;
-    deviceFeatures.shaderCullDistance = VK_FALSE;
-    deviceFeatures.shaderFloat64 = VK_FALSE;
-    deviceFeatures.shaderInt64 = VK_FALSE;
-    deviceFeatures.shaderInt16 = VK_FALSE;
-    deviceFeatures.shaderResourceResidency = VK_FALSE;
-    deviceFeatures.shaderResourceMinLod = VK_FALSE;
-    deviceFeatures.sparseBinding = VK_FALSE;
-    deviceFeatures.sparseResidencyBuffer = VK_FALSE;
-    deviceFeatures.sparseResidencyImage2D = VK_FALSE;
-    deviceFeatures.sparseResidencyImage3D = VK_FALSE;
-    deviceFeatures.sparseResidency2Samples = VK_FALSE;
-    deviceFeatures.sparseResidency4Samples = VK_FALSE;
-    deviceFeatures.sparseResidency8Samples = VK_FALSE;
-    deviceFeatures.sparseResidency16Samples = VK_FALSE;
-    deviceFeatures.sparseResidencyAliased = VK_FALSE;
-    deviceFeatures.variableMultisampleRate = VK_FALSE;
-    deviceFeatures.inheritedQueries = VK_FALSE;
+    VkPhysicalDeviceFeatures deviceFeatures = {0};
 
     uint32_t extensionCount = 0;
     vkEnumerateDeviceExtensionProperties(euclid.handle[eh].physicalDevices[euclid.handle[eh].chosenDevice], NULL, &extensionCount, NULL);
@@ -487,6 +439,77 @@ void createRenderPass(uint32_t eh){
     printf("\e[1;36mEuclidVK\e[0;37m: Renderpass created with result = %d\n", result);
 }
 
+void createShadowData(uint32_t eh){
+    uint32_t queueFamilyIndices[] = {euclid.handle[eh].chosenqueuefam, euclid.handle[eh].chosenpresentqueue};
+    VkImageCreateInfo depthCreateInfo = {0};
+    depthCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    depthCreateInfo.arrayLayers = euclid.handle[eh].shadowMapsCount;
+    depthCreateInfo.format = VK_FORMAT_D32_SFLOAT;
+    depthCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    depthCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    depthCreateInfo.mipLevels = 1;
+    depthCreateInfo.extent.depth = 1;
+    depthCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    depthCreateInfo.extent.width = euclid.handle[eh].shadowMapResolution;
+    depthCreateInfo.extent.height = euclid.handle[eh].shadowMapResolution;
+    depthCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    depthCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkResult result = vkCreateImage(euclid.handle[eh].device, &depthCreateInfo, NULL, &euclid.handle[eh].depthImage);
+    printf("\e[1;36mEuclidVK\e[0;37m: depth image created with result = %d\n", result);
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].depthImage, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo = {0};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, eh);
+
+    result = vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &euclid.handle[eh].depthImageMemory);
+    printf("\e[1;36mEuclidVK\e[0;37m: depth image memory allocated with result = %d\n", result);
+
+    vkBindImageMemory(euclid.handle[eh].device, euclid.handle[eh].depthImage, euclid.handle[eh].depthImageMemory, 0);
+
+    VkImageViewCreateInfo dicreateInfo = {0};
+    dicreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    dicreateInfo.image = euclid.handle[eh].depthImage;
+    dicreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    dicreateInfo.format = VK_FORMAT_D32_SFLOAT;
+    dicreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    dicreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    dicreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    dicreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    dicreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    dicreateInfo.subresourceRange.baseMipLevel = 0;
+    dicreateInfo.subresourceRange.levelCount = 1;
+    dicreateInfo.subresourceRange.baseArrayLayer = 0;
+    dicreateInfo.subresourceRange.layerCount = 1;
+    result = vkCreateImageView(euclid.handle[eh].device, &dicreateInfo, NULL, &euclid.handle[eh].depthImageView);
+    printf("\e[1;36mEuclidVK\e[0;37m: depth imageview created with result = %d\n", result);
+
+    euclid.handle[eh].swapChainFramebuffers = malloc(sizeof(VkFramebuffer)*euclid.handle[eh].swapChainImageCount);
+
+    for (int i = 0; i != euclid.handle[eh].swapChainImageCount; i++) {
+        VkImageView attachments[] = {
+            euclid.handle[eh].swapChainImageViews[i],
+            euclid.handle[eh].depthImageView,
+        };
+    
+        VkFramebufferCreateInfo framebufferInfo = {0};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = euclid.handle[eh].renderPass;
+        framebufferInfo.attachmentCount = 2;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = euclid.handle[eh].resolutionX;
+        framebufferInfo.height = euclid.handle[eh].resolutionY;
+        framebufferInfo.layers = 1;
+    
+        result = vkCreateFramebuffer(euclid.handle[eh].device, &framebufferInfo, NULL, &euclid.handle[eh].swapChainFramebuffers[i]);
+        printf("\e[1;36mEuclidVK\e[0;37m: SwapChain framebuffers created with result = %d\n", result);
+    }
+}
+
 void createFrameBuffers(uint32_t eh){
     uint32_t queueFamilyIndices[] = {euclid.handle[eh].chosenqueuefam, euclid.handle[eh].chosenpresentqueue};
     VkImageCreateInfo depthCreateInfo = {0};
@@ -696,7 +719,7 @@ void endrender(uint32_t eh){
     euclid.handle[eh].totalFrames++;
 }
 
-uint32_t neweng(){
+uint32_t neweng(uint32_t shadowMapResolution){
     uint32_t eh = euclid.size;
     if(euclid.size != 0){
         euclidh *tmp = malloc(sizeof(euclidh)*euclid.size);
@@ -716,7 +739,7 @@ uint32_t neweng(){
     getDevice(eh);
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    euclid.handle[eh].window = glfwCreateWindow(800, 600, "Schnellwerke 3", NULL, NULL);
+    euclid.handle[eh].window = glfwCreateWindow(800, 600, "Schnellwerke", NULL, NULL);
     glfwGetFramebufferSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
     glfwCreateWindowSurface(euclid.handle[eh].instance, euclid.handle[eh].window, NULL, &euclid.handle[eh].surface);
     getPresentFamily(eh);
@@ -724,6 +747,10 @@ uint32_t neweng(){
     createSwapChain(eh);
     createSwapChainImageViews(eh);
     createRenderPass(eh);
+    euclid.handle[eh].shadowMapsCount = 1;
+    euclid.handle[eh].oldshadowMapsCount = 1;
+    euclid.handle[eh].shadowMapResolution = shadowMapResolution;
+    createShadowData(eh);
     createFrameBuffers(eh);
     createCommandPool(eh);
     createCommandBuffer(eh);
