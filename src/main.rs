@@ -36,7 +36,7 @@ fn main() {
     ];
 
     let model = Model::new(eng, vert);
-    let mesh = Object::new(eng, model, mat);
+    let mesh = Object::new(eng, model, mat, engine::render::render::MeshUsage::LightingPass);
     while eng.work(){
         mesh.exec();
     }

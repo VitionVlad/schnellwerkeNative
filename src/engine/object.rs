@@ -1,4 +1,4 @@
-use super::{engine::Engine, material::Material, model::Model, render::render::Mesh};
+use super::{engine::Engine, material::Material, model::Model, render::render::{Mesh, MeshUsage}};
 
 #[warn(dead_code)]
 pub struct Object{
@@ -6,9 +6,9 @@ pub struct Object{
 }
 
 impl Object {
-    pub fn new(engine: Engine, model: Model, material: Material) -> Object{
+    pub fn new(engine: Engine, model: Model, material: Material, usage: MeshUsage) -> Object{
         Object { 
-            mesh: Mesh::new(engine.render, model.vertexbuf, material.material_shaders, material.textures[material.used_texture]) 
+            mesh: Mesh::new(engine.render, model.vertexbuf, material.material_shaders, material.textures[material.used_texture], usage) 
         }
     }
     pub fn exec(&self){
