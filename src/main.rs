@@ -37,6 +37,8 @@ fn main() {
 
     let model = Model::new(eng, vert);
     let mesh = Object::new(eng, model, mat, engine::render::render::MeshUsage::LightingPass);
+    eng.render.shadow_map_count = 4;
+    eng.render.shadow_map_resolution = 1280;
     while eng.work(){
         mesh.exec();
     }

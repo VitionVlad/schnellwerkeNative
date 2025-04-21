@@ -46,6 +46,7 @@ typedef struct euclidh{
     uint32_t imageIndex;
     uint32_t totalFrames;
     uint32_t shadowMapResolution;
+    uint32_t oldshadowMapResolution;
     float resolutionScale;
     uint32_t shadowMapsCount;
     uint32_t oldshadowMapsCount;
@@ -540,7 +541,7 @@ void createShadowData(uint32_t eh){
     VkImageViewCreateInfo dicreateInfo = {0};
     dicreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     dicreateInfo.image = euclid.handle[eh].shadowImage;
-    dicreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    dicreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     dicreateInfo.format = VK_FORMAT_D32_SFLOAT;
     dicreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
     dicreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -735,6 +736,19 @@ void startrender(uint32_t eh){
         euclid.handle[eh].oldx = euclid.handle[eh].resolutionX;
         euclid.handle[eh].oldy = euclid.handle[eh].resolutionY;
     }
+    if(euclid.handle[eh].shadowMapResolution != euclid.handle[eh].oldshadowMapResolution || euclid.handle[eh].shadowMapsCount != euclid.handle[eh].oldshadowMapsCount){
+        vkDeviceWaitIdle(euclid.handle[eh].device);
+        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].shadowImageView, NULL);
+        for(uint32_t i = 0; i != euclid.handle[eh].oldshadowMapsCount; i++){
+            vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].shadowFramebuffers[i], NULL);
+            vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].shadowRenderImageViews[i], NULL);
+        }
+        vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].shadowImageMemory, NULL);
+        vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].shadowImage, NULL);
+        euclid.handle[eh].oldshadowMapResolution = euclid.handle[eh].shadowMapResolution;
+        euclid.handle[eh].oldshadowMapsCount = euclid.handle[eh].shadowMapsCount;
+        createShadowData(eh);
+    }
 
     vkResetCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0);
 
@@ -743,6 +757,11 @@ void startrender(uint32_t eh){
     beginInfo.flags = 0;
     beginInfo.pInheritanceInfo = NULL;
     vkBeginCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &beginInfo);
+}
+
+void modifyshadowdata(uint32_t eh, uint32_t ncnt, uint32_t nres){
+    euclid.handle[eh].shadowMapResolution = nres;
+    euclid.handle[eh].shadowMapsCount = ncnt;
 }
 
 void startmainrenderpass(uint32_t eh){
@@ -763,6 +782,23 @@ void startmainrenderpass(uint32_t eh){
     clearValues[1].depthStencil.stencil = 0.0;    
     renderPassInfo.clearValueCount = 2;
     renderPassInfo.pClearValues = clearValues;
+    vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void startshadowrenderpass(uint32_t eh, uint32_t nm){
+    VkRenderPassBeginInfo renderPassInfo = {0};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = euclid.handle[eh].shadowRenderPass;
+    renderPassInfo.framebuffer = euclid.handle[eh].shadowFramebuffers[nm];
+    renderPassInfo.renderArea.offset.x = 0;
+    renderPassInfo.renderArea.offset.y = 0;
+    renderPassInfo.renderArea.extent.width = euclid.handle[eh].shadowMapResolution;
+    renderPassInfo.renderArea.extent.height = euclid.handle[eh].shadowMapResolution;
+    VkClearValue clearValue;
+    clearValue.depthStencil.depth = 1.0;
+    clearValue.depthStencil.stencil = 0.0;    
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearValue;
     vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
@@ -837,6 +873,7 @@ uint32_t neweng(uint32_t shadowMapResolution){
     euclid.handle[eh].shadowMapsCount = 1;
     euclid.handle[eh].oldshadowMapsCount = 1;
     euclid.handle[eh].shadowMapResolution = shadowMapResolution;
+    euclid.handle[eh].oldshadowMapResolution = shadowMapResolution;
     createShadowData(eh);
     createFrameBuffers(eh);
     createCommandPool(eh);
@@ -873,6 +910,40 @@ void draw(uint32_t eh, uint32_t eme){
     euclid.meshes[eme].lub[1] = (float) euclid.handle[eh].resolutionY;
     euclid.meshes[eme].lub[2] = (float) euclid.handle[eh].shadowMapResolution;
     euclid.meshes[eme].lub[3] = (float) euclid.handle[eh].totalFrames;
+    euclid.meshes[eme].lub[4] = (float) euclid.handle[eh].shadowMapsCount;
+    memcpy(euclid.meshes[eme].uniformBuffersMapped[euclid.handle[eh].currentFrame], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
+    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].pipelineLayout, 0, 1, &euclid.meshes[eme].descriptorSets[euclid.handle[eh].currentFrame], 0, NULL);
+
+    vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
+}
+
+void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
+    vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].graphicsPipeline);
+
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &euclid.models[euclid.meshes[eme].modelId].vertexBuffer, offsets);
+
+    VkViewport viewport = {0};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = euclid.handle[eh].shadowMapResolution;
+    viewport.height = euclid.handle[eh].shadowMapResolution;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &viewport);
+
+    VkRect2D scissor = {0};
+    scissor.offset.x = 0;
+    scissor.offset.y = 0;
+    scissor.extent = euclid.handle[eh].swapChainExtent;
+    vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &scissor);
+
+    euclid.meshes[eme].lub[0] = (float) euclid.handle[eh].resolutionX;
+    euclid.meshes[eme].lub[1] = (float) euclid.handle[eh].resolutionY;
+    euclid.meshes[eme].lub[2] = (float) euclid.handle[eh].shadowMapResolution;
+    euclid.meshes[eme].lub[3] = (float) euclid.handle[eh].totalFrames;
+    euclid.meshes[eme].lub[4] = (float) euclid.handle[eh].shadowMapsCount;
+    euclid.meshes[eme].lub[5] = (float) cs;
     memcpy(euclid.meshes[eme].uniformBuffersMapped[euclid.handle[eh].currentFrame], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
     vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].pipelineLayout, 0, 1, &euclid.meshes[eme].descriptorSets[euclid.handle[eh].currentFrame], 0, NULL);
 
@@ -1340,12 +1411,21 @@ uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t te, uint32_t us
 }
 
 void setmeshbuf(uint32_t eme, uint32_t i, float val){
-    euclid.meshes[eme].lub[i+4] = val;
+    euclid.meshes[eme].lub[i+8] = val;
 }
 
 uint32_t loopcont(uint32_t eh){
     glfwGetFramebufferSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
     startrender(eh);
+    for(uint32_t i = 0; i != euclid.handle[eh].shadowMapsCount; i++){
+        startshadowrenderpass(eh, i);
+        for(uint32_t j = 0; j != euclid.mesize; j++){
+            if(euclid.meshes[j].euclidid == eh && euclid.meshes[j].drawable == 1 && (euclid.meshes[j].usage == 2 || euclid.meshes[j].usage == 3)){
+                drawshadow(eh, j, i);
+            }
+        }
+        endrenderpass(eh);
+    }
     startmainrenderpass(eh);
     for(uint32_t i = 0; i != euclid.mesize; i++){
         if(euclid.meshes[i].euclidid == eh && euclid.meshes[i].drawable == 1 && euclid.meshes[i].usage == 0){
@@ -1661,6 +1741,13 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
 
 void destroy(uint32_t eh){
     vkDeviceWaitIdle(euclid.handle[eh].device);
+    vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].shadowImageView, NULL);
+    for(uint32_t i = 0; i != euclid.handle[eh].shadowMapsCount; i++){
+        vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].shadowFramebuffers[i], NULL);
+        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].shadowRenderImageViews[i], NULL);
+    }
+    vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].shadowImageMemory, NULL);
+    vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].shadowImage, NULL);
     for(uint32_t i = 0; i != euclid.mesize; i++){
         vkDestroyPipeline(euclid.handle[eh].device, euclid.meshes[i].graphicsPipeline, NULL);
         vkDestroyDescriptorSetLayout(euclid.handle[eh].device, euclid.meshes[i].descriptorSetLayout, NULL);

@@ -2,6 +2,7 @@
 #define EUCLID_H
 #include <stdint.h>
 
+void modifyshadowdata(uint32_t eh, uint32_t ncnt, uint32_t nres);
 uint32_t neweng(uint32_t shadowMapResolution);
 void destroy(uint32_t eh);
 uint32_t newmaterial(uint32_t eh, uint32_t *vert, uint32_t *frag, uint32_t svert, uint32_t sfrag, uint32_t cullmode);

@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 
 unsafe extern "C"{
+    fn modifyshadowdata(eh: cty::uint32_t, ncnt: cty::uint32_t, nres: cty::uint32_t);
     fn neweng(shadowMapResolution: cty::uint32_t) -> cty::uint32_t;
     fn destroy(eh: cty::uint32_t);
     fn newmaterial(eh: cty::uint32_t, vert: *mut cty::uint32_t, frag: *mut cty::uint32_t, svert: cty::uint32_t, sfrag: cty::uint32_t, cullmode: cty::uint32_t) -> cty::uint32_t;
@@ -15,6 +16,8 @@ unsafe extern "C"{
 #[derive(Copy, Clone)]
 pub struct Render{
     pub euclid: u32,
+    pub shadow_map_resolution: u32,
+    pub shadow_map_count: u32,
 }
 
 impl Render{
@@ -22,10 +25,13 @@ impl Render{
         Render { 
             euclid: unsafe {
                 neweng(1000)
-            } 
+            },
+            shadow_map_count: 1,
+            shadow_map_resolution: 1000,
         }
     }
     pub fn continue_loop(&self) -> bool{
+        unsafe{ modifyshadowdata(self.euclid, self.shadow_map_count, self.shadow_map_resolution) };
         return unsafe { loopcont(self.euclid) } == 1;
     }
     pub fn destroy(&self){
@@ -112,7 +118,7 @@ pub enum MeshUsage {
 #[derive(Copy, Clone)]
 pub struct Mesh{
     pub meshid: u32,
-    pub ubo: [f32; 20],
+    pub ubo: [f32; 16],
 }
 
 impl Mesh{
@@ -121,12 +127,12 @@ impl Mesh{
             meshid: unsafe{
                 newmesh(ren.euclid, material.materialid, model.modelid, texture.texid,usage as u32)
             },
-            ubo: [1.0; 20]
+            ubo: [1.0; 16]
         }
     }
 
     pub fn exec(&self){
-        for i in 0..20{
+        for i in 0..16{
             unsafe {
                 setmeshbuf(self.meshid, i, self.ubo[i as usize])
             };
