@@ -935,7 +935,8 @@ void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
     VkRect2D scissor = {0};
     scissor.offset.x = 0;
     scissor.offset.y = 0;
-    scissor.extent = euclid.handle[eh].swapChainExtent;
+    scissor.extent.height = euclid.handle[eh].shadowMapResolution;
+    scissor.extent.width = euclid.handle[eh].shadowMapResolution;
     vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &scissor);
 
     euclid.meshes[eme].lub[0] = (float) euclid.handle[eh].resolutionX;
