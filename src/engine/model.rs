@@ -1,6 +1,7 @@
 use super::{engine::Engine, render::render::Vertexes};
 
 #[warn(dead_code)]
+#[derive(Copy, Clone)]
 pub struct Model{
     pub vertexbuf: Vertexes,
 }

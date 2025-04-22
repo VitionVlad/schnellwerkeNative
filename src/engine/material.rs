@@ -1,6 +1,7 @@
 use super::{engine::Engine, render::render::{CullMode, MaterialShaders, Texture}};
 
 #[warn(dead_code)]
+#[derive(Clone)]
 pub struct Material{
     pub material_shaders: MaterialShaders,
     pub textures: Vec<Texture>,
@@ -9,9 +10,9 @@ pub struct Material{
 
 #[warn(dead_code)]
 impl Material{
-    pub fn new(eng: Engine, vert: Vec<u8>, frag: Vec<u8>, cullmode: CullMode) -> Material{
+    pub fn new(eng: Engine, vert: Vec<u8>, frag: Vec<u8>, shadow: Vec<u8>, cullmode: CullMode) -> Material{
         Material{
-            material_shaders: MaterialShaders::new(eng.render, vert, frag, cullmode),
+            material_shaders: MaterialShaders::new(eng.render, vert, frag, shadow, cullmode),
             textures: vec![],
             used_texture: 0,
         }

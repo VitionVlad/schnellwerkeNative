@@ -6,8 +6,8 @@ layout(location = 0) in vec2 uv;
 
 layout(binding = 0) uniform UniformBufferObject {
     vec4 resolutions;
+    vec4 lightinfo;
     mat4 model;
-    vec4 adddata;
 } ubo;
 
 layout(binding = 1) uniform sampler2DArray texSampler;

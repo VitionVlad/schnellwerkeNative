@@ -20,7 +20,8 @@ fn main() {
 
     let vert = fs::read("shaders/vert").unwrap();
     let frag = fs::read("shaders/frag").unwrap();
-    let mut mat = Material::new(eng, vert, frag, engine::render::render::CullMode::CullModeNone);
+    let shadow = fs::read("shaders/shadow").unwrap();
+    let mut mat = Material::new(eng, vert, frag, shadow, engine::render::render::CullMode::CullModeNone);
     mat.textures.push(Texture::new(eng.render, 2, 2, 2, img));
 
     let vert = vec![
@@ -36,11 +37,12 @@ fn main() {
     ];
 
     let model = Model::new(eng, vert);
-    let mesh = Object::new(eng, model, mat, engine::render::render::MeshUsage::LightingPass);
-    eng.render.shadow_map_count = 4;
-    eng.render.shadow_map_resolution = 1280;
+    let mesh = Object::new(eng, model, mat.clone(), engine::render::render::MeshUsage::LightingPass);
+    let mesh2 = Object::new(eng, model, mat.clone(), engine::render::render::MeshUsage::ShadowAndDefferedPass);
+    eng.render.shadow_map_count = 2;
     while eng.work(){
         mesh.exec();
+        mesh2.exec();
     }
     eng.end();
 }

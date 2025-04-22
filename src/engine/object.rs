@@ -1,6 +1,7 @@
 use super::{engine::Engine, material::Material, model::Model, render::render::{Mesh, MeshUsage}};
 
 #[warn(dead_code)]
+#[derive(Copy, Clone)]
 pub struct Object{
     pub mesh: Mesh,
 }
