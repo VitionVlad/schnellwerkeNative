@@ -10,15 +10,10 @@ layout(location = 3) in vec3 tg;
 
 layout(location = 4) in vec3 ctg;
 
-layout(location = 0) out vec2 fuv;
-
 layout(binding = 0) uniform UniformBufferObject {
-    vec4 resolutions;
-    vec4 lightinfo;
-    mat4 model;
+    mat4 view;
 } ubo;
 
 void main() {
-    fuv = uv;
-    gl_Position = vec4(pos.x, pos.y, ubo.lightinfo.y, 1.0);
+    gl_Position = vec4(pos.x, pos.y, ubo.view[0][0], 1.0);
 }

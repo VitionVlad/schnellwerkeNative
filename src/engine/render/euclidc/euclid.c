@@ -56,6 +56,10 @@ typedef struct euclidh{
     VkDeviceMemory shadowImageMemory;
     VkFramebuffer shadowFramebuffers[100];
     VkRenderPass shadowRenderPass;
+    float shadowMatrices[1600];
+    VkBuffer shadowUniformBuffer;
+    VkDeviceMemory shadowUniformBuffersMemory;
+    void** shadowUniformBuffersMapped;
 } euclidh;
 
 typedef struct euclidmaterial{
@@ -85,6 +89,7 @@ typedef struct euclidmesh{
     uint32_t euclidid;
     VkDescriptorSetLayout descriptorSetLayout;
     VkPipelineLayout pipelineLayout;
+    VkPipelineLayout shadowPipelineLayout;
     VkPipeline graphicsPipeline;
     VkPipeline shadowPipeline;
     uint32_t modelId;
@@ -93,6 +98,9 @@ typedef struct euclidmesh{
     void** uniformBuffersMapped;
     VkDescriptorPool descriptorPool;
     VkDescriptorSet *descriptorSets;
+    VkDescriptorPool shadowDescriptorPool;
+    VkDescriptorSet shadowDescriptorSets[100];
+    VkDescriptorSetLayout shadowDescriptorSetLayout;
     float lub[24];
     uint32_t drawable;
     uint32_t texid;
@@ -188,7 +196,8 @@ void getDevice(uint32_t eh){
             printf("\e[1;36mEuclidVK\e[0;37m: Device id = %d\n", i);
             printf("\e[1;36mEuclidVK\e[0;37m: Device name = %s\n", deviceProperties.deviceName);
             printf("\e[1;36mEuclidVK\e[0;37m: Device api version = %d\n", deviceProperties.apiVersion);
-            printf("\e[1;36mEuclidVK\e[0;37m: Device device type = %d\n", deviceProperties.deviceType);
+            printf("\e[1;36mEuclidVK\e[0;37m: Device type = %d\n", deviceProperties.deviceType);
+            printf("\e[1;36mEuclidVK\e[0;37m: Device maxUniformBufferRange = %d\n", deviceProperties.limits.maxUniformBufferRange);
             vkGetPhysicalDeviceQueueFamilyProperties(euclid.handle[eh].physicalDevices[i], &euclid.handle[eh].queueFamilyCount, NULL);
 
             VkQueueFamilyProperties *queueFamilies = malloc(sizeof(VkQueueFamilyProperties)*euclid.handle[eh].queueFamilyCount);
@@ -754,6 +763,8 @@ void startrender(uint32_t eh){
 
     vkResetCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0);
 
+    memcpy(euclid.handle[eh].shadowUniformBuffersMapped[0], euclid.handle[eh].shadowMatrices, sizeof(float)*100);
+
     VkCommandBufferBeginInfo beginInfo = {0};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0;
@@ -764,6 +775,10 @@ void startrender(uint32_t eh){
 void modifyshadowdata(uint32_t eh, uint32_t ncnt, uint32_t nres){
     euclid.handle[eh].shadowMapResolution = nres;
     euclid.handle[eh].shadowMapsCount = ncnt;
+}
+
+void modifyshadowuniform(uint32_t eh, uint32_t pos, float value){
+    euclid.handle[eh].shadowMatrices[pos] = value;
 }
 
 void startmainrenderpass(uint32_t eh){
@@ -884,6 +899,29 @@ uint32_t neweng(uint32_t shadowMapResolution){
     euclid.handle[eh].currentFrame = 0;
     euclid.handle[eh].imageIndex = 0;
     euclid.handle[eh].totalFrames = 0;
+
+    VkDeviceSize bufferSize = sizeof(float)*1600;
+    VkBufferCreateInfo bufferInfo = {0};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = bufferSize;
+    bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkResult result = vkCreateBuffer(euclid.handle[eh].device, &bufferInfo, NULL, &euclid.handle[eh].shadowUniformBuffer);
+    printf("\e[1;36mEuclidVK\e[0;37m: Shadow uniform buffer created with result = %d\n", result);
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffer, &memRequirements);
+    
+    VkMemoryAllocateInfo allocInfo = {0};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, eh);
+
+    euclid.handle[eh].shadowUniformBuffersMapped = malloc(sizeof(void*));
+
+    vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &euclid.handle[eh].shadowUniformBuffersMemory);
+    vkBindBufferMemory(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffer, euclid.handle[eh].shadowUniformBuffersMemory, 0);
+    vkMapMemory(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffersMemory, 0, bufferSize, 0, euclid.handle[eh].shadowUniformBuffersMapped);
+
     return eh;
 }
 
@@ -941,14 +979,7 @@ void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
     scissor.extent.width = euclid.handle[eh].shadowMapResolution;
     vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &scissor);
 
-    euclid.meshes[eme].lub[0] = (float) euclid.handle[eh].resolutionX;
-    euclid.meshes[eme].lub[1] = (float) euclid.handle[eh].resolutionY;
-    euclid.meshes[eme].lub[2] = (float) euclid.handle[eh].shadowMapResolution;
-    euclid.meshes[eme].lub[3] = (float) euclid.handle[eh].totalFrames;
-    euclid.meshes[eme].lub[4] = (float) euclid.handle[eh].shadowMapsCount;
-    euclid.meshes[eme].lub[5] = (float) cs;
-    memcpy(euclid.meshes[eme].uniformBuffersMapped[euclid.handle[eh].currentFrame], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
-    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].pipelineLayout, 0, 1, &euclid.meshes[eme].descriptorSets[euclid.handle[eh].currentFrame], 0, NULL);
+    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].shadowPipelineLayout, 0, 1, &euclid.meshes[eme].shadowDescriptorSets[cs], 0, NULL);
 
     vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
 }
@@ -1115,8 +1146,24 @@ void createDescriptorSetLayout(uint32_t eh, uint32_t eme) {
     printf("\e[1;36mEuclidMS\e[0;37m: Descriptor set layout created with result = %d\n", result);
 }
 
+void createShadowDescriptorSetLayout(uint32_t eh, uint32_t eme) {
+    VkDescriptorSetLayoutBinding uboLayoutBinding = {0};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.pImmutableSamplers = NULL;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {0};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &uboLayoutBinding;
+    VkResult result = vkCreateDescriptorSetLayout(euclid.handle[eh].device, &layoutInfo, NULL, &euclid.meshes[eme].shadowDescriptorSetLayout);
+    printf("\e[1;36mEuclidMS\e[0;37m: Shadow Descriptor set layout created with result = %d\n", result);
+}
+
 void createUniformBuffer(uint32_t eh, uint32_t eme){
-    VkDeviceSize bufferSize = 96;
+    VkDeviceSize bufferSize = sizeof(float)*24;
 
     euclid.meshes[eme].uniformBuffers = malloc(sizeof(VkBuffer)*MAX_FRAMES_IN_FLIGHT);
     euclid.meshes[eme].uniformBuffersMemory = malloc(sizeof(VkDeviceMemory)*MAX_FRAMES_IN_FLIGHT);
@@ -1162,6 +1209,21 @@ void createDescriptorPool(uint32_t eh, uint32_t eme){
     printf("\e[1;36mEuclidMS\e[0;37m: Descriptor pool created with result = %d\n", result);
 }
 
+void createShadowDescriptorPool(uint32_t eh, uint32_t eme){
+    VkDescriptorPoolSize poolSize = {0};
+    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize.descriptorCount = 100;
+
+    VkDescriptorPoolCreateInfo poolInfo = {0};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = 100;
+
+    VkResult result = vkCreateDescriptorPool(euclid.handle[eh].device, &poolInfo, NULL, &euclid.meshes[eme].shadowDescriptorPool);
+    printf("\e[1;36mEuclidMS\e[0;37m: Shadow descriptor pool created with result = %d\n", result);
+}
+
 void createDescriptorSets(uint32_t eh, uint32_t eme){
     VkDescriptorSetLayout *ldcs = malloc(sizeof(VkDescriptorSetLayout)*MAX_FRAMES_IN_FLIGHT);
     for(int i = 0; i != MAX_FRAMES_IN_FLIGHT; i++){
@@ -1182,7 +1244,7 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         VkDescriptorBufferInfo bufferInfo = {0};
         bufferInfo.buffer = euclid.meshes[eme].uniformBuffers[i];
         bufferInfo.offset = 0;
-        bufferInfo.range = 96;
+        bufferInfo.range = 14*sizeof(float);
 
         VkDescriptorImageInfo imageInfo = {0};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1213,6 +1275,41 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         vkUpdateDescriptorSets(euclid.handle[eh].device, 2, descriptorWrite, 0, NULL);
     }
     free(ldcs);
+}
+
+void createShadowDescriptorSets(uint32_t eh, uint32_t eme){
+    VkDescriptorSetLayout ldcs[100];
+    for(int i = 0; i != 100; i++){
+        ldcs[i] = euclid.meshes[eme].shadowDescriptorSetLayout;
+    }
+
+    VkDescriptorSetAllocateInfo allocInfo = {0};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = euclid.meshes[eme].shadowDescriptorPool;
+    allocInfo.descriptorSetCount = 100;
+    allocInfo.pSetLayouts = ldcs;
+    VkResult result = vkAllocateDescriptorSets(euclid.handle[eh].device, &allocInfo, euclid.meshes[eme].shadowDescriptorSets);
+    printf("\e[1;36mEuclidMS\e[0;37m: Shadow descriptor sets allocated with result = %d\n", result);
+
+    for (size_t i = 0; i < 100; i++) {
+        VkDescriptorBufferInfo bufferInfo = {0};
+        bufferInfo.buffer = euclid.handle[eh].shadowUniformBuffer;
+        bufferInfo.offset = sizeof(float)*16*i;
+        bufferInfo.range = sizeof(float)*16;
+
+        VkWriteDescriptorSet descriptorWrite = {0};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = euclid.meshes[eme].shadowDescriptorSets[i];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+        descriptorWrite.pImageInfo = NULL;
+        descriptorWrite.pTexelBufferView = NULL;
+
+        vkUpdateDescriptorSets(euclid.handle[eh].device, 1, &descriptorWrite, 0, NULL);
+    }
 }
 
 void createPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em){
@@ -1534,10 +1631,10 @@ void createshadowPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em){
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = NULL;
     pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &euclid.meshes[eme].descriptorSetLayout;
+    pipelineLayoutInfo.pSetLayouts = &euclid.meshes[eme].shadowDescriptorSetLayout;
 
-    VkResult result = vkCreatePipelineLayout(euclid.handle[eh].device, &pipelineLayoutInfo, NULL, &euclid.meshes[eme].pipelineLayout);
-    printf("\e[1;36mEuclidMS\e[0;37m: Pipeline layout created with result = %d\n", result);
+    VkResult result = vkCreatePipelineLayout(euclid.handle[eh].device, &pipelineLayoutInfo, NULL, &euclid.meshes[eme].shadowPipelineLayout);
+    printf("\e[1;36mEuclidMS\e[0;37m: Shadow pipeline layout created with result = %d\n", result);
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {0};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -1551,14 +1648,14 @@ void createshadowPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em){
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.layout = euclid.meshes[eme].pipelineLayout;
+    pipelineInfo.layout = euclid.meshes[eme].shadowPipelineLayout;
     pipelineInfo.renderPass = euclid.handle[eh].shadowRenderPass;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.basePipelineIndex = -1;
 
     result = vkCreateGraphicsPipelines(euclid.handle[eh].device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &euclid.meshes[eme].shadowPipeline);
-    printf("\e[1;36mEuclidMS\e[0;37m: Pipeline created with result = %d\n", result);
+    printf("\e[1;36mEuclidMS\e[0;37m: Shadow pipeline created with result = %d\n", result);
 }
 
 uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t te, uint32_t usage){
@@ -1585,6 +1682,9 @@ uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t te, uint32_t us
     createDescriptorSets(eh, eme);
     createPipeline(eh, eme, es, em);
     if(usage == 2 || usage == 3){
+        createShadowDescriptorPool(eh, eme);
+        createShadowDescriptorSetLayout(eh, eme);
+        createShadowDescriptorSets(eh, eme);
         createshadowPipeline(eh, eme, es, em);
     }
     return eme;
@@ -1928,9 +2028,13 @@ void destroy(uint32_t eh){
     }
     vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].shadowImageMemory, NULL);
     vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].shadowImage, NULL);
+    vkDestroyBuffer(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffer, NULL);
+    vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffersMemory, NULL);
+    free(euclid.handle[eh].shadowUniformBuffersMapped);
     for(uint32_t i = 0; i != euclid.mesize; i++){
         vkDestroyPipeline(euclid.handle[eh].device, euclid.meshes[i].graphicsPipeline, NULL);
         vkDestroyDescriptorSetLayout(euclid.handle[eh].device, euclid.meshes[i].descriptorSetLayout, NULL);
+        vkDestroyDescriptorSetLayout(euclid.handle[eh].device, euclid.meshes[i].shadowDescriptorSetLayout, NULL);
         vkDestroyPipelineLayout(euclid.handle[eh].device, euclid.meshes[i].pipelineLayout, NULL);
         for(uint32_t j = 0; j != MAX_FRAMES_IN_FLIGHT; j++){
             vkDestroyBuffer(euclid.handle[eh].device, euclid.meshes[i].uniformBuffers[j], NULL);
@@ -1940,6 +2044,7 @@ void destroy(uint32_t eh){
         free(euclid.meshes[i].uniformBuffersMemory);
         free(euclid.meshes[i].uniformBuffersMapped);
         vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[i].descriptorPool, NULL);
+        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[i].shadowDescriptorPool, NULL);
         free(euclid.meshes[i].descriptorSets);
     }
     for(uint32_t i = 0; i != euclid.tsize; i++){
