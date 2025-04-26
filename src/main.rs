@@ -39,9 +39,6 @@ fn main() {
     let model = Model::new(eng, vert);
     let mesh = Object::new(eng, model, mat.clone(), engine::render::render::MeshUsage::LightingPass);
     let mesh2 = Object::new(eng, model, mat.clone(), engine::render::render::MeshUsage::ShadowAndDefferedPass);
-    eng.render.shadow_map_count = 2;
-    eng.render.set_shadow_uniform_data(0, 0.25);
-    eng.render.set_shadow_uniform_data(16, 0.5);
     while eng.work(){
         mesh.exec();
         mesh2.exec();

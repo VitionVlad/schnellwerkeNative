@@ -979,6 +979,7 @@ void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
     scissor.extent.width = euclid.handle[eh].shadowMapResolution;
     vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &scissor);
 
+    memcpy(euclid.meshes[eme].uniformBuffersMapped[MAX_FRAMES_IN_FLIGHT], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
     vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].shadowPipelineLayout, 0, 1, &euclid.meshes[eme].shadowDescriptorSets[cs], 0, NULL);
 
     vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
@@ -1125,7 +1126,7 @@ uint32_t newmodel(uint32_t eh, float *vertices, float *uv, float *normals, uint3
 }
 
 void createDescriptorSetLayout(uint32_t eh, uint32_t eme) {
-    VkDescriptorSetLayoutBinding uboLayoutBinding[2] = {0};
+    VkDescriptorSetLayoutBinding uboLayoutBinding[3] = {0};
     uboLayoutBinding[0].binding = 0;
     uboLayoutBinding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding[0].descriptorCount = 1;
@@ -1133,31 +1134,43 @@ void createDescriptorSetLayout(uint32_t eh, uint32_t eme) {
     uboLayoutBinding[0].pImmutableSamplers = NULL;
 
     uboLayoutBinding[1].binding = 1;
-    uboLayoutBinding[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    uboLayoutBinding[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding[1].descriptorCount = 1;
-    uboLayoutBinding[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    uboLayoutBinding[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     uboLayoutBinding[1].pImmutableSamplers = NULL;
+
+    uboLayoutBinding[2].binding = 2;
+    uboLayoutBinding[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    uboLayoutBinding[2].descriptorCount = 1;
+    uboLayoutBinding[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    uboLayoutBinding[2].pImmutableSamplers = NULL;
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {0};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 2;
+    layoutInfo.bindingCount = 3;
     layoutInfo.pBindings = uboLayoutBinding;
     VkResult result = vkCreateDescriptorSetLayout(euclid.handle[eh].device, &layoutInfo, NULL, &euclid.meshes[eme].descriptorSetLayout);
     printf("\e[1;36mEuclidMS\e[0;37m: Descriptor set layout created with result = %d\n", result);
 }
 
 void createShadowDescriptorSetLayout(uint32_t eh, uint32_t eme) {
-    VkDescriptorSetLayoutBinding uboLayoutBinding = {0};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = NULL;
+    VkDescriptorSetLayoutBinding uboLayoutBinding[2] = {0};
+    uboLayoutBinding[0].binding = 0;
+    uboLayoutBinding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding[0].descriptorCount = 1;
+    uboLayoutBinding[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding[0].pImmutableSamplers = NULL;
+
+    uboLayoutBinding[1].binding = 1;
+    uboLayoutBinding[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding[1].descriptorCount = 1;
+    uboLayoutBinding[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding[1].pImmutableSamplers = NULL;
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {0};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &uboLayoutBinding;
+    layoutInfo.bindingCount = 2;
+    layoutInfo.pBindings = uboLayoutBinding;
     VkResult result = vkCreateDescriptorSetLayout(euclid.handle[eh].device, &layoutInfo, NULL, &euclid.meshes[eme].shadowDescriptorSetLayout);
     printf("\e[1;36mEuclidMS\e[0;37m: Shadow Descriptor set layout created with result = %d\n", result);
 }
@@ -1165,10 +1178,10 @@ void createShadowDescriptorSetLayout(uint32_t eh, uint32_t eme) {
 void createUniformBuffer(uint32_t eh, uint32_t eme){
     VkDeviceSize bufferSize = sizeof(float)*24;
 
-    euclid.meshes[eme].uniformBuffers = malloc(sizeof(VkBuffer)*MAX_FRAMES_IN_FLIGHT);
-    euclid.meshes[eme].uniformBuffersMemory = malloc(sizeof(VkDeviceMemory)*MAX_FRAMES_IN_FLIGHT);
-    euclid.meshes[eme].uniformBuffersMapped = malloc(sizeof(void*)*MAX_FRAMES_IN_FLIGHT);
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    euclid.meshes[eme].uniformBuffers = malloc(sizeof(VkBuffer)*(MAX_FRAMES_IN_FLIGHT+1));
+    euclid.meshes[eme].uniformBuffersMemory = malloc(sizeof(VkDeviceMemory)*(MAX_FRAMES_IN_FLIGHT+1));
+    euclid.meshes[eme].uniformBuffersMapped = malloc(sizeof(void*)*(MAX_FRAMES_IN_FLIGHT+1));
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT+1; i++) {
         VkBufferCreateInfo bufferInfo = {0};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = bufferSize;
@@ -1192,16 +1205,19 @@ void createUniformBuffer(uint32_t eh, uint32_t eme){
 }
 
 void createDescriptorPool(uint32_t eh, uint32_t eme){
-    VkDescriptorPoolSize poolSize[2] = {0};
+    VkDescriptorPoolSize poolSize[3] = {0};
     poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSize[0].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 
-    poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSize[1].descriptorCount = MAX_FRAMES_IN_FLIGHT;
+
+    poolSize[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[2].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 
     VkDescriptorPoolCreateInfo poolInfo = {0};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 2;
+    poolInfo.poolSizeCount = 3;
     poolInfo.pPoolSizes = poolSize;
     poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
 
@@ -1210,14 +1226,17 @@ void createDescriptorPool(uint32_t eh, uint32_t eme){
 }
 
 void createShadowDescriptorPool(uint32_t eh, uint32_t eme){
-    VkDescriptorPoolSize poolSize = {0};
-    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSize.descriptorCount = 100;
+    VkDescriptorPoolSize poolSize[2] = {0};
+    poolSize[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[0].descriptorCount = 100;
+
+    poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[1].descriptorCount = 100;
 
     VkDescriptorPoolCreateInfo poolInfo = {0};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.poolSizeCount = 2;
+    poolInfo.pPoolSizes = poolSize;
     poolInfo.maxSets = 100;
 
     VkResult result = vkCreateDescriptorPool(euclid.handle[eh].device, &poolInfo, NULL, &euclid.meshes[eme].shadowDescriptorPool);
@@ -1244,14 +1263,19 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         VkDescriptorBufferInfo bufferInfo = {0};
         bufferInfo.buffer = euclid.meshes[eme].uniformBuffers[i];
         bufferInfo.offset = 0;
-        bufferInfo.range = 14*sizeof(float);
+        bufferInfo.range = 24*sizeof(float);
+
+        VkDescriptorBufferInfo shbufferInfo = {0};
+        shbufferInfo.buffer = euclid.handle[eh].shadowUniformBuffer;
+        shbufferInfo.offset = 0;
+        shbufferInfo.range = 1600*sizeof(float);
 
         VkDescriptorImageInfo imageInfo = {0};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = euclid.textures[euclid.meshes[eme].texid].textureImageView;
         imageInfo.sampler = euclid.textures[euclid.meshes[eme].texid].sampler;
 
-        VkWriteDescriptorSet descriptorWrite[2] = {0};
+        VkWriteDescriptorSet descriptorWrite[3] = {0};
         descriptorWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrite[0].dstSet = euclid.meshes[eme].descriptorSets[i];
         descriptorWrite[0].dstBinding = 0;
@@ -1266,13 +1290,23 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         descriptorWrite[1].dstSet = euclid.meshes[eme].descriptorSets[i];
         descriptorWrite[1].dstBinding = 1;
         descriptorWrite[1].dstArrayElement = 0;
-        descriptorWrite[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptorWrite[1].descriptorCount = 1;
-        descriptorWrite[1].pBufferInfo = NULL;
-        descriptorWrite[1].pImageInfo = &imageInfo;
+        descriptorWrite[1].pBufferInfo = &shbufferInfo;
+        descriptorWrite[1].pImageInfo = NULL;
         descriptorWrite[1].pTexelBufferView = NULL;
 
-        vkUpdateDescriptorSets(euclid.handle[eh].device, 2, descriptorWrite, 0, NULL);
+        descriptorWrite[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite[2].dstSet = euclid.meshes[eme].descriptorSets[i];
+        descriptorWrite[2].dstBinding = 2;
+        descriptorWrite[2].dstArrayElement = 0;
+        descriptorWrite[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite[2].descriptorCount = 1;
+        descriptorWrite[2].pBufferInfo = NULL;
+        descriptorWrite[2].pImageInfo = &imageInfo;
+        descriptorWrite[2].pTexelBufferView = NULL;
+
+        vkUpdateDescriptorSets(euclid.handle[eh].device, 3, descriptorWrite, 0, NULL);
     }
     free(ldcs);
 }
@@ -1292,23 +1326,37 @@ void createShadowDescriptorSets(uint32_t eh, uint32_t eme){
     printf("\e[1;36mEuclidMS\e[0;37m: Shadow descriptor sets allocated with result = %d\n", result);
 
     for (size_t i = 0; i < 100; i++) {
-        VkDescriptorBufferInfo bufferInfo = {0};
-        bufferInfo.buffer = euclid.handle[eh].shadowUniformBuffer;
-        bufferInfo.offset = sizeof(float)*16*i;
-        bufferInfo.range = sizeof(float)*16;
+        VkDescriptorBufferInfo bufferInfo[2] = {0};
+        bufferInfo[0].buffer = euclid.handle[eh].shadowUniformBuffer;
+        bufferInfo[0].offset = sizeof(float)*16*i;
+        bufferInfo[0].range = sizeof(float)*16;
 
-        VkWriteDescriptorSet descriptorWrite = {0};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = euclid.meshes[eme].shadowDescriptorSets[i];
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pBufferInfo = &bufferInfo;
-        descriptorWrite.pImageInfo = NULL;
-        descriptorWrite.pTexelBufferView = NULL;
+        bufferInfo[1].buffer = euclid.meshes[eme].uniformBuffers[MAX_FRAMES_IN_FLIGHT];
+        bufferInfo[1].offset = 0;
+        bufferInfo[1].range = sizeof(float)*24;
 
-        vkUpdateDescriptorSets(euclid.handle[eh].device, 1, &descriptorWrite, 0, NULL);
+        VkWriteDescriptorSet descriptorWrite[2] = {0};
+        descriptorWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite[0].dstSet = euclid.meshes[eme].shadowDescriptorSets[i];
+        descriptorWrite[0].dstBinding = 0;
+        descriptorWrite[0].dstArrayElement = 0;
+        descriptorWrite[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite[0].descriptorCount = 1;
+        descriptorWrite[0].pBufferInfo = &bufferInfo[0];
+        descriptorWrite[0].pImageInfo = NULL;
+        descriptorWrite[0].pTexelBufferView = NULL;
+
+        descriptorWrite[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite[1].dstSet = euclid.meshes[eme].shadowDescriptorSets[i];
+        descriptorWrite[1].dstBinding = 1;
+        descriptorWrite[1].dstArrayElement = 0;
+        descriptorWrite[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite[1].descriptorCount = 1;
+        descriptorWrite[1].pBufferInfo = &bufferInfo[1];
+        descriptorWrite[1].pImageInfo = NULL;
+        descriptorWrite[1].pTexelBufferView = NULL;
+
+        vkUpdateDescriptorSets(euclid.handle[eh].device, 2, descriptorWrite, 0, NULL);
     }
 }
 
