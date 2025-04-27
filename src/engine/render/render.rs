@@ -3,6 +3,7 @@
 
 unsafe extern "C"{
     fn modifyshadowdata(eh: cty::uint32_t, ncnt: cty::uint32_t, nres: cty::uint32_t);
+    fn modifydeffereddata(eh: cty::uint32_t, ncnt: cty::uint32_t, nres: cty::c_float);
     fn modifyshadowuniform(eh: cty::uint32_t, pos: cty::uint32_t, value: cty::c_float);
     fn neweng(shadowMapResolution: cty::uint32_t) -> cty::uint32_t;
     fn destroy(eh: cty::uint32_t);
@@ -19,6 +20,8 @@ pub struct Render{
     pub euclid: u32,
     pub shadow_map_resolution: u32,
     pub shadow_map_count: u32,
+    pub camera_count: u32,
+    pub resolution_scale: f32,
 }
 
 impl Render{
@@ -29,10 +32,15 @@ impl Render{
             },
             shadow_map_count: 1,
             shadow_map_resolution: 1000,
+            camera_count: 1,
+            resolution_scale: 1f32,
         }
     }
     pub fn continue_loop(&self) -> bool{
-        unsafe{ modifyshadowdata(self.euclid, self.shadow_map_count, self.shadow_map_resolution) };
+        unsafe{ 
+            modifyshadowdata(self.euclid, self.shadow_map_count, self.shadow_map_resolution);
+            modifydeffereddata(self.euclid, self.camera_count, self.resolution_scale);
+        };
         return unsafe { loopcont(self.euclid) } == 1;
     }
     pub fn set_shadow_uniform_data(&self, i: u32, value: f32){

@@ -48,18 +48,36 @@ typedef struct euclidh{
     uint32_t shadowMapResolution;
     uint32_t oldshadowMapResolution;
     float resolutionScale;
+    float oldResolutionScale;
+    uint32_t renderResolutionX;
+    uint32_t renderResolutionY;
     uint32_t shadowMapsCount;
     uint32_t oldshadowMapsCount;
+    uint32_t defferedCount;
+    uint32_t oldDefferedCount;
     VkImage shadowImage;
     VkImageView shadowImageView;
     VkImageView shadowRenderImageViews[100];
     VkDeviceMemory shadowImageMemory;
     VkFramebuffer shadowFramebuffers[100];
     VkRenderPass shadowRenderPass;
-    float shadowMatrices[1600];
+    float shadowMatrices[2400];
     VkBuffer shadowUniformBuffer;
     VkDeviceMemory shadowUniformBuffersMemory;
     void** shadowUniformBuffersMapped;
+    VkRenderPass defferedRenderPass;
+    float defferedMatrices[240];
+    VkDeviceMemory defferedUniformBuffersMemory;
+    void** defferedUniformBuffersMapped;
+    VkImage defferedImage;
+    VkImage defferedDepthImage;
+    VkImageView defferedImageView;
+    VkImageView defferedDepthImageView;
+    VkImageView defferedRenderImageViews[40];
+    VkDeviceMemory defferedImageMemory;
+    VkDeviceMemory defferedDepthImageMemory;
+    VkImageView defferedDepthRenderImageViews[10];
+    VkFramebuffer defferedFramebuffers[10];
 } euclidh;
 
 typedef struct euclidmaterial{
@@ -471,7 +489,7 @@ void createShadowRenderPass(uint32_t eh){
     attachments.format = VK_FORMAT_D32_SFLOAT;
     attachments.samples = VK_SAMPLE_COUNT_1_BIT;
     attachments.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachments.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachments.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachments.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachments.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -515,6 +533,75 @@ void createShadowRenderPass(uint32_t eh){
 
     VkResult result = vkCreateRenderPass(euclid.handle[eh].device, &renderPassInfo, NULL, &euclid.handle[eh].shadowRenderPass);
     printf("\e[1;36mEuclidVK\e[0;37m: Shadow renderpass created with result = %d\n", result);
+}
+
+void createDefferedRenderPass(uint32_t eh){
+    VkAttachmentDescription attachments[5];
+    for(uint32_t i = 0; i != 4; i++){
+        attachments[i].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        attachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[i].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[i].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        attachments[i].flags = 0;
+    }
+
+    attachments[4].format = VK_FORMAT_D32_SFLOAT;
+    attachments[4].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[4].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[4].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[4].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[4].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[4].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachments[4].flags = 0;
+
+    VkAttachmentReference attref[4] = {0};
+    for(uint32_t i = 0; i != 4; i++){
+        attref[i].attachment = i;
+        attref[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+
+    VkAttachmentReference depthAttachmentRef = {0};
+    depthAttachmentRef.attachment = 4;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass = {0};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 4;
+    subpass.pColorAttachments = attref;
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    subpass.flags = 0;
+    subpass.pInputAttachments = NULL;
+    subpass.pPreserveAttachments = NULL;
+    subpass.preserveAttachmentCount = 0;
+    subpass.pResolveAttachments = NULL;
+
+    VkSubpassDependency dependency = {0};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcAccessMask = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependency.dependencyFlags = 0;
+
+    VkRenderPassCreateInfo renderPassInfo = {0};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 5;
+    renderPassInfo.pAttachments = attachments;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+    renderPassInfo.flags = 0;
+    renderPassInfo.pNext = NULL;
+
+    VkResult result = vkCreateRenderPass(euclid.handle[eh].device, &renderPassInfo, NULL, &euclid.handle[eh].defferedRenderPass);
+    printf("\e[1;36mEuclidVK\e[0;37m: Deffered renderpass created with result = %d\n", result);
 }
 
 void createShadowData(uint32_t eh){
@@ -598,6 +685,168 @@ void createShadowData(uint32_t eh){
     
         result = vkCreateFramebuffer(euclid.handle[eh].device, &framebufferInfo, NULL, &euclid.handle[eh].shadowFramebuffers[i]);
         printf("\e[1;36mEuclidVK\e[0;37m: Shadow framebuffer created with result = %d\n", result);
+    }
+}
+
+void createDefferedData(uint32_t eh){
+    euclid.handle[eh].renderResolutionX = euclid.handle[eh].resolutionX * euclid.handle[eh].resolutionScale;
+    euclid.handle[eh].renderResolutionY = euclid.handle[eh].resolutionY * euclid.handle[eh].resolutionScale;
+    euclid.handle[eh].oldDefferedCount = euclid.handle[eh].defferedCount;
+    euclid.handle[eh].oldResolutionScale = euclid.handle[eh].resolutionScale;
+    VkResult result;
+    {
+        uint32_t queueFamilyIndices[] = {euclid.handle[eh].chosenqueuefam, euclid.handle[eh].chosenpresentqueue};
+        VkImageCreateInfo depthCreateInfo = {0};
+        depthCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        depthCreateInfo.arrayLayers = euclid.handle[eh].defferedCount;
+        depthCreateInfo.format = VK_FORMAT_D32_SFLOAT;
+        depthCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        depthCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |VK_IMAGE_USAGE_SAMPLED_BIT;
+        depthCreateInfo.mipLevels = 1;
+        depthCreateInfo.extent.depth = 1;
+        depthCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+        depthCreateInfo.extent.width = euclid.handle[eh].renderResolutionX;
+        depthCreateInfo.extent.height = euclid.handle[eh].renderResolutionY;
+        depthCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        depthCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        depthCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        VkResult result = vkCreateImage(euclid.handle[eh].device, &depthCreateInfo, NULL, &euclid.handle[eh].defferedDepthImage);
+        printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth image created with result = %d\n", result);
+
+        VkMemoryRequirements memRequirements;
+        vkGetImageMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImage, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo = {0};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, eh);
+
+        result = vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &euclid.handle[eh].defferedDepthImageMemory);
+        printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth image memory allocated with result = %d\n", result);
+
+        vkBindImageMemory(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImage, euclid.handle[eh].defferedDepthImageMemory, 0);
+    }
+
+    {
+        VkImageCreateInfo defferedCreateInfo = {0};
+        defferedCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        defferedCreateInfo.arrayLayers = euclid.handle[eh].defferedCount*4;
+        defferedCreateInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        defferedCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        defferedCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        defferedCreateInfo.mipLevels = 1;
+        defferedCreateInfo.extent.depth = 1;
+        defferedCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+        defferedCreateInfo.extent.width = euclid.handle[eh].renderResolutionX;
+        defferedCreateInfo.extent.height = euclid.handle[eh].renderResolutionY;
+        defferedCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        defferedCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        defferedCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        VkResult result = vkCreateImage(euclid.handle[eh].device, &defferedCreateInfo, NULL, &euclid.handle[eh].defferedImage);
+        printf("\e[1;36mEuclidVK\e[0;37m: Deffered image created with result = %d\n", result);
+
+        VkMemoryRequirements memdefRequirements;
+        vkGetImageMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].defferedImage, &memdefRequirements);
+
+        VkMemoryAllocateInfo allodefcInfo = {0};
+        allodefcInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allodefcInfo.allocationSize = memdefRequirements.size;
+        allodefcInfo.memoryTypeIndex = findMemoryType(memdefRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, eh);
+
+        result = vkAllocateMemory(euclid.handle[eh].device, &allodefcInfo, NULL, &euclid.handle[eh].defferedImageMemory);
+        printf("\e[1;36mEuclidVK\e[0;37m: Deffered image memory allocated with result = %d\n", result);
+
+        vkBindImageMemory(euclid.handle[eh].device, euclid.handle[eh].defferedImage, euclid.handle[eh].defferedImageMemory, 0);
+    }
+
+    VkImageViewCreateInfo dicreateInfo = {0};
+    dicreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    dicreateInfo.image = euclid.handle[eh].defferedDepthImage;
+    dicreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    dicreateInfo.format = VK_FORMAT_D32_SFLOAT;
+    dicreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    dicreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    dicreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    dicreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    dicreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    dicreateInfo.subresourceRange.baseMipLevel = 0;
+    dicreateInfo.subresourceRange.levelCount = 1;
+    dicreateInfo.subresourceRange.baseArrayLayer = 0;
+    dicreateInfo.subresourceRange.layerCount = euclid.handle[eh].defferedCount;
+    result = vkCreateImageView(euclid.handle[eh].device, &dicreateInfo, NULL, &euclid.handle[eh].defferedDepthImageView);
+    printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth imageview created with result = %d\n", result);
+
+    VkImageViewCreateInfo defcreateInfo = {0};
+    defcreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    defcreateInfo.image = euclid.handle[eh].defferedImage;
+    defcreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    defcreateInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    defcreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    defcreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    defcreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    defcreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    defcreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    defcreateInfo.subresourceRange.baseMipLevel = 0;
+    defcreateInfo.subresourceRange.levelCount = 1;
+    defcreateInfo.subresourceRange.baseArrayLayer = 0;
+    defcreateInfo.subresourceRange.layerCount = euclid.handle[eh].defferedCount*4;
+    result = vkCreateImageView(euclid.handle[eh].device, &defcreateInfo, NULL, &euclid.handle[eh].defferedImageView);
+    printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth imageview created with result = %d\n", result);
+
+    for (uint32_t i = 0, b = 0; i != euclid.handle[eh].defferedCount; i++, b+=4) {
+        dicreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        dicreateInfo.image = euclid.handle[eh].defferedDepthImage;
+        dicreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        dicreateInfo.format = VK_FORMAT_D32_SFLOAT;
+        dicreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        dicreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        dicreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        dicreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        dicreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        dicreateInfo.subresourceRange.baseMipLevel = 0;
+        dicreateInfo.subresourceRange.levelCount = 1;
+        dicreateInfo.subresourceRange.baseArrayLayer = i;
+        dicreateInfo.subresourceRange.layerCount = 1;
+        result = vkCreateImageView(euclid.handle[eh].device, &dicreateInfo, NULL, &euclid.handle[eh].defferedDepthRenderImageViews[i]);
+        printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth render imageview (%d) created with result = %d\n", i, result);
+
+        for(uint32_t j = 0; j != 4; j++){
+            defcreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            defcreateInfo.image = euclid.handle[eh].defferedImage;
+            defcreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            defcreateInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+            defcreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            defcreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            defcreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            defcreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            defcreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            defcreateInfo.subresourceRange.baseMipLevel = 0;
+            defcreateInfo.subresourceRange.levelCount = 1;
+            defcreateInfo.subresourceRange.baseArrayLayer = b+j;
+            defcreateInfo.subresourceRange.layerCount = 1;
+            result = vkCreateImageView(euclid.handle[eh].device, &defcreateInfo, NULL, &euclid.handle[eh].defferedRenderImageViews[b+j]);
+            printf("\e[1;36mEuclidVK\e[0;37m: Deffered render imageview (%d) created with result = %d\n", b+j, result);
+        }
+
+        VkImageView attachments[] = {
+            euclid.handle[eh].defferedRenderImageViews[b],
+            euclid.handle[eh].defferedRenderImageViews[b+1],
+            euclid.handle[eh].defferedRenderImageViews[b+2],
+            euclid.handle[eh].defferedRenderImageViews[b+3],
+            euclid.handle[eh].defferedDepthRenderImageViews[i],
+        };
+    
+        VkFramebufferCreateInfo framebufferInfo = {0};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = euclid.handle[eh].defferedRenderPass;
+        framebufferInfo.attachmentCount = 5;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = euclid.handle[eh].renderResolutionX;
+        framebufferInfo.height = euclid.handle[eh].renderResolutionY;
+        framebufferInfo.layers = 1;
+    
+        result = vkCreateFramebuffer(euclid.handle[eh].device, &framebufferInfo, NULL, &euclid.handle[eh].defferedFramebuffers[i]);
+        printf("\e[1;36mEuclidVK\e[0;37m: Deffered framebuffer (%d) created with result = %d\n", i, result);
     }
 }
 
@@ -741,11 +990,26 @@ void startrender(uint32_t eh){
     vkResetFences(euclid.handle[eh].device, 1, &euclid.handle[eh].inFlightFences[euclid.handle[eh].currentFrame]);
 
     VkResult result = vkAcquireNextImageKHR(euclid.handle[eh].device, euclid.handle[eh].swapChain, UINT64_MAX, euclid.handle[eh].imageAvailableSemaphores[euclid.handle[eh].currentFrame], VK_NULL_HANDLE, &euclid.handle[eh].imageIndex);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || euclid.handle[eh].oldx != euclid.handle[eh].resolutionX || euclid.handle[eh].oldy != euclid.handle[eh].resolutionY) {
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || euclid.handle[eh].oldx != euclid.handle[eh].resolutionX || euclid.handle[eh].oldy != euclid.handle[eh].resolutionY || euclid.handle[eh].resolutionScale != euclid.handle[eh].oldResolutionScale || euclid.handle[eh].defferedCount != euclid.handle[eh].oldDefferedCount) {
         printf("\e[1;36mEuclidVk\e[0;37m: Resolution changed from %dx%d to %dx%d\n", euclid.handle[eh].oldx, euclid.handle[eh].oldy, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionY);
         recreateSwapChain(eh);
         euclid.handle[eh].oldx = euclid.handle[eh].resolutionX;
         euclid.handle[eh].oldy = euclid.handle[eh].resolutionY;
+        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].defferedImageView, NULL);
+        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImageView, NULL);
+        for(uint32_t i = 0, b = 0; i != euclid.handle[eh].defferedCount; i++, b+=4){
+            vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].defferedFramebuffers[i], NULL);
+            vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].defferedRenderImageViews[b], NULL);
+            vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].defferedRenderImageViews[b+1], NULL);
+            vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].defferedRenderImageViews[b+2], NULL);
+            vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].defferedRenderImageViews[b+3], NULL);
+            vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].defferedDepthRenderImageViews[i], NULL);
+        }
+        vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].defferedImageMemory, NULL);
+        vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].defferedImage, NULL);
+        vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImageMemory, NULL);
+        vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImage, NULL);
+        createDefferedData(eh);
     }
     if(euclid.handle[eh].shadowMapResolution != euclid.handle[eh].oldshadowMapResolution || euclid.handle[eh].shadowMapsCount != euclid.handle[eh].oldshadowMapsCount){
         vkDeviceWaitIdle(euclid.handle[eh].device);
@@ -763,7 +1027,7 @@ void startrender(uint32_t eh){
 
     vkResetCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0);
 
-    memcpy(euclid.handle[eh].shadowUniformBuffersMapped[0], euclid.handle[eh].shadowMatrices, sizeof(float)*100);
+    memcpy(euclid.handle[eh].shadowUniformBuffersMapped[0], euclid.handle[eh].shadowMatrices, sizeof(float)*2400);
 
     VkCommandBufferBeginInfo beginInfo = {0};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -775,6 +1039,11 @@ void startrender(uint32_t eh){
 void modifyshadowdata(uint32_t eh, uint32_t ncnt, uint32_t nres){
     euclid.handle[eh].shadowMapResolution = nres;
     euclid.handle[eh].shadowMapsCount = ncnt;
+}
+
+void modifydeffereddata(uint32_t eh, uint32_t ncnt, float nres){
+    euclid.handle[eh].resolutionScale = nres;
+    euclid.handle[eh].defferedCount = ncnt;
 }
 
 void modifyshadowuniform(uint32_t eh, uint32_t pos, float value){
@@ -798,6 +1067,29 @@ void startmainrenderpass(uint32_t eh){
     clearValues[1].depthStencil.depth = 1.0;
     clearValues[1].depthStencil.stencil = 0.0;    
     renderPassInfo.clearValueCount = 2;
+    renderPassInfo.pClearValues = clearValues;
+    vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void startdefferedrenderpass(uint32_t eh, uint32_t cc){
+    VkRenderPassBeginInfo renderPassInfo = {0};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = euclid.handle[eh].defferedRenderPass;
+    renderPassInfo.framebuffer = euclid.handle[eh].defferedFramebuffers[cc];
+    renderPassInfo.renderArea.offset.x = 0;
+    renderPassInfo.renderArea.offset.y = 0;
+    renderPassInfo.renderArea.extent.width = euclid.handle[eh].renderResolutionX;
+    renderPassInfo.renderArea.extent.height = euclid.handle[eh].renderResolutionY;
+    VkClearValue clearValues[5] = {0};
+    for(uint32_t i = 0; i != 4; i++){
+        clearValues[i].color.float32[0] = 0.0;
+        clearValues[i].color.float32[1] = 0.0;
+        clearValues[i].color.float32[2] = 0.0;
+        clearValues[i].color.float32[3] = 1.0;
+    }
+    clearValues[4].depthStencil.depth = 1.0;
+    clearValues[4].depthStencil.stencil = 0.0;    
+    renderPassInfo.clearValueCount = 5;
     renderPassInfo.pClearValues = clearValues;
     vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
@@ -879,7 +1171,6 @@ uint32_t neweng(uint32_t shadowMapResolution){
     euclid.handle[eh].window = glfwCreateWindow(800, 600, "Schnellwerke", NULL, NULL);
     euclid.handle[eh].resolutionX = 800;
     euclid.handle[eh].resolutionY = 600;
-    //glfwGetFramebufferSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
     glfwCreateWindowSurface(euclid.handle[eh].instance, euclid.handle[eh].window, NULL, &euclid.handle[eh].surface);
     getPresentFamily(eh);
     createDevice(eh);
@@ -887,11 +1178,15 @@ uint32_t neweng(uint32_t shadowMapResolution){
     createSwapChainImageViews(eh);
     createRenderPass(eh);
     createShadowRenderPass(eh);
+    createDefferedRenderPass(eh);
     euclid.handle[eh].shadowMapsCount = 1;
     euclid.handle[eh].oldshadowMapsCount = 1;
     euclid.handle[eh].shadowMapResolution = shadowMapResolution;
     euclid.handle[eh].oldshadowMapResolution = shadowMapResolution;
+    euclid.handle[eh].resolutionScale = 1;
+    euclid.handle[eh].defferedCount = 1;
     createShadowData(eh);
+    createDefferedData(eh);
     createFrameBuffers(eh);
     createCommandPool(eh);
     createCommandBuffer(eh);
@@ -900,7 +1195,7 @@ uint32_t neweng(uint32_t shadowMapResolution){
     euclid.handle[eh].imageIndex = 0;
     euclid.handle[eh].totalFrames = 0;
 
-    VkDeviceSize bufferSize = sizeof(float)*1600;
+    VkDeviceSize bufferSize = sizeof(float)*2400;
     VkBufferCreateInfo bufferInfo = {0};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = bufferSize;
@@ -1268,7 +1563,7 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         VkDescriptorBufferInfo shbufferInfo = {0};
         shbufferInfo.buffer = euclid.handle[eh].shadowUniformBuffer;
         shbufferInfo.offset = 0;
-        shbufferInfo.range = 1600*sizeof(float);
+        shbufferInfo.range = 2400*sizeof(float);
 
         VkDescriptorImageInfo imageInfo = {0};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1752,6 +2047,10 @@ uint32_t loopcont(uint32_t eh){
                 drawshadow(eh, j, i);
             }
         }
+        endrenderpass(eh);
+    }
+    for(uint32_t i = 0; i != euclid.handle[eh].defferedCount; i++){
+        startdefferedrenderpass(eh, i);
         endrenderpass(eh);
     }
     startmainrenderpass(eh);

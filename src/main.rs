@@ -39,6 +39,9 @@ fn main() {
     let model = Model::new(eng, vert);
     let mesh = Object::new(eng, model, mat.clone(), engine::render::render::MeshUsage::LightingPass);
     let mesh2 = Object::new(eng, model, mat.clone(), engine::render::render::MeshUsage::ShadowAndDefferedPass);
+
+    eng.render.camera_count = 2;
+    eng.render.resolution_scale = 0.5f32;
     while eng.work(){
         mesh.exec();
         mesh2.exec();
