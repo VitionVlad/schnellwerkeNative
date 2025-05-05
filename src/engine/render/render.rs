@@ -5,6 +5,7 @@ unsafe extern "C"{
     fn modifyshadowdata(eh: cty::uint32_t, ncnt: cty::uint32_t, nres: cty::uint32_t);
     fn modifydeffereddata(eh: cty::uint32_t, ncnt: cty::uint32_t, nres: cty::c_float);
     fn modifyshadowuniform(eh: cty::uint32_t, pos: cty::uint32_t, value: cty::c_float);
+    fn modifydeffereduniform(eh: cty::uint32_t, pos: cty::uint32_t, value: cty::c_float);
     fn neweng(shadowMapResolution: cty::uint32_t) -> cty::uint32_t;
     fn destroy(eh: cty::uint32_t);
     fn newmaterial(eh: cty::uint32_t, vert: *mut cty::uint32_t, frag: *mut cty::uint32_t, shadow: *mut cty::uint32_t, svert: cty::uint32_t, sfrag: cty::uint32_t, sshadow: cty::uint32_t, cullmode: cty::uint32_t) -> cty::uint32_t;
@@ -45,6 +46,9 @@ impl Render{
     }
     pub fn set_shadow_uniform_data(&self, i: u32, value: f32){
         unsafe{ modifyshadowuniform(self.euclid, i, value); }
+    }
+    pub fn set_deffered_uniform_data(&self, i: u32, value: f32){
+        unsafe{ modifydeffereduniform(self.euclid, i, value); }
     }
     pub fn destroy(&self){
         unsafe{

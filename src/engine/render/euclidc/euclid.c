@@ -67,6 +67,7 @@ typedef struct euclidh{
     void** shadowUniformBuffersMapped;
     VkRenderPass defferedRenderPass;
     float defferedMatrices[240];
+    VkBuffer defferedUniformBuffer;
     VkDeviceMemory defferedUniformBuffersMemory;
     void** defferedUniformBuffersMapped;
     VkImage defferedImage;
@@ -78,6 +79,7 @@ typedef struct euclidh{
     VkDeviceMemory defferedDepthImageMemory;
     VkImageView defferedDepthRenderImageViews[10];
     VkFramebuffer defferedFramebuffers[10];
+    VkSampler attachmentSampler;
 } euclidh;
 
 typedef struct euclidmaterial{
@@ -108,8 +110,10 @@ typedef struct euclidmesh{
     VkDescriptorSetLayout descriptorSetLayout;
     VkPipelineLayout pipelineLayout;
     VkPipelineLayout shadowPipelineLayout;
+    VkPipelineLayout defferedPipelineLayout;
     VkPipeline graphicsPipeline;
     VkPipeline shadowPipeline;
+    VkPipeline defferedPipeline;
     uint32_t modelId;
     VkBuffer *uniformBuffers;
     VkDeviceMemory *uniformBuffersMemory;
@@ -119,6 +123,9 @@ typedef struct euclidmesh{
     VkDescriptorPool shadowDescriptorPool;
     VkDescriptorSet shadowDescriptorSets[100];
     VkDescriptorSetLayout shadowDescriptorSetLayout;
+    VkDescriptorPool defferedDescriptorPool;
+    VkDescriptorSet defferedDescriptorSets[10];
+    VkDescriptorSetLayout defferedDescriptorSetLayout;
     float lub[24];
     uint32_t drawable;
     uint32_t texid;
@@ -1028,6 +1035,7 @@ void startrender(uint32_t eh){
     vkResetCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0);
 
     memcpy(euclid.handle[eh].shadowUniformBuffersMapped[0], euclid.handle[eh].shadowMatrices, sizeof(float)*2400);
+    memcpy(euclid.handle[eh].defferedUniformBuffersMapped[0], euclid.handle[eh].defferedMatrices, sizeof(float)*240);
 
     VkCommandBufferBeginInfo beginInfo = {0};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1048,6 +1056,10 @@ void modifydeffereddata(uint32_t eh, uint32_t ncnt, float nres){
 
 void modifyshadowuniform(uint32_t eh, uint32_t pos, float value){
     euclid.handle[eh].shadowMatrices[pos] = value;
+}
+
+void modifydeffereduniform(uint32_t eh, uint32_t pos, float value){
+    euclid.handle[eh].defferedMatrices[pos] = value;
 }
 
 void startmainrenderpass(uint32_t eh){
@@ -1195,27 +1207,76 @@ uint32_t neweng(uint32_t shadowMapResolution){
     euclid.handle[eh].imageIndex = 0;
     euclid.handle[eh].totalFrames = 0;
 
-    VkDeviceSize bufferSize = sizeof(float)*2400;
-    VkBufferCreateInfo bufferInfo = {0};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = bufferSize;
-    bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult result = vkCreateBuffer(euclid.handle[eh].device, &bufferInfo, NULL, &euclid.handle[eh].shadowUniformBuffer);
-    printf("\e[1;36mEuclidVK\e[0;37m: Shadow uniform buffer created with result = %d\n", result);
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffer, &memRequirements);
-    
-    VkMemoryAllocateInfo allocInfo = {0};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, eh);
+    {
+        VkSamplerCreateInfo samplerInfo = {0};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter = VK_FILTER_NEAREST;
+        samplerInfo.minFilter = VK_FILTER_NEAREST;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.anisotropyEnable = VK_FALSE;
+        samplerInfo.maxAnisotropy = 0;
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable = VK_FALSE;
+        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        samplerInfo.mipLodBias = 0.0f;
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = 0.0f;
 
-    euclid.handle[eh].shadowUniformBuffersMapped = malloc(sizeof(void*));
+        VkResult result = vkCreateSampler(euclid.handle[eh].device, &samplerInfo, NULL, &euclid.handle[eh].attachmentSampler);
+        printf("\e[1;36mEuclidTEX\e[0;37m: Attachment sampler created with result = %d\n", result);
+    }
 
-    vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &euclid.handle[eh].shadowUniformBuffersMemory);
-    vkBindBufferMemory(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffer, euclid.handle[eh].shadowUniformBuffersMemory, 0);
-    vkMapMemory(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffersMemory, 0, bufferSize, 0, euclid.handle[eh].shadowUniformBuffersMapped);
+    {
+        VkDeviceSize bufferSize = sizeof(float)*2400;
+        VkBufferCreateInfo bufferInfo = {0};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = bufferSize;
+        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VkResult result = vkCreateBuffer(euclid.handle[eh].device, &bufferInfo, NULL, &euclid.handle[eh].shadowUniformBuffer);
+        printf("\e[1;36mEuclidVK\e[0;37m: Shadow uniform buffer created with result = %d\n", result);
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffer, &memRequirements);
+        
+        VkMemoryAllocateInfo allocInfo = {0};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, eh);
+        
+        euclid.handle[eh].shadowUniformBuffersMapped = malloc(sizeof(void*));
+        
+        vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &euclid.handle[eh].shadowUniformBuffersMemory);
+        vkBindBufferMemory(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffer, euclid.handle[eh].shadowUniformBuffersMemory, 0);
+        vkMapMemory(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffersMemory, 0, bufferSize, 0, euclid.handle[eh].shadowUniformBuffersMapped);
+    }
+
+    {
+        VkDeviceSize bufferSize = sizeof(float)*240;
+        VkBufferCreateInfo bufferInfo = {0};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = bufferSize;
+        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VkResult result = vkCreateBuffer(euclid.handle[eh].device, &bufferInfo, NULL, &euclid.handle[eh].defferedUniformBuffer);
+        printf("\e[1;36mEuclidVK\e[0;37m: Deffered uniform buffer created with result = %d\n", result);
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].defferedUniformBuffer, &memRequirements);
+        
+        VkMemoryAllocateInfo allocInfo = {0};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, eh);
+
+        euclid.handle[eh].defferedUniformBuffersMapped = malloc(sizeof(void*));
+
+        vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &euclid.handle[eh].defferedUniformBuffersMemory);
+        vkBindBufferMemory(euclid.handle[eh].device, euclid.handle[eh].defferedUniformBuffer, euclid.handle[eh].defferedUniformBuffersMemory, 0);
+        vkMapMemory(euclid.handle[eh].device, euclid.handle[eh].defferedUniformBuffersMemory, 0, bufferSize, 0, euclid.handle[eh].defferedUniformBuffersMapped);
+    }
 
     return eh;
 }
@@ -1276,6 +1337,34 @@ void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
 
     memcpy(euclid.meshes[eme].uniformBuffersMapped[MAX_FRAMES_IN_FLIGHT], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
     vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].shadowPipelineLayout, 0, 1, &euclid.meshes[eme].shadowDescriptorSets[cs], 0, NULL);
+
+    vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
+}
+
+void drawdeffered(uint32_t eh, uint32_t eme, uint32_t cs){
+    vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].defferedPipeline);
+
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &euclid.models[euclid.meshes[eme].modelId].vertexBuffer, offsets);
+
+    VkViewport viewport = {0};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = euclid.handle[eh].renderResolutionX;
+    viewport.height = euclid.handle[eh].renderResolutionY;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &viewport);
+
+    VkRect2D scissor = {0};
+    scissor.offset.x = 0;
+    scissor.offset.y = 0;
+    scissor.extent.height = euclid.handle[eh].renderResolutionX;
+    scissor.extent.width = euclid.handle[eh].renderResolutionY;
+    vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &scissor);
+
+    memcpy(euclid.meshes[eme].uniformBuffersMapped[MAX_FRAMES_IN_FLIGHT], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
+    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].defferedPipelineLayout, 0, 1, &euclid.meshes[eme].defferedDescriptorSets[cs], 0, NULL);
 
     vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
 }
@@ -1421,7 +1510,7 @@ uint32_t newmodel(uint32_t eh, float *vertices, float *uv, float *normals, uint3
 }
 
 void createDescriptorSetLayout(uint32_t eh, uint32_t eme) {
-    VkDescriptorSetLayoutBinding uboLayoutBinding[3] = {0};
+    VkDescriptorSetLayoutBinding uboLayoutBinding[7] = {0};
     uboLayoutBinding[0].binding = 0;
     uboLayoutBinding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding[0].descriptorCount = 1;
@@ -1435,14 +1524,38 @@ void createDescriptorSetLayout(uint32_t eh, uint32_t eme) {
     uboLayoutBinding[1].pImmutableSamplers = NULL;
 
     uboLayoutBinding[2].binding = 2;
-    uboLayoutBinding[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    uboLayoutBinding[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding[2].descriptorCount = 1;
-    uboLayoutBinding[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    uboLayoutBinding[2].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     uboLayoutBinding[2].pImmutableSamplers = NULL;
+
+    uboLayoutBinding[3].binding = 3;
+    uboLayoutBinding[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    uboLayoutBinding[3].descriptorCount = 1;
+    uboLayoutBinding[3].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    uboLayoutBinding[3].pImmutableSamplers = NULL;
+
+    uboLayoutBinding[4].binding = 4;
+    uboLayoutBinding[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    uboLayoutBinding[4].descriptorCount = 1;
+    uboLayoutBinding[4].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    uboLayoutBinding[4].pImmutableSamplers = NULL;
+
+    uboLayoutBinding[5].binding = 5;
+    uboLayoutBinding[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    uboLayoutBinding[5].descriptorCount = 1;
+    uboLayoutBinding[5].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    uboLayoutBinding[5].pImmutableSamplers = NULL;
+
+    uboLayoutBinding[6].binding = 6;
+    uboLayoutBinding[6].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    uboLayoutBinding[6].descriptorCount = 1;
+    uboLayoutBinding[6].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    uboLayoutBinding[6].pImmutableSamplers = NULL;
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {0};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 3;
+    layoutInfo.bindingCount = 7;
     layoutInfo.pBindings = uboLayoutBinding;
     VkResult result = vkCreateDescriptorSetLayout(euclid.handle[eh].device, &layoutInfo, NULL, &euclid.meshes[eme].descriptorSetLayout);
     printf("\e[1;36mEuclidMS\e[0;37m: Descriptor set layout created with result = %d\n", result);
@@ -1468,6 +1581,34 @@ void createShadowDescriptorSetLayout(uint32_t eh, uint32_t eme) {
     layoutInfo.pBindings = uboLayoutBinding;
     VkResult result = vkCreateDescriptorSetLayout(euclid.handle[eh].device, &layoutInfo, NULL, &euclid.meshes[eme].shadowDescriptorSetLayout);
     printf("\e[1;36mEuclidMS\e[0;37m: Shadow Descriptor set layout created with result = %d\n", result);
+}
+
+void createDefferedDescriptorSetLayout(uint32_t eh, uint32_t eme) {
+    VkDescriptorSetLayoutBinding uboLayoutBinding[3] = {0};
+    uboLayoutBinding[0].binding = 0;
+    uboLayoutBinding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding[0].descriptorCount = 1;
+    uboLayoutBinding[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding[0].pImmutableSamplers = NULL;
+
+    uboLayoutBinding[1].binding = 1;
+    uboLayoutBinding[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding[1].descriptorCount = 1;
+    uboLayoutBinding[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding[1].pImmutableSamplers = NULL;
+
+    uboLayoutBinding[2].binding = 2;
+    uboLayoutBinding[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    uboLayoutBinding[2].descriptorCount = 1;
+    uboLayoutBinding[2].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding[2].pImmutableSamplers = NULL;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {0};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 3;
+    layoutInfo.pBindings = uboLayoutBinding;
+    VkResult result = vkCreateDescriptorSetLayout(euclid.handle[eh].device, &layoutInfo, NULL, &euclid.meshes[eme].defferedDescriptorSetLayout);
+    printf("\e[1;36mEuclidMS\e[0;37m: Deffered Descriptor set layout created with result = %d\n", result);
 }
 
 void createUniformBuffer(uint32_t eh, uint32_t eme){
@@ -1500,19 +1641,31 @@ void createUniformBuffer(uint32_t eh, uint32_t eme){
 }
 
 void createDescriptorPool(uint32_t eh, uint32_t eme){
-    VkDescriptorPoolSize poolSize[3] = {0};
+    VkDescriptorPoolSize poolSize[7] = {0};
     poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSize[0].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 
     poolSize[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSize[1].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 
-    poolSize[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSize[2].descriptorCount = MAX_FRAMES_IN_FLIGHT;
+
+    poolSize[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[3].descriptorCount = MAX_FRAMES_IN_FLIGHT;
+
+    poolSize[4].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[4].descriptorCount = MAX_FRAMES_IN_FLIGHT;
+
+    poolSize[5].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[5].descriptorCount = MAX_FRAMES_IN_FLIGHT;
+
+    poolSize[6].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[6].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 
     VkDescriptorPoolCreateInfo poolInfo = {0};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 3;
+    poolInfo.poolSizeCount = 7;
     poolInfo.pPoolSizes = poolSize;
     poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
 
@@ -1536,6 +1689,27 @@ void createShadowDescriptorPool(uint32_t eh, uint32_t eme){
 
     VkResult result = vkCreateDescriptorPool(euclid.handle[eh].device, &poolInfo, NULL, &euclid.meshes[eme].shadowDescriptorPool);
     printf("\e[1;36mEuclidMS\e[0;37m: Shadow descriptor pool created with result = %d\n", result);
+}
+
+void createDefferedDescriptorPool(uint32_t eh, uint32_t eme){
+    VkDescriptorPoolSize poolSize[3] = {0};
+    poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize[0].descriptorCount = 10;
+
+    poolSize[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize[1].descriptorCount = 10;
+
+    poolSize[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[2].descriptorCount = 10;
+
+    VkDescriptorPoolCreateInfo poolInfo = {0};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 3;
+    poolInfo.pPoolSizes = poolSize;
+    poolInfo.maxSets = 10;
+
+    VkResult result = vkCreateDescriptorPool(euclid.handle[eh].device, &poolInfo, NULL, &euclid.meshes[eme].defferedDescriptorPool);
+    printf("\e[1;36mEuclidMS\e[0;37m: Deffered descriptor pool created with result = %d\n", result);
 }
 
 void createDescriptorSets(uint32_t eh, uint32_t eme){
@@ -1565,12 +1739,32 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         shbufferInfo.offset = 0;
         shbufferInfo.range = 2400*sizeof(float);
 
+        VkDescriptorBufferInfo dfbufferInfo = {0};
+        shbufferInfo.buffer = euclid.handle[eh].defferedUniformBuffer;
+        shbufferInfo.offset = 0;
+        shbufferInfo.range = 240*sizeof(float);
+
         VkDescriptorImageInfo imageInfo = {0};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = euclid.textures[euclid.meshes[eme].texid].textureImageView;
         imageInfo.sampler = euclid.textures[euclid.meshes[eme].texid].sampler;
 
-        VkWriteDescriptorSet descriptorWrite[3] = {0};
+        VkDescriptorImageInfo colInfo = {0};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = euclid.handle[eh].defferedImageView;
+        imageInfo.sampler = euclid.handle[eh].attachmentSampler;
+
+        VkDescriptorImageInfo depthInfo = {0};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = euclid.handle[eh].defferedDepthImageView;
+        imageInfo.sampler = euclid.handle[eh].attachmentSampler;
+
+        VkDescriptorImageInfo shInfo = {0};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = euclid.handle[eh].shadowImageView;
+        imageInfo.sampler = euclid.handle[eh].attachmentSampler;
+
+        VkWriteDescriptorSet descriptorWrite[7] = {0};
         descriptorWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrite[0].dstSet = euclid.meshes[eme].descriptorSets[i];
         descriptorWrite[0].dstBinding = 0;
@@ -1595,13 +1789,53 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         descriptorWrite[2].dstSet = euclid.meshes[eme].descriptorSets[i];
         descriptorWrite[2].dstBinding = 2;
         descriptorWrite[2].dstArrayElement = 0;
-        descriptorWrite[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptorWrite[2].descriptorCount = 1;
-        descriptorWrite[2].pBufferInfo = NULL;
-        descriptorWrite[2].pImageInfo = &imageInfo;
+        descriptorWrite[2].pBufferInfo = &dfbufferInfo;
+        descriptorWrite[2].pImageInfo = NULL;
         descriptorWrite[2].pTexelBufferView = NULL;
 
-        vkUpdateDescriptorSets(euclid.handle[eh].device, 3, descriptorWrite, 0, NULL);
+        descriptorWrite[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite[3].dstSet = euclid.meshes[eme].descriptorSets[i];
+        descriptorWrite[3].dstBinding = 3;
+        descriptorWrite[3].dstArrayElement = 0;
+        descriptorWrite[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite[3].descriptorCount = 1;
+        descriptorWrite[3].pBufferInfo = NULL;
+        descriptorWrite[3].pImageInfo = &imageInfo;
+        descriptorWrite[3].pTexelBufferView = NULL;
+
+        descriptorWrite[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite[4].dstSet = euclid.meshes[eme].descriptorSets[i];
+        descriptorWrite[4].dstBinding = 4;
+        descriptorWrite[4].dstArrayElement = 0;
+        descriptorWrite[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite[4].descriptorCount = 1;
+        descriptorWrite[4].pBufferInfo = NULL;
+        descriptorWrite[4].pImageInfo = &colInfo;
+        descriptorWrite[4].pTexelBufferView = NULL;
+
+        descriptorWrite[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite[5].dstSet = euclid.meshes[eme].descriptorSets[i];
+        descriptorWrite[5].dstBinding = 5;
+        descriptorWrite[5].dstArrayElement = 0;
+        descriptorWrite[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite[5].descriptorCount = 1;
+        descriptorWrite[5].pBufferInfo = NULL;
+        descriptorWrite[5].pImageInfo = &depthInfo;
+        descriptorWrite[5].pTexelBufferView = NULL;
+
+        descriptorWrite[6].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite[6].dstSet = euclid.meshes[eme].descriptorSets[i];
+        descriptorWrite[6].dstBinding = 6;
+        descriptorWrite[6].dstArrayElement = 0;
+        descriptorWrite[6].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite[6].descriptorCount = 1;
+        descriptorWrite[6].pBufferInfo = NULL;
+        descriptorWrite[6].pImageInfo = &shInfo;
+        descriptorWrite[6].pTexelBufferView = NULL;
+
+        vkUpdateDescriptorSets(euclid.handle[eh].device, 7, descriptorWrite, 0, NULL);
     }
     free(ldcs);
 }
@@ -1652,6 +1886,70 @@ void createShadowDescriptorSets(uint32_t eh, uint32_t eme){
         descriptorWrite[1].pTexelBufferView = NULL;
 
         vkUpdateDescriptorSets(euclid.handle[eh].device, 2, descriptorWrite, 0, NULL);
+    }
+}
+
+void createDefferedDescriptorSets(uint32_t eh, uint32_t eme){
+    VkDescriptorSetLayout ldcs[10];
+    for(int i = 0; i != 10; i++){
+        ldcs[i] = euclid.meshes[eme].defferedDescriptorSetLayout;
+    }
+
+    VkDescriptorSetAllocateInfo allocInfo = {0};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = euclid.meshes[eme].defferedDescriptorPool;
+    allocInfo.descriptorSetCount = 10;
+    allocInfo.pSetLayouts = ldcs;
+    VkResult result = vkAllocateDescriptorSets(euclid.handle[eh].device, &allocInfo, euclid.meshes[eme].defferedDescriptorSets);
+    printf("\e[1;36mEuclidMS\e[0;37m: Deffered descriptor sets allocated with result = %d\n", result);
+
+    for (size_t i = 0; i < 10; i++) {
+        VkDescriptorBufferInfo bufferInfo[2] = {0};
+        bufferInfo[0].buffer = euclid.handle[eh].defferedUniformBuffer;
+        bufferInfo[0].offset = sizeof(float)*16*i;
+        bufferInfo[0].range = sizeof(float)*16;
+
+        bufferInfo[1].buffer = euclid.meshes[eme].uniformBuffers[MAX_FRAMES_IN_FLIGHT];
+        bufferInfo[1].offset = 0;
+        bufferInfo[1].range = sizeof(float)*24;
+
+        VkDescriptorImageInfo imageInfo = {0};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = euclid.textures[euclid.meshes[eme].texid].textureImageView;
+        imageInfo.sampler = euclid.textures[euclid.meshes[eme].texid].sampler;
+
+        VkWriteDescriptorSet descriptorWrite[3] = {0};
+        descriptorWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite[0].dstSet = euclid.meshes[eme].defferedDescriptorSets[i];
+        descriptorWrite[0].dstBinding = 0;
+        descriptorWrite[0].dstArrayElement = 0;
+        descriptorWrite[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite[0].descriptorCount = 1;
+        descriptorWrite[0].pBufferInfo = &bufferInfo[0];
+        descriptorWrite[0].pImageInfo = NULL;
+        descriptorWrite[0].pTexelBufferView = NULL;
+
+        descriptorWrite[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite[1].dstSet = euclid.meshes[eme].defferedDescriptorSets[i];
+        descriptorWrite[1].dstBinding = 1;
+        descriptorWrite[1].dstArrayElement = 0;
+        descriptorWrite[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite[1].descriptorCount = 1;
+        descriptorWrite[1].pBufferInfo = &bufferInfo[1];
+        descriptorWrite[1].pImageInfo = NULL;
+        descriptorWrite[1].pTexelBufferView = NULL;
+
+        descriptorWrite[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite[2].dstSet = euclid.meshes[eme].defferedDescriptorSets[i];
+        descriptorWrite[2].dstBinding = 2;
+        descriptorWrite[2].dstArrayElement = 0;
+        descriptorWrite[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite[2].descriptorCount = 1;
+        descriptorWrite[2].pBufferInfo = NULL;
+        descriptorWrite[2].pImageInfo = &imageInfo;
+        descriptorWrite[2].pTexelBufferView = NULL;
+
+        vkUpdateDescriptorSets(euclid.handle[eh].device, 3, descriptorWrite, 0, NULL);
     }
 }
 
@@ -2001,6 +2299,187 @@ void createshadowPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em){
     printf("\e[1;36mEuclidMS\e[0;37m: Shadow pipeline created with result = %d\n", result);
 }
 
+void createdefferedPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em){
+    euclid.meshes[eme].modelId = em;
+    VkPipelineShaderStageCreateInfo vertShaderStageInfo = {0};
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertShaderStageInfo.module = euclid.materials[es].vertModule;
+    vertShaderStageInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo = {0};
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.module = euclid.materials[es].fragModule;
+    fragShaderStageInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+
+    VkDynamicState dynamicStates[] = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR
+    };
+    
+    VkPipelineDynamicStateCreateInfo dynamicState = {0};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.dynamicStateCount = 2;
+    dynamicState.pDynamicStates = dynamicStates;
+
+    VkVertexInputBindingDescription bindingDescription = {0};
+    bindingDescription.binding = 0;
+    bindingDescription.stride = 56;
+    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription attributeDescriptions[5] = {0};
+
+    attributeDescriptions[0].binding = 0;
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[0].offset = 0;
+
+    attributeDescriptions[1].binding = 0;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[1].offset = 12;
+
+    attributeDescriptions[2].binding = 0;
+    attributeDescriptions[2].location = 2;
+    attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[2].offset = 20;
+
+    attributeDescriptions[3].binding = 0;
+    attributeDescriptions[3].location = 3;
+    attributeDescriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[3].offset = 32;
+
+    attributeDescriptions[4].binding = 0;
+    attributeDescriptions[4].location = 4;
+    attributeDescriptions[4].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[4].offset = 44;
+
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {0};
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.vertexAttributeDescriptionCount = 5;
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions;
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {0};
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+    VkViewport viewport = {0};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = (float) euclid.handle[eh].renderResolutionX;
+    viewport.height = (float) euclid.handle[eh].renderResolutionY;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor = {0};
+    scissor.offset.x = 0;
+    scissor.offset.y = 0;
+    scissor.extent.width = euclid.handle[eh].renderResolutionX;
+    scissor.extent.height = euclid.handle[eh].renderResolutionY;
+
+    VkPipelineViewportStateCreateInfo viewportState = {0};
+    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.viewportCount = 1;
+    viewportState.pViewports = &viewport;
+    viewportState.scissorCount = 1;
+    viewportState.pScissors = &scissor;
+
+    VkPipelineRasterizationStateCreateInfo rasterizer = {0};
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.depthClampEnable = VK_FALSE;
+    rasterizer.rasterizerDiscardEnable = VK_FALSE;
+    rasterizer.polygonMode = (VkPolygonMode) euclid.materials[es].polygonMode;
+    rasterizer.lineWidth = euclid.materials[es].lineWidth;
+    rasterizer.cullMode = (VkCullModeFlags) euclid.materials[es].cullMode;
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.depthBiasEnable = VK_FALSE;
+    rasterizer.depthBiasConstantFactor = 0.0f;
+    rasterizer.depthBiasClamp = 0.0f;
+    rasterizer.depthBiasSlopeFactor = 0.0f;
+
+    VkPipelineMultisampleStateCreateInfo multisampling = {0};
+    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.sampleShadingEnable = VK_FALSE;
+    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampling.minSampleShading = 1.0f;
+    multisampling.pSampleMask = NULL;
+    multisampling.alphaToCoverageEnable = VK_FALSE;
+    multisampling.alphaToOneEnable = VK_FALSE;
+
+    VkPipelineColorBlendAttachmentState colorBlendAttachment = {0};
+    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable = VK_FALSE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+    VkPipelineColorBlendStateCreateInfo colorBlending = {0};
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.logicOpEnable = VK_FALSE;
+    colorBlending.logicOp = VK_LOGIC_OP_COPY;
+    colorBlending.attachmentCount = 1;
+    colorBlending.pAttachments = &colorBlendAttachment;
+    colorBlending.blendConstants[0] = 0.0f;
+    colorBlending.blendConstants[1] = 0.0f;
+    colorBlending.blendConstants[2] = 0.0f;
+    colorBlending.blendConstants[3] = 0.0f;
+
+    VkPipelineDepthStencilStateCreateInfo depthStencil = {0};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    depthStencil.depthBoundsTestEnable = VK_FALSE;
+    depthStencil.minDepthBounds = 0.0f;
+    depthStencil.maxDepthBounds = 1.0f;
+    depthStencil.stencilTestEnable = VK_FALSE;
+    VkStencilOpState dpinfo = {0};
+    depthStencil.front = dpinfo;
+    depthStencil.back = dpinfo;
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {0};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 0;
+    pipelineLayoutInfo.pSetLayouts = NULL;
+    pipelineLayoutInfo.pushConstantRangeCount = 0;
+    pipelineLayoutInfo.pPushConstantRanges = NULL;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &euclid.meshes[eme].defferedDescriptorSetLayout;
+
+    VkResult result = vkCreatePipelineLayout(euclid.handle[eh].device, &pipelineLayoutInfo, NULL, &euclid.meshes[eme].defferedPipelineLayout);
+    printf("\e[1;36mEuclidMS\e[0;37m: Deffered pipeline layout created with result = %d\n", result);
+
+    VkGraphicsPipelineCreateInfo pipelineInfo = {0};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderStages;
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    pipelineInfo.pViewportState = &viewportState;
+    pipelineInfo.pRasterizationState = &rasterizer;
+    pipelineInfo.pMultisampleState = &multisampling;
+    pipelineInfo.pDepthStencilState = &depthStencil;
+    pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pDynamicState = &dynamicState;
+    pipelineInfo.layout = euclid.meshes[eme].defferedPipelineLayout;
+    pipelineInfo.renderPass = euclid.handle[eh].defferedRenderPass;
+    pipelineInfo.subpass = 0;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+    pipelineInfo.basePipelineIndex = -1;
+
+    result = vkCreateGraphicsPipelines(euclid.handle[eh].device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &euclid.meshes[eme].defferedPipeline);
+    printf("\e[1;36mEuclidMS\e[0;37m: Deffered pipeline created with result = %d\n", result);
+}
+
 uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t te, uint32_t usage){
     uint32_t eme = euclid.mesize;
     if(euclid.mesize != 0){
@@ -2020,15 +2499,23 @@ uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t te, uint32_t us
     euclid.meshes[eme].texid = te;
     euclid.meshes[eme].usage = usage;
     createUniformBuffer(eh, eme);
-    createDescriptorPool(eh, eme);
-    createDescriptorSetLayout(eh, eme);
-    createDescriptorSets(eh, eme);
-    createPipeline(eh, eme, es, em);
+    if(usage == 0){
+        createDescriptorPool(eh, eme);
+        createDescriptorSetLayout(eh, eme);
+        createDescriptorSets(eh, eme);
+        createPipeline(eh, eme, es, em);
+    }
     if(usage == 2 || usage == 3){
         createShadowDescriptorPool(eh, eme);
         createShadowDescriptorSetLayout(eh, eme);
         createShadowDescriptorSets(eh, eme);
         createshadowPipeline(eh, eme, es, em);
+    }
+    if(usage == 1 || usage == 3){
+        createDefferedDescriptorPool(eh, eme);
+        createDefferedDescriptorSetLayout(eh, eme);
+        createDefferedDescriptorSets(eh, eme);
+        createdefferedPipeline(eh, eme, es, em);
     }
     return eme;
 }
@@ -2051,6 +2538,11 @@ uint32_t loopcont(uint32_t eh){
     }
     for(uint32_t i = 0; i != euclid.handle[eh].defferedCount; i++){
         startdefferedrenderpass(eh, i);
+        for(uint32_t j = 0; j != euclid.mesize; j++){
+            if(euclid.meshes[j].euclidid == eh && euclid.meshes[j].drawable == 1 && (euclid.meshes[j].usage == 1 || euclid.meshes[j].usage == 3)){
+                drawdeffered(eh, j, i);
+            }
+        }
         endrenderpass(eh);
     }
     startmainrenderpass(eh);

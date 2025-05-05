@@ -20,9 +20,13 @@ fn main() {
 
     let vert = fs::read("shaders/vert").unwrap();
     let frag = fs::read("shaders/frag").unwrap();
+    let dvert = fs::read("shaders/vdeffered").unwrap();
+    let dfrag = fs::read("shaders/fdeffered").unwrap();
     let shadow = fs::read("shaders/shadow").unwrap();
-    let mut mat = Material::new(eng, vert, frag, shadow, engine::render::render::CullMode::CullModeNone);
-    mat.textures.push(Texture::new(eng.render, 2, 2, 2, img));
+    let mut mat = Material::new(eng, vert, frag, vec![], engine::render::render::CullMode::CullModeNone);
+    let mut mat2 = Material::new(eng, dvert, dfrag, shadow, engine::render::render::CullMode::CullModeNone);
+    mat.textures.push(Texture::new(eng.render, 2, 2, 2, img.clone()));
+    mat2.textures.push(Texture::new(eng.render, 2, 2, 2, img.clone()));
 
     let vert = vec![
         0.0f32, -0.5f32, 0f32, 
@@ -37,8 +41,8 @@ fn main() {
     ];
 
     let model = Model::new(eng, vert);
-    let mesh = Object::new(eng, model, mat.clone(), engine::render::render::MeshUsage::LightingPass);
-    let mesh2 = Object::new(eng, model, mat.clone(), engine::render::render::MeshUsage::ShadowAndDefferedPass);
+    let mesh = Object::new(eng, model, mat, engine::render::render::MeshUsage::LightingPass);
+    let mesh2 = Object::new(eng, model, mat2, engine::render::render::MeshUsage::ShadowAndDefferedPass);
 
     eng.render.camera_count = 2;
     eng.render.resolution_scale = 0.5f32;

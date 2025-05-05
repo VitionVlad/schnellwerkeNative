@@ -12,6 +12,24 @@ layout(location = 4) in vec3 ctg;
 
 layout(location = 0) out vec2 fuv;
 
+layout(binding = 0) uniform MeshInput {
+    vec4 resolutions;
+    vec4 lightinfo;
+    mat4 model;
+} mi;
+
+layout(binding = 1) uniform ShadowMatricesInput {
+    mat4 shadowViews[100];
+    vec4 lightpos[100];
+    vec4 lightcol[100];
+} smi;
+
+layout(binding = 2) uniform DefferedMatricesInput {
+    mat4 defferedViews[10];
+    vec4 lightpos[10];
+    vec4 lightcol[10];
+} dmi;
+
 void main() {
     fuv = uv;
     gl_Position = vec4(pos, 1.0);

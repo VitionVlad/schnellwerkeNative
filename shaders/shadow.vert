@@ -14,6 +14,12 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
 } ubo;
 
+layout(binding = 1) uniform Model {
+    vec4 resolutions;
+    vec4 lightinfo;
+    mat4 model;
+} modelbuf;
+
 void main() {
     gl_Position = vec4(pos.x, pos.y, ubo.view[0][0], 1.0);
 }

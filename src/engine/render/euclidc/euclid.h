@@ -5,6 +5,7 @@
 void modifyshadowdata(uint32_t eh, uint32_t ncnt, uint32_t nres);
 void modifydeffereddata(uint32_t eh, uint32_t ncnt, float nres);
 void modifyshadowuniform(uint32_t eh, uint32_t pos, float value);
+void modifydeffereduniform(uint32_t eh, uint32_t pos, float value);
 uint32_t neweng(uint32_t shadowMapResolution);
 void destroy(uint32_t eh);
 uint32_t newmaterial(uint32_t eh, uint32_t *vert, uint32_t *frag, uint32_t *shadow, uint32_t svert, uint32_t sfrag, uint32_t sshadow, uint32_t cullmode);
