@@ -17,7 +17,7 @@ layout(location = 1) out vec4 fpos;
 layout(location = 2) out vec4 fnormal;
 
 layout(binding = 0) uniform DefferedMatricesInput {
-    mat4 defferedViews;
+    mat4 defferedView;
 } dmi;
 
 layout(binding = 1) uniform MeshInput {
