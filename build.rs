@@ -3,7 +3,7 @@ use std::env;
 
 fn main(){
     let out_dir = env::var("OUT_DIR").unwrap();
-
+    
     Command::new("gcc").args(&["src/engine/render/euclidc/euclid.c", "-c", "", "-o"])
                        .arg(&format!("{}/euclid.o", out_dir))
                        .status().unwrap();

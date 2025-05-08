@@ -1,7 +1,14 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use cty::uint32_t;
+
 unsafe extern "C"{
+    fn getKeyPressed(eh: cty::uint32_t, index: cty::uint32_t) -> cty::uint8_t;
+    fn get_mouse_posx(eh: cty::uint32_t)  -> cty::c_double;
+    fn get_mouse_posy(eh: cty::uint32_t)  -> cty::c_double;
+    fn req_mouse_lock(eh: cty::uint32_t);
+    fn req_mouse_unlock(eh: cty::uint32_t);
     fn modifyshadowdata(eh: cty::uint32_t, ncnt: cty::uint32_t, nres: cty::uint32_t);
     fn modifydeffereddata(eh: cty::uint32_t, ncnt: cty::uint32_t, nres: cty::c_float);
     fn modifyshadowuniform(eh: cty::uint32_t, pos: cty::uint32_t, value: cty::c_float);
@@ -54,6 +61,30 @@ impl Render{
         unsafe{
             destroy(self.euclid);
         }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct Control{
+    euclid: u32,
+    xpos: f64,
+    ypos: f64,
+}
+
+impl Control{
+    pub fn new(render: Render) -> Control{
+        Control {
+            euclid: render.euclid,
+            xpos: 0.0f64,
+            ypos: 0.0f64,
+        }
+    }
+    pub fn get_key_state(&self, keyindex: uint32_t) -> bool{
+        return unsafe { getKeyPressed(self.euclid, keyindex) != 0 };
+    }
+    pub fn get_mouse_pos(&mut self){
+        self.xpos = unsafe{ get_mouse_posx(self.euclid) };
+        self.ypos = unsafe{ get_mouse_posy(self.euclid) };
     }
 }
 

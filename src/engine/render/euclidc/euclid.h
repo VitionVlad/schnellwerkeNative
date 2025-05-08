@@ -2,6 +2,11 @@
 #define EUCLID_H
 #include <stdint.h>
 
+uint8_t getKeyPressed(uint32_t eh, uint32_t index);
+double get_mouse_posx(uint32_t eh);
+double get_mouse_posy(uint32_t eh);
+void req_mouse_lock(uint32_t eh);
+void req_mouse_unlock(uint32_t eh);
 void modifyshadowdata(uint32_t eh, uint32_t ncnt, uint32_t nres);
 void modifydeffereddata(uint32_t eh, uint32_t ncnt, float nres);
 void modifyshadowuniform(uint32_t eh, uint32_t pos, float value);

@@ -44,6 +44,8 @@ fn main() {
     let mesh = Object::new(eng, model, mat, engine::render::render::MeshUsage::LightingPass);
     let mesh2 = Object::new(eng, model, mat2, engine::render::render::MeshUsage::ShadowAndDefferedPass);
     while eng.work(){
+        if eng.control.get_key_state(44){
+        }
         mesh.exec();
         mesh2.exec();
     }

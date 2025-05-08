@@ -80,6 +80,9 @@ typedef struct euclidh{
     VkImageView defferedDepthRenderImageViews[10];
     VkFramebuffer defferedFramebuffers[10];
     VkSampler attachmentSampler;
+    uint8_t key_state[58];
+    double xpos;
+    double ypos;
 } euclidh;
 
 typedef struct euclidmaterial{
@@ -144,6 +147,128 @@ struct euclidVK{
     euclidtexture *textures;
     uint32_t tsize;
 } euclid;
+
+uint8_t getKeyPressed(uint32_t eh, uint32_t index){
+    return euclid.handle[eh].key_state[index];
+}
+
+double get_mouse_posx(uint32_t eh){
+    return euclid.handle[eh].xpos;
+}
+
+double get_mouse_posy(uint32_t eh){
+    return euclid.handle[eh].ypos;
+}
+
+void req_mouse_lock(uint32_t eh){
+    glfwSetInputMode(euclid.handle[eh].window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
+
+void req_mouse_unlock(uint32_t eh){
+    glfwSetInputMode(euclid.handle[eh].window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+}
+
+uint32_t getKey(uint32_t glfwkey){
+    if(glfwkey >= 290 && glfwkey <= 301){
+        return glfwkey - 290;
+    }else if(glfwkey >= 48 && glfwkey <= 57){
+        return glfwkey - 36;
+    }else if(glfwkey >= 65 && glfwkey <= 90){
+        return glfwkey - 43;
+    }else{
+        switch(glfwkey){
+            case GLFW_KEY_SPACE:
+                return 48;
+                break;
+            case GLFW_KEY_ESCAPE:
+                return 49;
+                break;
+            case GLFW_KEY_LEFT_SHIFT:
+                return 50;
+                break;
+            case GLFW_KEY_RIGHT_SHIFT:
+                return 50;
+                break;
+            case GLFW_KEY_LEFT_CONTROL:
+                return 51;
+                break;
+            case GLFW_KEY_RIGHT_CONTROL:
+                return 51;
+                break;
+            case GLFW_KEY_UP:
+                return 52;
+                break;
+            case GLFW_KEY_LEFT:
+                return 53;
+                break;
+            case GLFW_KEY_DOWN:
+                return 54;
+                break;
+            case GLFW_KEY_RIGHT:
+                return 55;
+                break;
+            case GLFW_KEY_ENTER:
+                return 56;
+                break;
+            case GLFW_KEY_BACKSPACE:
+                return 57;
+                break;
+        }
+    }
+    return 0;
+}
+
+void setk(uint32_t eh, uint32_t key, uint32_t state){
+    switch(state){
+        case GLFW_PRESS:
+            euclid.handle[eh].key_state[getKey(key)] = 1;
+            break;
+        default:
+            euclid.handle[eh].key_state[getKey(key)] = 0;
+            break;
+    }
+}
+
+void keywork(uint32_t eh){
+    uint32_t btstate = 0;
+    for(uint32_t i = GLFW_KEY_F1; i != GLFW_KEY_F13; i++){
+        btstate = glfwGetKey(euclid.handle[eh].window, i);
+        setk(eh, i, btstate);
+    }
+    for(uint32_t i = GLFW_KEY_0; i != GLFW_KEY_9; i++){
+        btstate = glfwGetKey(euclid.handle[eh].window, i);
+        setk(eh, i, btstate);
+    }
+    for(uint32_t i = GLFW_KEY_A; i != GLFW_KEY_Z; i++){
+        btstate = glfwGetKey(euclid.handle[eh].window, i);
+        setk(eh, i, btstate);
+    }
+    btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_SPACE);
+    setk(eh, GLFW_KEY_SPACE, btstate);
+    btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_ESCAPE);
+    setk(eh, GLFW_KEY_ESCAPE, btstate);
+    btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_LEFT_SHIFT);
+    setk(eh, GLFW_KEY_LEFT_SHIFT, btstate);
+    btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_RIGHT_SHIFT);
+    setk(eh, GLFW_KEY_RIGHT_SHIFT, btstate);
+    btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_LEFT_CONTROL);
+    setk(eh, GLFW_KEY_LEFT_CONTROL, btstate);
+    btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_RIGHT_CONTROL);
+    setk(eh, GLFW_KEY_RIGHT_CONTROL, btstate);
+    btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_UP);
+    setk(eh, GLFW_KEY_UP, btstate);
+    btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_LEFT);
+    setk(eh, GLFW_KEY_LEFT, btstate);
+    btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_DOWN);
+    setk(eh, GLFW_KEY_DOWN, btstate);
+    btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_RIGHT);
+    setk(eh, GLFW_KEY_RIGHT, btstate);
+    btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_ENTER);
+    setk(eh, GLFW_KEY_ENTER, btstate);
+    btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_BACKSPACE);
+    setk(eh, GLFW_KEY_BACKSPACE, btstate);
+    glfwGetCursorPos(euclid.handle[eh].window, &euclid.handle[eh].xpos, &euclid.handle[eh].ypos);
+}
 
 uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, uint32_t eh) {
     VkPhysicalDeviceMemoryProperties memProperties;
@@ -2537,6 +2662,7 @@ void setmeshbuf(uint32_t eme, uint32_t i, float val){
 }
 
 uint32_t loopcont(uint32_t eh){
+    keywork(eh);
     glfwGetFramebufferSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
     startrender(eh);
     for(uint32_t i = 0; i != euclid.handle[eh].shadowMapsCount; i++){
