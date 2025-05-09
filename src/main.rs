@@ -1,6 +1,6 @@
 use std::fs;
 
-use engine::{engine::Engine, material::Material, model::Model, object::Object, render::render::Texture};
+use engine::{engine::Engine, material::Material, model::Model, object::Object, plane::PLANE, render::render::Texture};
 mod engine;
 
 fn main() {
@@ -28,21 +28,10 @@ fn main() {
     mat.textures.push(Texture::new(eng.render, 2, 2, 2, img.clone()));
     mat2.textures.push(Texture::new(eng.render, 2, 2, 2, img.clone()));
 
-    let vert = vec![
-        0.0f32, -0.5f32, 0f32, 
-        0.5f32, 0.5f32, 0f32,
-        -0.5f32, 0.5f32, 0f32, 
-        0f32, 1f32,
-        1f32, 0f32,
-        1f32, 1f32,
-        0f32, 0f32, 0f32,
-        0f32, 0f32, 0f32,
-        0f32, 0f32, 0f32,
-    ];
-
-    let model = Model::new(eng, vert);
+    let model = Model::new(eng, PLANE.to_vec());
     let mesh = Object::new(eng, model, mat, engine::render::render::MeshUsage::LightingPass);
     let mesh2 = Object::new(eng, model, mat2, engine::render::render::MeshUsage::ShadowAndDefferedPass);
+    eng.render.resolution_scale = 0.1;
     while eng.work(){
         if eng.control.get_key_state(44){
         }

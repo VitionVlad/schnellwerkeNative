@@ -31,5 +31,9 @@ layout(binding = 5) uniform sampler2DArray defferedDepthSampler;
 layout(binding = 6) uniform sampler2DArray shadowSampler;
 
 void main() {
-    outColor = vec4(texture(texSampler, vec3(uv, 0)).rgb, 1.0);
+    if(uv.x < 0.5){
+        outColor = vec4(texture(texSampler, vec3(uv, 0)).rgb, 1.0);
+    }else{
+        outColor = vec4(texture(defferedSampler, vec3(uv, 0)).rgb, 1.0);
+    }
 }
