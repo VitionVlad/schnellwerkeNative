@@ -84,6 +84,8 @@ typedef struct euclidh{
     double xpos;
     double ypos;
     uint32_t mrec;
+    float frametime;
+    float it;
 } euclidh;
 
 typedef struct euclidmaterial{
@@ -149,6 +151,31 @@ struct euclidVK{
     euclidtexture *textures;
     uint32_t tsize;
 } euclid;
+
+float get_frametime(uint32_t eh){
+    return euclid.handle[eh].frametime;
+}
+
+uint32_t get_resx(uint32_t eh){
+    return euclid.handle[eh].resolutionX;
+}
+
+uint32_t get_resy(uint32_t eh){
+    return euclid.handle[eh].resolutionY;
+}
+
+void setresolution(uint32_t eh, uint32_t xs, uint32_t ys){
+    glfwSetWindowSize(euclid.handle[eh].window, xs, ys);
+}
+
+void setfullscreen(uint32_t eh){
+    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    glfwSetWindowMonitor(euclid.handle[eh].window, glfwGetPrimaryMonitor(), 0, 0, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionX, mode->refreshRate);
+}
+
+void quitfullscreen(uint32_t eh){
+    glfwSetWindowMonitor(euclid.handle[eh].window, NULL, 100, 100, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionX, 0);
+}
 
 uint8_t getKeyPressed(uint32_t eh, uint32_t index){
     return euclid.handle[eh].key_state[index];
@@ -1336,6 +1363,7 @@ uint32_t neweng(uint32_t shadowMapResolution){
     euclid.handle[eh].imageIndex = 0;
     euclid.handle[eh].totalFrames = 0;
     euclid.handle[eh].mrec = 0;
+    euclid.handle[eh].frametime = 0;
 
     {
         VkSamplerCreateInfo samplerInfo = {0};
@@ -2571,38 +2599,11 @@ void setmeshbuf(uint32_t eme, uint32_t i, float val){
 
 void draw(uint32_t eh, uint32_t eme){
     if(euclid.handle[eh].mrec != euclid.meshes[eme].mrec){
-        vkDeviceWaitIdle(euclid.handle[eh].device);
-        switch(euclid.meshes[eh].usage){
-            case 0:
-                vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, NULL);
-                createDescriptorPool(eh, eme);
-                vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, MAX_FRAMES_IN_FLIGHT, euclid.meshes[eme].descriptorSets);
-                free(euclid.meshes[eme].descriptorSets);
-                createDescriptorSets(eh, eme);
-                break;
-            case 1:
-                vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].defferedDescriptorPool, NULL);
-                createDefferedDescriptorPool(eh, eme);
-                vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].defferedDescriptorPool, 10, euclid.meshes[eme].defferedDescriptorSets);
-                createDefferedDescriptorSets(eh, eme);
-                break;
-            case 2:
-                vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].shadowDescriptorPool, NULL);
-                createShadowDescriptorPool(eh, eme);
-                vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].shadowDescriptorPool, 100, euclid.meshes[eme].shadowDescriptorSets);
-                createShadowDescriptorSets(eh, eme);
-                break;
-            case 3:
-                vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].defferedDescriptorPool, NULL);
-                createDefferedDescriptorPool(eh, eme);
-                vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].shadowDescriptorPool, NULL);
-                createShadowDescriptorPool(eh, eme);
-                vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].defferedDescriptorPool, 10, euclid.meshes[eme].defferedDescriptorSets);
-                createDefferedDescriptorSets(eh, eme);
-                vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].shadowDescriptorPool, 100, euclid.meshes[eme].shadowDescriptorSets);
-                createShadowDescriptorSets(eh, eme);
-                break;
-        }
+        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, NULL);
+        createDescriptorPool(eh, eme);
+        vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, MAX_FRAMES_IN_FLIGHT, euclid.meshes[eme].descriptorSets);
+        free(euclid.meshes[eme].descriptorSets);
+        createDescriptorSets(eh, eme);
         euclid.meshes[eh].mrec = euclid.handle[eme].mrec;
     }
 
@@ -2641,42 +2642,6 @@ void draw(uint32_t eh, uint32_t eme){
 }
 
 void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
-    //if(euclid.handle[eh].mrec != euclid.meshes[eme].mrec){
-    //    vkDeviceWaitIdle(euclid.handle[eh].device);
-    //    switch(euclid.meshes[eh].usage){
-    //        case 0:
-    //            vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, NULL);
-    //            createDescriptorPool(eh, eme);
-    //            vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, MAX_FRAMES_IN_FLIGHT, euclid.meshes[eme].descriptorSets);
-    //            free(euclid.meshes[eme].descriptorSets);
-    //            createDescriptorSets(eh, eme);
-    //            break;
-    //        case 1:
-    //            vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].defferedDescriptorPool, NULL);
-    //            createDefferedDescriptorPool(eh, eme);
-    //            vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].defferedDescriptorPool, 10, euclid.meshes[eme].defferedDescriptorSets);
-    //            createDefferedDescriptorSets(eh, eme);
-    //            break;
-    //        case 2:
-    //            vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].shadowDescriptorPool, NULL);
-    //            createShadowDescriptorPool(eh, eme);
-    //            vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].shadowDescriptorPool, 100, euclid.meshes[eme].shadowDescriptorSets);
-    //            createShadowDescriptorSets(eh, eme);
-    //            break;
-    //        case 3:
-    //            vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].defferedDescriptorPool, NULL);
-    //            createDefferedDescriptorPool(eh, eme);
-    //            vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].shadowDescriptorPool, NULL);
-    //            createShadowDescriptorPool(eh, eme);
-    //            vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].defferedDescriptorPool, 10, euclid.meshes[eme].defferedDescriptorSets);
-    //            createDefferedDescriptorSets(eh, eme);
-    //            vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].shadowDescriptorPool, 100, euclid.meshes[eme].shadowDescriptorSets);
-    //            createShadowDescriptorSets(eh, eme);
-    //            break;
-    //    }
-    //    euclid.meshes[eh].mrec = euclid.handle[eme].mrec;
-    //}
-
     vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].shadowPipeline);
 
     VkDeviceSize offsets[] = {0};
@@ -2712,42 +2677,6 @@ void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
 }
 
 void drawdeffered(uint32_t eh, uint32_t eme, uint32_t cs){
-    //if(euclid.handle[eh].mrec != euclid.meshes[eme].mrec){
-    //    vkDeviceWaitIdle(euclid.handle[eh].device);
-    //    switch(euclid.meshes[eh].usage){
-    //        case 0:
-    //            vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, NULL);
-    //            createDescriptorPool(eh, eme);
-    //            vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, MAX_FRAMES_IN_FLIGHT, euclid.meshes[eme].descriptorSets);
-    //            free(euclid.meshes[eme].descriptorSets);
-    //            createDescriptorSets(eh, eme);
-    //            break;
-    //        case 1:
-    //            vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].defferedDescriptorPool, NULL);
-    //            createDefferedDescriptorPool(eh, eme);
-    //            vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].defferedDescriptorPool, 10, euclid.meshes[eme].defferedDescriptorSets);
-    //            createDefferedDescriptorSets(eh, eme);
-    //            break;
-    //        case 2:
-    //            vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].shadowDescriptorPool, NULL);
-    //            createShadowDescriptorPool(eh, eme);
-    //            vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].shadowDescriptorPool, 100, euclid.meshes[eme].shadowDescriptorSets);
-    //            createShadowDescriptorSets(eh, eme);
-    //            break;
-    //        case 3:
-    //            vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].defferedDescriptorPool, NULL);
-    //            createDefferedDescriptorPool(eh, eme);
-    //            vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].shadowDescriptorPool, NULL);
-    //            createShadowDescriptorPool(eh, eme);
-    //            vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].defferedDescriptorPool, 10, euclid.meshes[eme].defferedDescriptorSets);
-    //            createDefferedDescriptorSets(eh, eme);
-    //            vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].shadowDescriptorPool, 100, euclid.meshes[eme].shadowDescriptorSets);
-    //            createShadowDescriptorSets(eh, eme);
-    //            break;
-    //    }
-    //    euclid.meshes[eh].mrec = euclid.handle[eme].mrec;
-    //}
-
     vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].defferedPipeline);
 
     VkDeviceSize offsets[] = {0};
@@ -2783,6 +2712,8 @@ void drawdeffered(uint32_t eh, uint32_t eme, uint32_t cs){
 }
 
 uint32_t loopcont(uint32_t eh){
+    euclid.handle[eh].frametime = glfwGetTime() - euclid.handle[eh].it;
+    euclid.handle[eh].it = glfwGetTime();
     keywork(eh);
     glfwGetFramebufferSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
     startrender(eh);

@@ -2,6 +2,12 @@
 #define EUCLID_H
 #include <stdint.h>
 
+float get_frametime(uint32_t eh);
+uint32_t get_resx(uint32_t eh);
+uint32_t get_resy(uint32_t eh);
+void setresolution(uint32_t eh, uint32_t xs, uint32_t ys);
+void setfullscreen(uint32_t eh);
+void quitfullscreen(uint32_t eh);
 uint8_t getKeyPressed(uint32_t eh, uint32_t index);
 double get_mouse_posx(uint32_t eh);
 double get_mouse_posy(uint32_t eh);

@@ -4,6 +4,12 @@
 use cty::uint32_t;
 
 unsafe extern "C"{
+    fn get_frametime(eh: cty::uint32_t) -> cty::c_float;
+    fn get_resx(eh: cty::uint32_t) -> cty::uint32_t;
+    fn get_resy(eh: cty::uint32_t) -> cty::uint32_t;
+    fn setresolution(eh: cty::uint32_t, xs: cty::uint32_t, ys: cty::uint32_t);
+    fn setfullscreen(eh: cty::uint32_t);
+    fn quitfullscreen(eh: cty::uint32_t);
     fn getKeyPressed(eh: cty::uint32_t, index: cty::uint32_t) -> cty::uint8_t;
     fn get_mouse_posx(eh: cty::uint32_t)  -> cty::c_double;
     fn get_mouse_posy(eh: cty::uint32_t)  -> cty::c_double;
@@ -30,6 +36,11 @@ pub struct Render{
     pub shadow_map_count: u32,
     pub camera_count: u32,
     pub resolution_scale: f32,
+    pub resolution_x: u32,
+    pub resolution_y: u32,
+    pub fullscreen: bool,
+    pub frametime: f32,
+    fullscreeno: bool,
 }
 
 impl Render{
@@ -42,12 +53,27 @@ impl Render{
             shadow_map_resolution: 1000,
             camera_count: 1,
             resolution_scale: 1f32,
+            resolution_x: 800,
+            resolution_y: 600,
+            fullscreen: false,
+            fullscreeno: false,
+            frametime: 0.0,
         }
     }
-    pub fn continue_loop(&self) -> bool{
+    pub fn continue_loop(&mut self) -> bool{
         unsafe{ 
+            self.resolution_x = get_resx(self.euclid);
+            self.resolution_y = get_resy(self.euclid);
+            if self.fullscreen != self.fullscreeno {
+                match self.fullscreen{
+                    true => setfullscreen(self.euclid),
+                    false => quitfullscreen(self.euclid),
+                }
+                self.fullscreeno = self.fullscreen;
+            }
             modifyshadowdata(self.euclid, self.shadow_map_count, self.shadow_map_resolution);
             modifydeffereddata(self.euclid, self.camera_count, self.resolution_scale);
+            self.frametime = get_frametime(self.euclid)
         };
         return unsafe { loopcont(self.euclid) } == 1;
     }
@@ -56,6 +82,9 @@ impl Render{
     }
     pub fn set_deffered_uniform_data(&self, i: u32, value: f32){
         unsafe{ modifydeffereduniform(self.euclid, i, value); }
+    }
+    pub fn set_new_resolution(&self, resx: u32, resy: u32){
+        unsafe { setresolution(self.euclid, resx, resy); }
     }
     pub fn destroy(&self){
         unsafe{
@@ -67,8 +96,10 @@ impl Render{
 #[derive(Copy, Clone)]
 pub struct Control{
     euclid: u32,
-    xpos: f64,
-    ypos: f64,
+    pub xpos: f64,
+    pub ypos: f64,
+    pub mouse_lock: bool,
+    old_mouse_lock: bool,
 }
 
 impl Control{
@@ -77,12 +108,20 @@ impl Control{
             euclid: render.euclid,
             xpos: 0.0f64,
             ypos: 0.0f64,
+            mouse_lock: false,
+            old_mouse_lock: false,
         }
     }
     pub fn get_key_state(&self, keyindex: uint32_t) -> bool{
         return unsafe { getKeyPressed(self.euclid, keyindex) != 0 };
     }
     pub fn get_mouse_pos(&mut self){
+        if self.mouse_lock != self.old_mouse_lock{
+            match self.mouse_lock {
+                true => unsafe { req_mouse_lock(self.euclid) },
+                false => unsafe { req_mouse_unlock(self.euclid) },
+            }
+        }
         self.xpos = unsafe{ get_mouse_posx(self.euclid) };
         self.ypos = unsafe{ get_mouse_posy(self.euclid) };
     }

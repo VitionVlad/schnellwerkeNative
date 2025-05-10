@@ -4,6 +4,7 @@ use engine::{engine::Engine, material::Material, model::Model, object::Object, p
 mod engine;
 
 fn main() {
+    const SPEED: f32 = 600f32;
     let mut eng = Engine::new();
 
     let img: Vec<i8> = vec![
@@ -31,9 +32,29 @@ fn main() {
     let model = Model::new(eng, PLANE.to_vec());
     let mesh = Object::new(eng, model, mat, engine::render::render::MeshUsage::LightingPass);
     let mesh2 = Object::new(eng, model, mat2, engine::render::render::MeshUsage::ShadowAndDefferedPass);
-    eng.render.resolution_scale = 0.1;
+
+    eng.cameras[0].physic_object.gravity = false;
+    eng.cameras[0].physic_object.solid = false;
+    eng.cameras[0].physic_object.is_static = false;
+    //eng.control.mouse_lock = true;
     while eng.work(){
+        eng.cameras[0].physic_object.rot.x = eng.control.ypos as f32/eng.render.resolution_y as f32;
+        eng.cameras[0].physic_object.rot.y = eng.control.xpos as f32/eng.render.resolution_x as f32;
+        if eng.control.get_key_state(40){
+          eng.cameras[0].physic_object.speed.z += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED;
+          eng.cameras[0].physic_object.speed.x += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED;
+        }
         if eng.control.get_key_state(44){
+          eng.cameras[0].physic_object.speed.z += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED;
+          eng.cameras[0].physic_object.speed.x += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED;
+        }
+        if eng.control.get_key_state(25){
+          eng.cameras[0].physic_object.speed.x += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED;
+          eng.cameras[0].physic_object.speed.z += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED;
+        }
+        if eng.control.get_key_state(22){
+          eng.cameras[0].physic_object.speed.x += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED;
+          eng.cameras[0].physic_object.speed.z += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED;
         }
         mesh.exec();
         mesh2.exec();

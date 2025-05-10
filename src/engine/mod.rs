@@ -1,7 +1,11 @@
 pub mod render;
+pub mod math;
+pub mod cube;
+pub mod plane;
+pub mod physics;
+pub mod camera;
+pub mod light;
 pub mod engine;
 pub mod material;
 pub mod model;
 pub mod object;
-pub mod cube;
-pub mod plane;
