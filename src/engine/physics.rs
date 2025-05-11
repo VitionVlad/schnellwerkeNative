@@ -57,7 +57,6 @@ pub struct PhysicsObject{
     oldscale: Vec3,
     pub savedp1: Vec3,
     pub savedp2: Vec3,
-    pub frametime: f32,
 }
 
 impl PhysicsObject{
@@ -86,7 +85,6 @@ impl PhysicsObject{
             oldscale: Vec3::new(),
             savedp1: v[0],
             savedp2: v[1],
-            frametime: 1f32,
         }
     }
     #[allow(dead_code)]
@@ -160,13 +158,14 @@ impl PhysicsObject{
             self.oldpos = self.pos;
             self.oldrot = self.rot;
             self.oldscale = self.scale;
-            self.speed.x *= self.air_friction * self.frametime;
-            self.speed.y *= self.air_friction * self.frametime;
-            self.speed.z *= self.air_friction * self.frametime;
-            let corac = Vec3::newdefined(self.acceleration.x*self.frametime, self.acceleration.y*self.frametime, self.acceleration.z*self.frametime);
-            self.speed.sum(corac);
-            let scorec = Vec3::newdefined(self.speed.x*self.frametime, self.speed.y*self.frametime, self.speed.z*self.frametime);
-            self.pos.sum(scorec);
+            self.speed.sum(self.acceleration);
+            self.speed.x *= self.air_friction;
+            self.speed.y *= self.air_friction;
+            self.speed.z *= self.air_friction;
+            self.acceleration.x = 0.0;
+            self.acceleration.y = 0.0;
+            self.acceleration.z = 0.0;
+            self.pos.sum(self.speed);
             if self.gravity{
                 self.acceleration.y = -self.mass;
             }

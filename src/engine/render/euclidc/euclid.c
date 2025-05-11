@@ -85,7 +85,6 @@ typedef struct euclidh{
     double ypos;
     uint32_t mrec;
     float frametime;
-    float it;
 } euclidh;
 
 typedef struct euclidmaterial{
@@ -153,7 +152,7 @@ struct euclidVK{
 } euclid;
 
 float get_frametime(uint32_t eh){
-    return euclid.handle[eh].frametime;
+    return euclid.handle[eh].frametime * 1000;
 }
 
 uint32_t get_resx(uint32_t eh){
@@ -2712,8 +2711,8 @@ void drawdeffered(uint32_t eh, uint32_t eme, uint32_t cs){
 }
 
 uint32_t loopcont(uint32_t eh){
-    euclid.handle[eh].frametime = glfwGetTime() - euclid.handle[eh].it;
-    euclid.handle[eh].it = glfwGetTime();
+    euclid.handle[eh].frametime = glfwGetTime();
+    glfwSetTime(0);
     keywork(eh);
     glfwGetFramebufferSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
     startrender(eh);

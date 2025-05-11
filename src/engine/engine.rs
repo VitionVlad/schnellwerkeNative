@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::cmp;
-
 use super::{camera::Camera, light::Light, math::vec3::Vec3, physics::PhysicsObject, render::render::{Control, Render}};
 
 #[derive(Copy, Clone)]
@@ -13,6 +11,9 @@ pub struct Engine{
     pub used_camera_count: u32,
     pub lights: [Light; 100],
     pub used_light_count: u32,
+    pub physics_tick: u32,
+    cumulated_time: f32,
+    pub times_to_calculate_physics: u32,
 }
 
 impl Engine{
@@ -25,15 +26,24 @@ impl Engine{
             used_camera_count: 1,
             lights: [Light::new(super::light::LightType::Directional); 100],
             used_light_count: 1,
+            physics_tick: 4,
+            cumulated_time: 0.0,
+            times_to_calculate_physics: 0,
         }
     }
     pub fn work(&mut self) -> bool{
+        self.cumulated_time += self.render.frametime;
+        self.times_to_calculate_physics = (self.cumulated_time/self.physics_tick as f32).floor() as u32;
+        if self.times_to_calculate_physics >= 1{
+            self.cumulated_time -= (self.times_to_calculate_physics * self.physics_tick) as f32;
+        }
         self.render.camera_count = self.used_camera_count;
         self.render.shadow_map_count = self.used_light_count;
-        for i in 0..cmp::min(self.used_camera_count, 10){
-            self.cameras[i as usize].physic_object.frametime = self.render.frametime;
+        for i in 0..u32::min(self.used_camera_count, 10){
             self.cameras[i as usize].physic_object.reset_states();
-            self.cameras[i as usize].physic_object.exec();
+            for _ in 0..self.times_to_calculate_physics {
+                self.cameras[i as usize].physic_object.exec();
+            }
             let mt = self.cameras[i as usize].get_projection(self.render.resolution_x as f32/self.render.resolution_y as f32);
             for j in 0..16{
                 self.render.set_deffered_uniform_data(j+i*16, mt.mat[j as usize]);

@@ -121,6 +121,7 @@ impl Control{
                 true => unsafe { req_mouse_lock(self.euclid) },
                 false => unsafe { req_mouse_unlock(self.euclid) },
             }
+            self.old_mouse_lock = self.mouse_lock;
         }
         self.xpos = unsafe{ get_mouse_posx(self.euclid) };
         self.ypos = unsafe{ get_mouse_posy(self.euclid) };
