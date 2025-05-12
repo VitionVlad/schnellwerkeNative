@@ -9,7 +9,7 @@ pub fn check_for_intersection(x1: f32, x2: f32, y1: f32, y2: f32) -> bool{
 pub fn getpoints(v: Vec<f32>) -> Vec<Vec3>{
     let mut v1 = Vec3::newdefined(v[0], v[1], v[2]);
     let mut v2 = Vec3::newdefined(v[0], v[1], v[2]);
-    for i in (0..v.len()).step_by(3){
+    for i in (0..v.len()/8*3).step_by(3){
         if v[i] > v1.x {
             v1.x = v[i];
         }
@@ -69,7 +69,7 @@ impl PhysicsObject{
             v2: v[1],
             is_static: is_static,
             is_interacting: false,
-            elasticity: 0.0f32,
+            elasticity: 0.9f32,
             gravity: true,
             air_friction: 0.9f32,
             pos: Vec3::new(),

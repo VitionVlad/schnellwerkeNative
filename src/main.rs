@@ -30,11 +30,10 @@ fn main() {
     mat2.textures.push(Texture::new(eng.render, 2, 2, 2, img.clone()));
 
     let model = Model::new(eng, PLANE.to_vec());
-    let mesh = Object::new(eng, model, mat, engine::render::render::MeshUsage::LightingPass);
-    let mesh2 = Object::new(eng, model, mat2, engine::render::render::MeshUsage::ShadowAndDefferedPass);
+    let mut mesh = Object::new(eng, model, mat, engine::render::render::MeshUsage::LightingPass, true);
+    let mut mesh2 = Object::new(eng, model, mat2, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
 
     eng.cameras[0].physic_object.gravity = false;
-    eng.cameras[0].physic_object.solid = false;
     eng.cameras[0].physic_object.is_static = false;
     eng.control.mouse_lock = true;
     while eng.work(){
@@ -59,8 +58,8 @@ fn main() {
         if eng.control.get_key_state(49){
           eng.control.mouse_lock = false;
         }
-        mesh.exec();
-        mesh2.exec();
+        mesh.exec(&mut eng);
+        mesh2.exec(&mut eng);
     }
     eng.end();
 }

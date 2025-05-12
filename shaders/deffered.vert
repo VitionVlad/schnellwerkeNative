@@ -30,5 +30,5 @@ void main() {
     fuv = uv;
     fpos = vec4(pos.x, pos.y, pos.z, 1.0);
     fnormal = vec4(normal, 1.0);
-    gl_Position = dmi.defferedView * vec4(pos.x, pos.y, pos.z, 1.0);
+    gl_Position = dmi.defferedView * mi.model * vec4(pos.x, pos.y, pos.z, 1.0);
 }

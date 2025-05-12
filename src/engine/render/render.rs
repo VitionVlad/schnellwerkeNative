@@ -195,6 +195,7 @@ impl Texture {
 }
 
 #[derive(Copy, Clone)]
+#[derive(PartialEq)]
 pub enum MeshUsage {
     LightingPass = 0,
     DefferedPass = 1,
