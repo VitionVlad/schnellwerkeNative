@@ -3079,6 +3079,7 @@ void destroy(uint32_t eh){
             vkDestroyDescriptorSetLayout(euclid.handle[eh].device, euclid.meshes[i].descriptorSetLayout, NULL);
             vkDestroyPipelineLayout(euclid.handle[eh].device, euclid.meshes[i].pipelineLayout, NULL);
             vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[i].descriptorPool, NULL);
+            free(euclid.meshes[i].descriptorSets);
         }
         if(euclid.meshes[i].usage == 1){
             vkDestroyPipeline(euclid.handle[eh].device, euclid.meshes[i].defferedPipeline, NULL);
@@ -3109,7 +3110,6 @@ void destroy(uint32_t eh){
         free(euclid.meshes[i].uniformBuffers);
         free(euclid.meshes[i].uniformBuffersMemory);
         free(euclid.meshes[i].uniformBuffersMapped);
-        free(euclid.meshes[i].descriptorSets);
     }
     printf("\e[1;36mEuclidVK\e[0;37m: Destroyed uniform buffers\n");
     for(uint32_t i = 0; i != euclid.tsize; i++){
