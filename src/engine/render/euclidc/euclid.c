@@ -1744,10 +1744,10 @@ void createDescriptorPool(uint32_t eh, uint32_t eme){
 
 void createShadowDescriptorPool(uint32_t eh, uint32_t eme){
     VkDescriptorPoolSize poolSize[2] = {0};
-    poolSize[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSize[0].descriptorCount = 100;
 
-    poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSize[1].descriptorCount = 100;
 
     VkDescriptorPoolCreateInfo poolInfo = {0};
