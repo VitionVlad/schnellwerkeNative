@@ -1,11 +1,13 @@
 pub mod render;
 pub mod math;
+pub mod loader;
 pub mod cube;
 pub mod plane;
 pub mod physics;
 pub mod camera;
 pub mod light;
 pub mod engine;
+pub mod image;
 pub mod material;
 pub mod model;
 pub mod object;

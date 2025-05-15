@@ -1,6 +1,6 @@
 use std::fs;
 
-use engine::{engine::Engine, material::Material, model::Model, object::Object, plane::PLANE, render::render::Texture};
+use engine::{engine::Engine, image::Image, loader::imageloader::ImageLoader, material::Material, model::Model, object::Object, plane::PLANE};
 mod engine;
 
 fn main() {
@@ -24,14 +24,15 @@ fn main() {
     let dvert = fs::read("shaders/vdeffered").unwrap();
     let dfrag = fs::read("shaders/fdeffered").unwrap();
     let shadow = fs::read("shaders/shadow").unwrap();
-    let mut mat = Material::new(eng, vert, frag, vec![], engine::render::render::CullMode::CullModeNone);
-    let mut mat2 = Material::new(eng, dvert, dfrag, shadow, engine::render::render::CullMode::CullModeNone);
-    mat.textures.push(Texture::new(eng.render, 2, 2, 2, img.clone()));
-    mat2.textures.push(Texture::new(eng.render, 2, 2, 2, img.clone()));
+    let mat = Material::new(eng, vert, frag, vec![], engine::render::render::CullMode::CullModeNone);
+    let mat2 = Material::new(eng, dvert, dfrag, shadow, engine::render::render::CullMode::CullModeNone);
+    let image = Image::new(eng, [2, 2, 2], img);
 
     let model = Model::new(eng, PLANE.to_vec());
-    let mut mesh = Object::new(eng, model, mat, engine::render::render::MeshUsage::LightingPass, true);
-    let mut mesh2 = Object::new(eng, model, mat2, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
+    let mut mesh = Object::new(eng, model, mat, image, engine::render::render::MeshUsage::LightingPass, true);
+    let mut mesh2 = Object::new(eng, model, mat2, image, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
+
+    let _ppm = ImageLoader::load_ppm("assets/texture.ppm");
 
     eng.cameras[0].physic_object.gravity = false;
     eng.cameras[0].physic_object.is_static = false;

@@ -69,7 +69,7 @@ impl PhysicsObject{
             v2: v[1],
             is_static: is_static,
             is_interacting: false,
-            elasticity: 1.5f32,
+            elasticity: 1.0f32,
             gravity: true,
             air_friction: 0.9f32,
             pos: Vec3::new(),

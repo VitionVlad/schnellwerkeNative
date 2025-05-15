@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use super::{engine::Engine, material::Material, math::mat4::Mat4, model::Model, physics::PhysicsObject, render::render::{Mesh, MeshUsage}};
+use super::{engine::Engine, image::Image, material::Material, math::mat4::Mat4, model::Model, physics::PhysicsObject, render::render::{Mesh, MeshUsage}};
 
 #[derive(Copy, Clone)]
 pub struct Object{
@@ -11,9 +11,9 @@ pub struct Object{
 }
 
 impl Object {
-    pub fn new(engine: Engine, model: Model, material: Material, usage: MeshUsage, is_static: bool) -> Object{
+    pub fn new(engine: Engine, model: Model, material: Material, image: Image, usage: MeshUsage, is_static: bool) -> Object{
         Object { 
-            mesh: Mesh::new(engine.render, model.vertexbuf, material.material_shaders, material.textures[material.used_texture], usage),
+            mesh: Mesh::new(engine.render, model.vertexbuf, material.material_shaders, image.textures, usage),
             physic_object: PhysicsObject::new(model.points.to_vec(), is_static),
             usage: usage,
         }
@@ -23,9 +23,9 @@ impl Object {
             self.physic_object.reset_states();
             for _ in 0..eng.times_to_calculate_physics {
                 self.physic_object.exec();
-            }
-            for i in 0..u32::min(eng.used_camera_count, 10){
-                eng.cameras[i as usize].physic_object.interact_with_other_object(self.physic_object);
+                for i in 0..u32::min(eng.used_camera_count, 10){
+                    eng.cameras[i as usize].physic_object.interact_with_other_object(self.physic_object);
+                }
             }
         }
         let mut ubm = Mat4::new();
