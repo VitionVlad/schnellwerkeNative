@@ -1,6 +1,6 @@
 use std::fs;
 
-use engine::{engine::Engine, image::Image, loader::imageloader::ImageLoader, material::Material, model::Model, object::Object, plane::PLANE};
+use engine::{engine::Engine, image::Image, loader::imageasset::ImageAsset, material::Material, model::Model, object::Object, plane::PLANE};
 mod engine;
 
 fn main() {
@@ -19,6 +19,8 @@ fn main() {
         127, 127, 127, 127,
     ];
 
+    let tiff = ImageAsset::load_tiff("assets/texture.tiff");
+
     let vert = fs::read("shaders/vert").unwrap();
     let frag = fs::read("shaders/frag").unwrap();
     let dvert = fs::read("shaders/vdeffered").unwrap();
@@ -27,12 +29,11 @@ fn main() {
     let mat = Material::new(eng, vert, frag, vec![], engine::render::render::CullMode::CullModeNone);
     let mat2 = Material::new(eng, dvert, dfrag, shadow, engine::render::render::CullMode::CullModeNone);
     let image = Image::new(eng, [2, 2, 2], img);
+    let img2 = Image::new(eng, [tiff.size[0], tiff.size[1], 1], tiff.data);
 
     let model = Model::new(eng, PLANE.to_vec());
     let mut mesh = Object::new(eng, model, mat, image, engine::render::render::MeshUsage::LightingPass, true);
-    let mut mesh2 = Object::new(eng, model, mat2, image, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
-
-    let _ppm = ImageLoader::load_ppm("assets/texture.ppm");
+    let mut mesh2 = Object::new(eng, model, mat2, img2, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
 
     eng.cameras[0].physic_object.gravity = false;
     eng.cameras[0].physic_object.is_static = false;

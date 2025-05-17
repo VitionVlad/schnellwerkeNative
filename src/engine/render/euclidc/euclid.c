@@ -2887,6 +2887,7 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     VkDeviceMemory stagingBufferMemory;
 
     VkDeviceSize imageSize = xsize * ysize * zsize * 4;
+    printf("\e[1;36mEuclidTEX\e[0;37m: passed image size = %dx%dx%d, total size number = %d\n", xsize, ysize, zsize, imageSize);
 
     VkBufferCreateInfo bufferInfo = {0};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

@@ -1,1 +1,1 @@
-pub mod imageloader;
+pub mod imageasset;
