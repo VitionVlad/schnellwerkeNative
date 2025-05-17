@@ -2818,7 +2818,7 @@ void generateMipmaps(VkImage image, int32_t texWidth, int32_t texHeight, uint32_
             blit.srcOffsets[1].z = 1;
             blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             blit.srcSubresource.mipLevel = i - 1;
-            blit.srcSubresource.baseArrayLayer = 0;
+            blit.srcSubresource.baseArrayLayer = j;
             blit.srcSubresource.layerCount = 1;
             blit.dstOffsets[0].x = 0;
             blit.dstOffsets[0].y = 0;
@@ -3040,7 +3040,7 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = 0.0f;
+    samplerInfo.maxLod = euclid.textures[te].mipLevels;
 
     result = vkCreateSampler(euclid.handle[eh].device, &samplerInfo, NULL, &euclid.textures[te].sampler);
     printf("\e[1;36mEuclidTEX\e[0;37m: Sampler created with result = %d\n", result);
