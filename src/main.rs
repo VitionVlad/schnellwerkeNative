@@ -7,18 +7,6 @@ fn main() {
     const SPEED: f32 = 0.001f32;
     let mut eng = Engine::new();
 
-    let img: Vec<i8> = vec![
-        0, 0, 0, 127,
-        127, 127, 127, 127,
-        127, 127, 127, 127,
-        0, 0, 0, 127,
-
-        127, 127, 127, 127,
-        0, 0, 0, 127,
-        0, 0, 0, 127,
-        127, 127, 127, 127,
-    ];
-
     let vert = fs::read("shaders/vert").unwrap();
     let frag = fs::read("shaders/frag").unwrap();
     let dvert = fs::read("shaders/vdeffered").unwrap();
@@ -26,7 +14,7 @@ fn main() {
     let shadow = fs::read("shaders/shadow").unwrap();
     let mat = Material::new(eng, vert, frag, vec![], engine::render::render::CullMode::CullModeNone);
     let mat2 = Material::new(eng, dvert, dfrag, shadow, engine::render::render::CullMode::CullModeNone);
-    let image = Image::new(eng, [2, 2, 2], img);
+    let image = Image::new_color(eng, [i8::MAX, i8::MAX, i8::MAX, i8::MAX]);
     let img2 = Image::new_from_files(eng, vec!["assets/texture2.tiff", "assets/texture.tiff"]);
 
     let model = Model::new(eng, PLANE.to_vec());
@@ -59,8 +47,10 @@ fn main() {
         if eng.control.get_key_state(49){
           eng.control.mouse_lock = false;
         }
-        eng.lights[0].pos = eng.cameras[0].physic_object.pos;
-        eng.lights[0].rot = eng.cameras[0].physic_object.rot;
+        if eng.control.mousebtn[0]{
+          eng.lights[0].pos = eng.cameras[0].physic_object.pos;
+          eng.lights[0].rot = eng.cameras[0].physic_object.rot;
+        }
         mesh.exec(&mut eng);
         mesh2.exec(&mut eng);
     }

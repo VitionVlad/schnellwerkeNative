@@ -11,6 +11,9 @@ unsafe extern "C"{
     fn setfullscreen(eh: cty::uint32_t);
     fn quitfullscreen(eh: cty::uint32_t);
     fn getKeyPressed(eh: cty::uint32_t, index: cty::uint32_t) -> cty::uint8_t;
+    fn getmr(eh: cty::uint32_t) -> cty::uint8_t;
+    fn getml(eh: cty::uint32_t) -> cty::uint8_t;
+    fn getmm(eh: cty::uint32_t) -> cty::uint8_t;
     fn get_mouse_posx(eh: cty::uint32_t)  -> cty::c_double;
     fn get_mouse_posy(eh: cty::uint32_t)  -> cty::c_double;
     fn req_mouse_lock(eh: cty::uint32_t);
@@ -100,6 +103,7 @@ pub struct Control{
     pub ypos: f64,
     pub mouse_lock: bool,
     old_mouse_lock: bool,
+    pub mousebtn: [bool; 3],
 }
 
 impl Control{
@@ -110,6 +114,7 @@ impl Control{
             ypos: 0.0f64,
             mouse_lock: false,
             old_mouse_lock: false,
+            mousebtn: [false, false, false],
         }
     }
     pub fn get_key_state(&self, keyindex: uint32_t) -> bool{
@@ -125,6 +130,7 @@ impl Control{
         }
         self.xpos = unsafe{ get_mouse_posx(self.euclid) };
         self.ypos = unsafe{ get_mouse_posy(self.euclid) };
+        self.mousebtn = [ unsafe { getmr(self.euclid) } == 1, unsafe { getmm(self.euclid) } == 1, unsafe { getml(self.euclid) } == 1];
     }
 }
 

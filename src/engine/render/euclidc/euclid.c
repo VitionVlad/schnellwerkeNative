@@ -85,6 +85,9 @@ typedef struct euclidh{
     double ypos;
     uint32_t mrec;
     float frametime;
+    uint8_t right;
+    uint8_t left;
+    uint8_t middle;
 } euclidh;
 
 typedef struct euclidmaterial{
@@ -178,6 +181,17 @@ void quitfullscreen(uint32_t eh){
 
 uint8_t getKeyPressed(uint32_t eh, uint32_t index){
     return euclid.handle[eh].key_state[index];
+}
+uint8_t getmr(uint32_t eh){
+    return euclid.handle[eh].right;
+}
+
+uint8_t getml(uint32_t eh){
+    return euclid.handle[eh].left;
+}
+
+uint8_t getmm(uint32_t eh){
+    return euclid.handle[eh].middle;
 }
 
 double get_mouse_posx(uint32_t eh){
@@ -295,6 +309,33 @@ void keywork(uint32_t eh){
     setk(eh, GLFW_KEY_ENTER, btstate);
     btstate = glfwGetKey(euclid.handle[eh].window, GLFW_KEY_BACKSPACE);
     setk(eh, GLFW_KEY_BACKSPACE, btstate);
+    btstate = glfwGetMouseButton(euclid.handle[eh].window, GLFW_MOUSE_BUTTON_RIGHT);
+    switch(btstate){
+        case GLFW_PRESS:
+            euclid.handle[eh].right = 1;
+            break;
+        default:
+            euclid.handle[eh].right = 0;
+            break;
+    }
+    btstate = glfwGetMouseButton(euclid.handle[eh].window, GLFW_MOUSE_BUTTON_MIDDLE);
+    switch(btstate){
+        case GLFW_PRESS:
+            euclid.handle[eh].middle = 1;
+            break;
+        default:
+            euclid.handle[eh].middle = 0;
+            break;
+    }
+    btstate = glfwGetMouseButton(euclid.handle[eh].window, GLFW_MOUSE_BUTTON_LEFT);
+    switch(btstate){
+        case GLFW_PRESS:
+            euclid.handle[eh].left = 1;
+            break;
+        default:
+            euclid.handle[eh].left = 0;
+            break;
+    }
     glfwGetCursorPos(euclid.handle[eh].window, &euclid.handle[eh].xpos, &euclid.handle[eh].ypos);
 }
 

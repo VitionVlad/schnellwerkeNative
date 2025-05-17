@@ -14,6 +14,11 @@ impl Image{
             textures: Texture::new(eng.render, size[0], size[1], size[2], data),
         }
     }
+    pub fn new_color(eng: Engine, color: [i8; 4]) -> Image{
+        Image{
+            textures: Texture::new(eng.render, 1, 1, 1, color.to_vec()),
+        }
+    }
     pub fn new_from_files(eng: Engine, paths: Vec<&str>) -> Image{
         let mut size: [u32; 3] = [0, 0, paths.len() as u32];
         let mut data: Vec<i8> = vec![];
