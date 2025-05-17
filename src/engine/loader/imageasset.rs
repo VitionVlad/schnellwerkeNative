@@ -33,7 +33,8 @@ impl ImageAsset{
         let tiff = fs::read(path).unwrap();
         let mut size: [u32; 2] = [0, 0];
         let idfoffset: u32 = (tiff[7] as u32) << 24 | (tiff[6] as u32) << 16 | (tiff[5] as u32) << 8 | (tiff[4] as u32);
-        let pixelcnt = (idfoffset - 8)/3;
+        let mut begoff = 8u32;
+        let mut componentscnt = 3;
         println!("ImageLoader: TIFF idf offset = {}", idfoffset);
         let argcnt = ((tiff[idfoffset as usize + 1] as u32) << 8) | (tiff[idfoffset as usize] as u32);
         println!("ImageLoader: TIFF idf cnt = {}", argcnt);
@@ -42,17 +43,31 @@ impl ImageAsset{
             println!("ImageLoader: TIFF idf tag = {}", tag);
             if tag == 256 {
                 size[0] = (tiff[i as usize + 11] as u32) << 24 | (tiff[i as usize + 10] as u32) << 16 | (tiff[i as usize + 9] as u32) << 8 | (tiff[i as usize + 8] as u32);
-                size[1] = pixelcnt/size[0];
-                println!("ImageLoader: TIFF image resolution = {}x{}", size[0], size[1]);
-                break;
+            }
+            if tag == 257 {
+                size[1] = (tiff[i as usize + 11] as u32) << 24 | (tiff[i as usize + 10] as u32) << 16 | (tiff[i as usize + 9] as u32) << 8 | (tiff[i as usize + 8] as u32);
+            }
+            if tag == 273 {
+                let stripoff = (tiff[i as usize + 11] as u32) << 24 | (tiff[i as usize + 10] as u32) << 16 | (tiff[i as usize + 9] as u32) << 8 | (tiff[i as usize + 8] as u32);
+                begoff = (tiff[stripoff as usize + 3] as u32) << 24 | (tiff[stripoff as usize + 2] as u32) << 16 | (tiff[stripoff as usize + 1] as u32) << 8 | (tiff[stripoff as usize] as u32);
+            }
+            if tag == 277 {
+                componentscnt = (tiff[i as usize + 11] as u32) << 24 | (tiff[i as usize + 10] as u32) << 16 | (tiff[i as usize + 9] as u32) << 8 | (tiff[i as usize + 8] as u32);
             }
         }
+        println!("ImageLoader: TIFF image resolution = {}x{}", size[0], size[1]);
+        println!("ImageLoader: TIFF begoffset = {}", begoff);
+        println!("ImageLoader: TIFF number of components per pixel = {}", componentscnt);
         let mut data: Vec<i8> = vec![];
-        for i in (8..idfoffset).step_by(3){
-            data.push(tiff[i as usize] as i8);
-            data.push(tiff[i as usize + 1] as i8);
-            data.push(tiff[i as usize + 2] as i8);
-            data.push(i8::MAX);
+        for i in (begoff..size[0]*size[1]*componentscnt).step_by(componentscnt as usize){
+            for j in 0..componentscnt{
+                data.push(tiff[i as usize + j as usize] as i8);
+            }
+            if 4 - componentscnt > 0{
+                for _ in 0..(4 - componentscnt){
+                    data.push(i8::MAX);
+                }
+            }
         }
         ImageAsset { 
             data: data, 
