@@ -1,6 +1,6 @@
 use std::fs;
 
-use engine::{engine::Engine, image::Image, light::LightType, loader::imageasset::ImageAsset, material::Material, model::Model, object::Object, plane::PLANE};
+use engine::{engine::Engine, image::Image, light::LightType, material::Material, model::Model, object::Object, plane::PLANE};
 mod engine;
 
 fn main() {
@@ -19,10 +19,6 @@ fn main() {
         127, 127, 127, 127,
     ];
 
-    let mut tiff = ImageAsset::load_tiff("assets/texture.tiff");
-    let mut tiff2 = ImageAsset::load_tiff("assets/texture2.tiff");
-    tiff.data.append(&mut tiff2.data);
-
     let vert = fs::read("shaders/vert").unwrap();
     let frag = fs::read("shaders/frag").unwrap();
     let dvert = fs::read("shaders/vdeffered").unwrap();
@@ -31,7 +27,7 @@ fn main() {
     let mat = Material::new(eng, vert, frag, vec![], engine::render::render::CullMode::CullModeNone);
     let mat2 = Material::new(eng, dvert, dfrag, shadow, engine::render::render::CullMode::CullModeNone);
     let image = Image::new(eng, [2, 2, 2], img);
-    let img2 = Image::new(eng, [tiff.size[0], tiff.size[1], 2], tiff.data);
+    let img2 = Image::new_from_files(eng, vec!["assets/texture2.tiff", "assets/texture.tiff"]);
 
     let model = Model::new(eng, PLANE.to_vec());
     let mut mesh = Object::new(eng, model, mat, image, engine::render::render::MeshUsage::LightingPass, true);
