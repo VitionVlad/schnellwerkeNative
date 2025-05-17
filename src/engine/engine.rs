@@ -57,6 +57,20 @@ impl Engine{
             self.render.set_deffered_uniform_data(i*4+202, self.cameras[i as usize].physic_object.rot.z);
             self.render.set_deffered_uniform_data(i*4+203, 0.0);
         }
+        for i in 0..u32::min(self.used_light_count, 100){
+            let mt = self.lights[i as usize].getvec();
+            for j in 0..16{
+                self.render.set_shadow_uniform_data(j+i*16, mt[j as usize]);
+            }
+            self.render.set_shadow_uniform_data(i*4+1600, self.lights[i as usize].pos.x);
+            self.render.set_shadow_uniform_data(i*4+1601, self.lights[i as usize].pos.y);
+            self.render.set_shadow_uniform_data(i*4+1602, self.lights[i as usize].pos.z);
+            self.render.set_shadow_uniform_data(i*4+1603, 0.0);
+            self.render.set_shadow_uniform_data(i*4+2000, self.lights[i as usize].color.x);
+            self.render.set_shadow_uniform_data(i*4+2001, self.lights[i as usize].color.y);
+            self.render.set_shadow_uniform_data(i*4+2002, self.lights[i as usize].color.z);
+            self.render.set_shadow_uniform_data(i*4+2003, 0.0);
+        }
         self.control.get_mouse_pos();
         return self.render.continue_loop();
     }

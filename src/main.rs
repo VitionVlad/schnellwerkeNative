@@ -1,6 +1,6 @@
 use std::fs;
 
-use engine::{engine::Engine, image::Image, loader::imageasset::ImageAsset, material::Material, model::Model, object::Object, plane::PLANE};
+use engine::{engine::Engine, image::Image, light::LightType, loader::imageasset::ImageAsset, material::Material, model::Model, object::Object, plane::PLANE};
 mod engine;
 
 fn main() {
@@ -40,6 +40,7 @@ fn main() {
     eng.cameras[0].physic_object.gravity = false;
     eng.cameras[0].physic_object.is_static = false;
     eng.control.mouse_lock = true;
+    eng.lights[0].light_type = LightType::Spot;
     while eng.work(){
         eng.cameras[0].physic_object.rot.x = eng.control.ypos as f32/eng.render.resolution_y as f32;
         eng.cameras[0].physic_object.rot.y = eng.control.xpos as f32/eng.render.resolution_x as f32;
@@ -62,6 +63,8 @@ fn main() {
         if eng.control.get_key_state(49){
           eng.control.mouse_lock = false;
         }
+        eng.lights[0].pos = eng.cameras[0].physic_object.pos;
+        eng.lights[0].rot = eng.cameras[0].physic_object.rot;
         mesh.exec(&mut eng);
         mesh2.exec(&mut eng);
     }

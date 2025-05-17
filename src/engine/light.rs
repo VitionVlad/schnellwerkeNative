@@ -37,6 +37,7 @@ impl Light{
     pub fn getvec(&mut self) -> Vec<f32>{
         self.cameras.physic_object.pos = self.pos;
         self.cameras.physic_object.rot = self.rot;
+        self.cameras.is_orthographic = self.light_type == LightType::Directional; 
         return self.cameras.get_projection(1f32).mat.to_vec();
     }
 }
