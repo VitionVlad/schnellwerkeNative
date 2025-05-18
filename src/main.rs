@@ -1,30 +1,36 @@
 use std::fs;
 
-use engine::{engine::Engine, image::Image, light::LightType, material::Material, model::Model, object::Object, plane::PLANE};
+use engine::{engine::Engine, image::Image, light::LightType, loader::modelasset::ModelAsset, material::Material, model::Model, object::Object, plane::PLANE};
 mod engine;
 
 fn main() {
     const SPEED: f32 = 0.001f32;
     let mut eng = Engine::new();
+    eng.lights[0].light_type = LightType::Spot;
 
     let vert = fs::read("shaders/vert").unwrap();
     let frag = fs::read("shaders/frag").unwrap();
     let dvert = fs::read("shaders/vdeffered").unwrap();
     let dfrag = fs::read("shaders/fdeffered").unwrap();
     let shadow = fs::read("shaders/shadow").unwrap();
+
     let mat = Material::new(eng, vert, frag, vec![], engine::render::render::CullMode::CullModeNone);
     let mat2 = Material::new(eng, dvert, dfrag, shadow, engine::render::render::CullMode::CullModeNone);
+
     let image = Image::new_color(eng, [i8::MAX, i8::MAX, i8::MAX, i8::MAX]);
     let img2 = Image::new_from_files(eng, vec!["assets/texture2.tiff", "assets/texture.tiff"]);
 
+    let obj = ModelAsset::load_obj("assets/model.obj");
+
     let model = Model::new(eng, PLANE.to_vec());
+    let ldobj = Model::new(eng, obj.vertices);
     let mut mesh = Object::new(eng, model, mat, image, engine::render::render::MeshUsage::LightingPass, true);
-    let mut mesh2 = Object::new(eng, model, mat2, img2, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
+    let mut mesh2 = Object::new(eng, ldobj, mat2, img2, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
 
     eng.cameras[0].physic_object.gravity = false;
     eng.cameras[0].physic_object.is_static = false;
+    eng.cameras[0].physic_object.pos.z = -5f32;
     eng.control.mouse_lock = true;
-    eng.lights[0].light_type = LightType::Spot;
     while eng.work(){
         eng.cameras[0].physic_object.rot.x = eng.control.ypos as f32/eng.render.resolution_y as f32;
         eng.cameras[0].physic_object.rot.y = eng.control.xpos as f32/eng.render.resolution_x as f32;
