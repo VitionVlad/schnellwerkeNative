@@ -22,7 +22,7 @@ impl Engine{
         Engine { 
             render: rn,
             control: Control::new(rn), 
-            cameras: [Camera{ physic_object: PhysicsObject::new(vec![Vec3::newdefined(0.25, 0f32, 0.25), Vec3::newdefined(-0.25, -5f32, -0.25)], false), fov: 90f32, znear: 0.1f32, zfar: 100f32, is_orthographic: false, rotation_colision_calc: false }; 10],
+            cameras: [Camera{ physic_object: PhysicsObject::new(vec![Vec3::newdefined(0.25, 0f32, 0.25), Vec3::newdefined(-0.25, -2f32, -0.25)], false), fov: 90f32, znear: 0.1f32, zfar: 100f32, is_orthographic: false, rotation_colision_calc: false }; 10],
             used_camera_count: 1,
             lights: [Light::new(super::light::LightType::Directional); 100],
             used_light_count: 1,

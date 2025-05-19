@@ -23,13 +23,20 @@ fn main() {
     let obj = ModelAsset::load_obj("assets/model.obj");
 
     let model = Model::new(eng, PLANE.to_vec());
-    let ldobj = Model::new(eng, obj.vertices);
-    let mut mesh = Object::new(eng, model, mat, image, engine::render::render::MeshUsage::LightingPass, true);
-    let mut mesh2 = Object::new(eng, ldobj, mat2, img2, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
+    let ldobj1 = Model::new(eng, obj.vertices[0].clone());
+    let ldobj2 = Model::new(eng, obj.vertices[1].clone());
+    let ldobj3 = Model::new(eng, obj.vertices[2].clone());
 
-    eng.cameras[0].physic_object.gravity = false;
-    eng.cameras[0].physic_object.is_static = false;
-    eng.cameras[0].physic_object.pos.z = -5f32;
+    let mut mesh = Object::new(eng, model, mat, image, engine::render::render::MeshUsage::LightingPass, true);
+    let mut mesh2 = Object::new(eng, ldobj1, mat2, img2, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
+    let mut mesh3 = Object::new(eng, ldobj2, mat2, img2, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
+    let mut mesh4 = Object::new(eng, ldobj3, mat2, img2, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
+
+    eng.cameras[0].physic_object.gravity = true;
+    eng.cameras[0].physic_object.pos.x = -2.5f32;
+    eng.cameras[0].physic_object.pos.y = 25f32;
+    eng.cameras[0].physic_object.mass = 0.005f32;
+    eng.cameras[0].physic_object.solid = true;
     eng.control.mouse_lock = true;
     while eng.work(){
         eng.cameras[0].physic_object.rot.x = eng.control.ypos as f32/eng.render.resolution_y as f32;
@@ -53,12 +60,17 @@ fn main() {
         if eng.control.get_key_state(49){
           eng.control.mouse_lock = false;
         }
+        if eng.control.get_key_state(0){
+          eng.control.mouse_lock = true;
+        }
         if eng.control.mousebtn[0]{
           eng.lights[0].pos = eng.cameras[0].physic_object.pos;
           eng.lights[0].rot = eng.cameras[0].physic_object.rot;
         }
         mesh.exec(&mut eng);
         mesh2.exec(&mut eng);
+        mesh3.exec(&mut eng);
+        mesh4.exec(&mut eng);
     }
     eng.end();
 }

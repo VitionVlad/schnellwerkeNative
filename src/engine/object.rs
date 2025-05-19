@@ -23,6 +23,8 @@ impl Object {
             self.physic_object.reset_states();
             for _ in 0..eng.times_to_calculate_physics {
                 self.physic_object.exec();
+            }
+            if eng.times_to_calculate_physics > 0{
                 for i in 0..u32::min(eng.used_camera_count, 10){
                     eng.cameras[i as usize].physic_object.interact_with_other_object(self.physic_object);
                 }

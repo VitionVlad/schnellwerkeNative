@@ -4,7 +4,7 @@
 use std::{fs::File, io::{BufRead, BufReader}};
 
 pub struct ModelAsset{
-    pub vertices: Vec<f32>,
+    pub vertices: Vec<Vec<f32>>,
 }
 
 impl ModelAsset{
@@ -20,28 +20,40 @@ impl ModelAsset{
         let mut inorm: Vec<u32> = vec![];
 
         let mut fnvrt: Vec<f32> = vec![];
+        let mut fnobj: Vec<Vec<f32>> = vec![];
+        
+        let mut objcnt = 0usize;
+        let mut objbegind: Vec<[usize; 3]> = vec![];
         for line in reader.lines() {
             let va = line.unwrap_or_default();
             if va.clone().chars().next().unwrap_or_default() == '#' {
-                continue
+                continue;
+            }
+            if va.clone().as_bytes()[0] == b'o' && va.clone().as_bytes()[1] == b' '{
+                objcnt += 1usize;
+                objbegind.push([ivert.len(), iuv.len(), inorm.len()]);
+                continue;
             }
             if va.clone().as_bytes()[0] == b'v' && va.clone().as_bytes()[1] == b' '{
                 let spl: Vec<&str> = va.split(' ').collect();
                 let pos: [f32; 3] = [spl[1].parse::<f32>().unwrap(), spl[2].parse::<f32>().unwrap(), spl[3].parse::<f32>().unwrap()];
                 vert.push(pos);
                 println!("ModelLoader: obj vert = ({}, {}, {})", pos[0], pos[1], pos[2]);
+                continue;
             }
             if va.clone().as_bytes()[0] == b'v' && va.clone().as_bytes()[1] == b't'{
                 let spl: Vec<&str> = va.split(' ').collect();
                 let uvc: [f32; 2] = [spl[1].parse::<f32>().unwrap(), spl[2].parse::<f32>().unwrap()];
                 uv.push(uvc);
                 println!("ModelLoader: obj uv = ({}, {})", uvc[0], uvc[1]);
+                continue;
             }
             if va.clone().as_bytes()[0] == b'v' && va.clone().as_bytes()[1] == b'n'{
                 let spl: Vec<&str> = va.split(' ').collect();
                 let normal: [f32; 3] = [spl[1].parse::<f32>().unwrap(), spl[2].parse::<f32>().unwrap(), spl[3].parse::<f32>().unwrap()];
                 norm.push(normal);
                 println!("ModelLoader: obj normal = ({}, {}, {})", normal[0], normal[1], normal[2]);
+                continue;
             }
             if va.clone().as_bytes()[0] == b'f' && va.clone().as_bytes()[1] == b' '{
                 let spl: Vec<&str> = va.split(' ').collect();
@@ -61,24 +73,30 @@ impl ModelAsset{
                 iuv.push(uvi[1]);
                 iuv.push(uvi[2]);
                 println!("ModelLoader: obj face = p({}, {}, {}) u({}, {}, {}) n({}, {}, {})", posi[0], posi[1], posi[2], uvi[0], uvi[1], uvi[2], normali[0], normali[1], normali[2]);
+                continue;
             }
         }
-        for i in 0..ivert.len(){
-            fnvrt.push(vert[ivert[i] as usize - 1][0]);
-            fnvrt.push(vert[ivert[i] as usize - 1][1]);
-            fnvrt.push(vert[ivert[i] as usize - 1][2]);
-        }
-        for i in 0..iuv.len(){
-            fnvrt.push(uv[iuv[i] as usize - 1][0]);
-            fnvrt.push(uv[iuv[i] as usize - 1][1]);
-        }
-        for i in 0..inorm.len(){
-            fnvrt.push(norm[inorm[i] as usize - 1][0]);
-            fnvrt.push(norm[inorm[i] as usize - 1][1]);
-            fnvrt.push(norm[inorm[i] as usize - 1][2]);
+        objbegind.push([ivert.len(), iuv.len(), inorm.len()]);
+        for j in 0..objcnt{
+            for i in objbegind[j][0]..objbegind[j+1][0]{
+                fnvrt.push(vert[ivert[i] as usize - 1][0]);
+                fnvrt.push(vert[ivert[i] as usize - 1][1]);
+                fnvrt.push(vert[ivert[i] as usize - 1][2]);
+            }
+            for i in objbegind[j][1]..objbegind[j+1][1]{
+                fnvrt.push(uv[iuv[i] as usize - 1][0]);
+                fnvrt.push(uv[iuv[i] as usize - 1][1]);
+            }
+            for i in objbegind[j][2]..objbegind[j+1][2]{
+                fnvrt.push(norm[inorm[i] as usize - 1][0]);
+                fnvrt.push(norm[inorm[i] as usize - 1][1]);
+                fnvrt.push(norm[inorm[i] as usize - 1][2]);
+            }
+            fnobj.push(fnvrt.clone());
+            fnvrt = vec![];
         }
         ModelAsset { 
-            vertices: fnvrt, 
+            vertices:fnobj, 
         }
     }
 }
