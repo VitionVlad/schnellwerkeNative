@@ -69,7 +69,7 @@ impl PhysicsObject{
             v2: v[1],
             is_static: is_static,
             is_interacting: false,
-            elasticity: 1.0f32,
+            elasticity: 0.0f32,
             gravity: true,
             air_friction: 0.9f32,
             pos: Vec3::new(),
@@ -255,7 +255,7 @@ impl PhysicsObject{
                     self.speed.z = -self.speed.z * self.elasticity;
                     self.retur = true;
                 }else{
-                    self.pos.y += ph2.savedp1.y - self.savedp2.y - 0.01;
+                    self.pos.y += ph2.savedp1.y - self.savedp2.y - 0.001f32;
                 }
             }
         }

@@ -182,6 +182,7 @@ void quitfullscreen(uint32_t eh){
 uint8_t getKeyPressed(uint32_t eh, uint32_t index){
     return euclid.handle[eh].key_state[index];
 }
+
 uint8_t getmr(uint32_t eh){
     return euclid.handle[eh].right;
 }

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use super::{camera::Camera, light::Light, math::vec3::Vec3, physics::PhysicsObject, render::render::{Control, Render}};
+use super::{camera::Camera, light::Light, math::vec3::Vec3, object::Object, physics::PhysicsObject, render::render::{Control, Render}};
 
 #[derive(Copy, Clone)]
 pub struct Engine{
@@ -31,7 +31,7 @@ impl Engine{
             times_to_calculate_physics: 0,
         }
     }
-    pub fn work(&mut self) -> bool{
+    pub fn work(&mut self, mut objects: Vec<&mut Object>) -> bool{
         self.cumulated_time += self.render.frametime;
         self.times_to_calculate_physics = (self.cumulated_time/self.physics_tick as f32).floor() as u32;
         if self.times_to_calculate_physics >= 1{
@@ -40,10 +40,6 @@ impl Engine{
         self.render.camera_count = self.used_camera_count;
         self.render.shadow_map_count = self.used_light_count;
         for i in 0..u32::min(self.used_camera_count, 10){
-            self.cameras[i as usize].physic_object.reset_states();
-            for _ in 0..self.times_to_calculate_physics {
-                self.cameras[i as usize].physic_object.exec();
-            }
             let mt = self.cameras[i as usize].get_projection(self.render.resolution_x as f32/self.render.resolution_y as f32);
             for j in 0..16{
                 self.render.set_deffered_uniform_data(j+i*16, mt.mat[j as usize]);
@@ -72,6 +68,18 @@ impl Engine{
             self.render.set_shadow_uniform_data(i*4+2003, 0.0);
         }
         self.control.get_mouse_pos();
+        for i in 0..objects.len(){
+            objects[i].exec();
+        }
+        for _ in 0..self.times_to_calculate_physics{
+            for i in 0..u32::min(self.used_camera_count, 10){
+                self.cameras[i as usize].physic_object.reset_states();
+                self.cameras[i as usize].physic_object.exec();
+            }
+            for i in 0..objects.len(){
+                objects[i].execph(self);
+            }
+        }
         return self.render.continue_loop();
     }
     pub fn end(&mut self){

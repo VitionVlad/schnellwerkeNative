@@ -18,18 +18,16 @@ impl Object {
             usage: usage,
         }
     }
-    pub fn exec(&mut self, eng: &mut Engine){
+    pub fn execph(&mut self, eng: &mut Engine){
         if self.usage == MeshUsage::DefferedPass || self.usage == MeshUsage::ShadowAndDefferedPass {
             self.physic_object.reset_states();
-            for _ in 0..eng.times_to_calculate_physics {
-                self.physic_object.exec();
-            }
-            if eng.times_to_calculate_physics > 0{
-                for i in 0..u32::min(eng.used_camera_count, 10){
-                    eng.cameras[i as usize].physic_object.interact_with_other_object(self.physic_object);
-                }
+            self.physic_object.exec();
+            for i in 0..u32::min(eng.used_camera_count, 10){
+                eng.cameras[i as usize].physic_object.interact_with_other_object(self.physic_object);
             }
         }
+    }
+    pub fn exec(&mut self){
         let mut ubm = Mat4::new();
         ubm.trans(self.physic_object.pos);
         let mut t: Mat4 = Mat4::new();
