@@ -3,8 +3,11 @@
 
 use std::{fs::File, io::{BufRead, BufReader}};
 
+use super::mtlasset::MtlAsset;
+
 pub struct ModelAsset{
     pub vertices: Vec<Vec<f32>>,
+    pub mtl: MtlAsset,
 }
 
 impl ModelAsset{
@@ -24,9 +27,24 @@ impl ModelAsset{
         
         let mut objcnt = 0usize;
         let mut objbegind: Vec<[usize; 3]> = vec![];
+
+        let mut mtl: MtlAsset = MtlAsset { matinfo: vec![] };
         for line in reader.lines() {
             let va = line.unwrap_or_default();
             if va.clone().chars().next().unwrap_or_default() == '#' {
+                continue;
+            }
+            let spl: Vec<&str> = va.split(' ').collect();
+            if spl[0] == "mtllib"{
+                let pspl: Vec<&str> = path.split('/').collect();
+                let mut mtlp: String = "".to_string();
+                for i in 0..pspl.len()-1{
+                    mtlp += &pspl[i].to_string();
+                    mtlp += "/";
+                }
+                mtlp += &spl[1].to_string();
+                println!("ModelLoader: Loading mtl by path: {}", mtlp);
+                mtl = MtlAsset::load_mtl(&mtlp);
                 continue;
             }
             if va.clone().as_bytes()[0] == b'o' && va.clone().as_bytes()[1] == b' '{
@@ -96,7 +114,8 @@ impl ModelAsset{
             fnvrt = vec![];
         }
         ModelAsset { 
-            vertices:fnobj, 
+            vertices: fnobj, 
+            mtl: mtl,
         }
     }
 }

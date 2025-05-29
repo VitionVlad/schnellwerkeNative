@@ -10,7 +10,7 @@ pub struct Model{
 }
 
 impl Model{
-    pub fn new(engine: Engine, vertices: Vec<f32>) -> Model{
+    pub fn new(engine: &Engine, vertices: Vec<f32>) -> Model{
         let pt = getpoints(vertices.clone());
         Model { 
             vertexbuf: Vertexes::new(engine.render, vertices),

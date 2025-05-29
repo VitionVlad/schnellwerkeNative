@@ -11,3 +11,4 @@ pub mod image;
 pub mod material;
 pub mod model;
 pub mod object;
+pub mod scene;

@@ -1,6 +1,6 @@
 use std::fs;
 
-use engine::{engine::Engine, image::Image, light::LightType, loader::modelasset::ModelAsset, material::Material, model::Model, object::Object, plane::PLANE};
+use engine::{engine::Engine, image::Image, light::LightType, material::Material, model::Model, object::Object, plane::PLANE, scene::Scene};
 mod engine;
 
 fn main() {
@@ -14,36 +14,22 @@ fn main() {
     let dfrag = fs::read("shaders/fdeffered").unwrap();
     let shadow = fs::read("shaders/shadow").unwrap();
 
-    let mat = Material::new(eng, vert, frag, vec![], engine::render::render::CullMode::CullModeNone);
-    let mat2 = Material::new(eng, dvert, dfrag, shadow, engine::render::render::CullMode::CullModeNone);
+    let mat = Material::new(&eng, vert, frag, vec![], engine::render::render::CullMode::CullModeNone);
+    let mat2 = Material::new(&eng, dvert, dfrag, shadow, engine::render::render::CullMode::CullModeNone);
 
-    let image = Image::new_color(eng, [i8::MAX, i8::MAX, i8::MAX, i8::MAX]);
-    let img2 = Image::new_from_files(eng, vec!["assets/texture2.tiff", "assets/texture.tiff"]);
+    let image = Image::new_color(&eng, [i8::MAX, i8::MAX, i8::MAX, i8::MAX]);
+    let model = Model::new(&eng, PLANE.to_vec());
+    let mut mesh = Object::new(&mut eng, model, mat, image, engine::render::render::MeshUsage::LightingPass, true);
 
-    let obj = ModelAsset::load_obj("assets/model.obj");
-
-    let model = Model::new(eng, PLANE.to_vec());
-    let ldobj1 = Model::new(eng, obj.vertices[0].clone());
-    let ldobj2 = Model::new(eng, obj.vertices[1].clone());
-    let ldobj3 = Model::new(eng, obj.vertices[2].clone());
-
-    let mut mesh = Object::new(eng, model, mat, image, engine::render::render::MeshUsage::LightingPass, true);
-    let mut mesh2 = Object::new(eng, ldobj1, mat2, img2, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
-    let mut mesh3 = Object::new(eng, ldobj2, mat2, img2, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
-    let mut mesh4 = Object::new(eng, ldobj3, mat2, img2, engine::render::render::MeshUsage::ShadowAndDefferedPass, true);
+    let mut scn = Scene::load_from_obj(&mut eng, "assets/model.obj", mat2);
 
     eng.cameras[0].physic_object.gravity = true;
-    eng.cameras[0].physic_object.pos.x = -2.5f32;
     eng.cameras[0].physic_object.pos.y = 25f32;
     eng.cameras[0].physic_object.mass = 0.005f32;
     eng.cameras[0].physic_object.solid = true;
     eng.control.mouse_lock = true;
-    while eng.work(vec![
-      &mut mesh, 
-      &mut mesh2,
-      &mut mesh3,
-      &mut mesh4,
-    ]){
+
+    while eng.work(){
       eng.cameras[0].physic_object.rot.x = eng.control.ypos as f32/eng.render.resolution_y as f32;
       eng.cameras[0].physic_object.rot.y = eng.control.xpos as f32/eng.render.resolution_x as f32;
       if eng.control.get_key_state(40){
@@ -72,6 +58,9 @@ fn main() {
         eng.lights[0].pos = eng.cameras[0].physic_object.pos;
         eng.lights[0].rot = eng.cameras[0].physic_object.rot;
       }
+
+      mesh.exec(&mut eng);
+      scn.exec(&mut eng);
     }
     eng.end();
 }

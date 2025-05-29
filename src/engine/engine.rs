@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use super::{camera::Camera, light::Light, math::vec3::Vec3, object::Object, physics::PhysicsObject, render::render::{Control, Render}};
+use super::{camera::Camera, light::Light, math::vec3::Vec3, physics::PhysicsObject, render::render::{Control, MeshUsage, Render}};
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct Engine{
     pub render: Render,
     pub control: Control,
@@ -14,6 +14,8 @@ pub struct Engine{
     pub physics_tick: u32,
     cumulated_time: f32,
     pub times_to_calculate_physics: u32,
+    pub obj_ph: Vec<PhysicsObject>,
+    pub obj_us: Vec<MeshUsage>,
 }
 
 impl Engine{
@@ -29,9 +31,11 @@ impl Engine{
             physics_tick: 4,
             cumulated_time: 0.0,
             times_to_calculate_physics: 0,
+            obj_ph: vec![],
+            obj_us: vec![],
         }
     }
-    pub fn work(&mut self, mut objects: Vec<&mut Object>) -> bool{
+    pub fn work(&mut self) -> bool{
         self.cumulated_time += self.render.frametime;
         self.times_to_calculate_physics = (self.cumulated_time/self.physics_tick as f32).floor() as u32;
         if self.times_to_calculate_physics >= 1{
@@ -68,16 +72,19 @@ impl Engine{
             self.render.set_shadow_uniform_data(i*4+2003, 0.0);
         }
         self.control.get_mouse_pos();
-        for i in 0..objects.len(){
-            objects[i].exec();
-        }
         for _ in 0..self.times_to_calculate_physics{
             for i in 0..u32::min(self.used_camera_count, 10){
                 self.cameras[i as usize].physic_object.reset_states();
                 self.cameras[i as usize].physic_object.exec();
             }
-            for i in 0..objects.len(){
-                objects[i].execph(self);
+            for i in 0..self.obj_ph.len(){
+                if self.obj_us[i] == MeshUsage::DefferedPass || self.obj_us[i] == MeshUsage::ShadowAndDefferedPass {
+                    self.obj_ph[i].reset_states();
+                    self.obj_ph[i].exec();
+                    for j in 0..u32::min(self.used_camera_count, 10){
+                        self.cameras[j as usize].physic_object.interact_with_other_object(self.obj_ph[i]);
+                    }
+                }
             }
         }
         return self.render.continue_loop();
