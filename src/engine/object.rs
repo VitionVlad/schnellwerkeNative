@@ -15,8 +15,9 @@ impl Object {
     pub fn new(engine: &mut Engine, model: Model, material: Material, image: Image, usage: MeshUsage, is_static: bool) -> Object{
         let ph = PhysicsObject::new(model.points.to_vec(), is_static);
         let id = engine.obj_ph.len();
-        engine.obj_ph.push(ph);
-        engine.obj_us.push(usage);
+        if usage == MeshUsage::DefferedPass || usage == MeshUsage::ShadowAndDefferedPass{
+            engine.obj_ph.push(ph);
+        }
         Object { 
             mesh: Mesh::new(engine.render, model.vertexbuf, material.material_shaders, image.textures, usage),
             physic_object: ph,
@@ -34,9 +35,11 @@ impl Object {
         }
     }
     pub fn exec(&mut self, eng: &mut Engine){
-        let th = self.physic_object.clone();
-        self.physic_object = eng.obj_ph[self.eng_ph_id];
-        eng.obj_ph[self.eng_ph_id] = th;
+        if self.usage == MeshUsage::DefferedPass || self.usage == MeshUsage::ShadowAndDefferedPass{
+            let th = self.physic_object.clone();
+            self.physic_object = eng.obj_ph[self.eng_ph_id];
+            eng.obj_ph[self.eng_ph_id] = th;
+        }
         let mut ubm = Mat4::new();
         ubm.trans(self.physic_object.pos);
         let mut t: Mat4 = Mat4::new();
@@ -52,7 +55,7 @@ impl Object {
         t.scale(self.physic_object.scale);
         ubm.mul(&t);
         ubm.transpose();
-        for i in 0.. self.mesh.ubo.len(){
+        for i in 0..16{
             self.mesh.ubo[i] = ubm.mat[i];
         }
         self.mesh.exec();

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use super::{camera::Camera, light::Light, math::vec3::Vec3, physics::PhysicsObject, render::render::{Control, MeshUsage, Render}};
+use super::{camera::Camera, light::Light, math::vec3::Vec3, physics::PhysicsObject, render::render::{Control, Render}};
 
 #[derive(Clone)]
 pub struct Engine{
@@ -15,7 +15,6 @@ pub struct Engine{
     cumulated_time: f32,
     pub times_to_calculate_physics: u32,
     pub obj_ph: Vec<PhysicsObject>,
-    pub obj_us: Vec<MeshUsage>,
 }
 
 impl Engine{
@@ -32,7 +31,6 @@ impl Engine{
             cumulated_time: 0.0,
             times_to_calculate_physics: 0,
             obj_ph: vec![],
-            obj_us: vec![],
         }
     }
     pub fn work(&mut self) -> bool{
@@ -78,12 +76,10 @@ impl Engine{
                 self.cameras[i as usize].physic_object.exec();
             }
             for i in 0..self.obj_ph.len(){
-                if self.obj_us[i] == MeshUsage::DefferedPass || self.obj_us[i] == MeshUsage::ShadowAndDefferedPass {
-                    self.obj_ph[i].reset_states();
-                    self.obj_ph[i].exec();
-                    for j in 0..u32::min(self.used_camera_count, 10){
-                        self.cameras[j as usize].physic_object.interact_with_other_object(self.obj_ph[i]);
-                    }
+                self.obj_ph[i].reset_states();
+                self.obj_ph[i].exec();
+                for j in 0..u32::min(self.used_camera_count, 10){
+                    self.cameras[j as usize].physic_object.interact_with_other_object(self.obj_ph[i]);
                 }
             }
         }

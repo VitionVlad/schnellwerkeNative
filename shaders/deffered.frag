@@ -22,6 +22,7 @@ layout(binding = 1) uniform MeshInput {
     vec4 resolutions;
     vec4 lightinfo;
     mat4 model;
+    vec4 addinfo;
 } mi;
 
 layout(binding = 2) uniform sampler2DArray texSampler;

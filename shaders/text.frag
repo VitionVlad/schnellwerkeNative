@@ -32,5 +32,5 @@ layout(binding = 5) uniform sampler2DArray defferedDepthSampler;
 layout(binding = 6) uniform sampler2DArray shadowSampler;
 
 void main() {
-    outColor = vec4(texture(defferedSampler, vec3(uv, 0)).rgb, 1.0);
+    outColor = vec4(texture(texSampler, vec3(uv.x/mi.addinfo.x + (1.0/mi.addinfo.x)*mi.addinfo.y, -uv.y, 0)).rgb, 1.0);
 }

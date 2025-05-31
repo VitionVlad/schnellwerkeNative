@@ -16,6 +16,7 @@ layout(binding = 0) uniform MeshInput {
     vec4 resolutions;
     vec4 lightinfo;
     mat4 model;
+    vec4 addinfo;
 } mi;
 
 layout(binding = 1) uniform ShadowMatricesInput {
@@ -26,11 +27,12 @@ layout(binding = 1) uniform ShadowMatricesInput {
 
 layout(binding = 2) uniform DefferedMatricesInput {
     mat4 defferedViews[10];
-    vec4 lightpos[10];
-    vec4 lightcol[10];
+    vec4 campos[10];
+    vec4 camrot[10];
 } dmi;
 
 void main() {
     fuv = uv;
-    gl_Position = vec4(pos, 1.0);
+    vec4 fpos = mi.model * vec4(pos, 1.0);
+    gl_Position = vec4(fpos.x/mi.resolutions.x, fpos.y/mi.resolutions.y, fpos.z, fpos.w);
 }

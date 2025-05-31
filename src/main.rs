@@ -1,10 +1,10 @@
 use std::fs;
 
-use engine::{engine::Engine, image::Image, light::LightType, material::Material, model::Model, object::Object, plane::PLANE, scene::Scene};
+use engine::{engine::Engine, image::Image, light::LightType, material::Material, scene::Scene, ui::{UIplane, UItext}};
 mod engine;
 
 fn main() {
-    const SPEED: f32 = 0.001f32;
+    const SPEED: f32 = 0.0025f32;
     let mut eng = Engine::new();
     eng.lights[0].light_type = LightType::Spot;
 
@@ -13,13 +13,17 @@ fn main() {
     let dvert = fs::read("shaders/vdeffered").unwrap();
     let dfrag = fs::read("shaders/fdeffered").unwrap();
     let shadow = fs::read("shaders/shadow").unwrap();
+    let textf = fs::read("shaders/ftext").unwrap();
 
-    let mat = Material::new(&eng, vert, frag, vec![], engine::render::render::CullMode::CullModeNone);
+    let mat = Material::new(&eng, vert.clone(), frag, vec![], engine::render::render::CullMode::CullModeNone);
+    let matt = Material::new(&eng, vert, textf, vec![], engine::render::render::CullMode::CullModeNone);
     let mat2 = Material::new(&eng, dvert, dfrag, shadow, engine::render::render::CullMode::CullModeNone);
 
     let image = Image::new_color(&eng, [i8::MAX, i8::MAX, i8::MAX, i8::MAX]);
-    let model = Model::new(&eng, PLANE.to_vec());
-    let mut mesh = Object::new(&mut eng, model, mat, image, engine::render::render::MeshUsage::LightingPass, true);
+    let mut viewport = UIplane::new(&mut eng, mat, image);
+
+    let font = Image::new_from_files(&eng, vec!["assets/text.tiff".to_string()]);
+    let mut text = UItext::new(&mut eng, matt, font, "abcdefghijklmnopqrstuvwxyz0123456789,.;");
 
     let mut scn = Scene::load_from_obj(&mut eng, "assets/model.obj", mat2);
 
@@ -59,8 +63,14 @@ fn main() {
         eng.lights[0].rot = eng.cameras[0].physic_object.rot;
       }
 
-      mesh.exec(&mut eng);
+      viewport.object.physic_object.scale.x = eng.render.resolution_x as f32;
+      viewport.object.physic_object.scale.y = eng.render.resolution_y as f32;
+      viewport.exec(&mut eng);
       scn.exec(&mut eng);
+      text.pos.y = eng.render.resolution_y as f32 - text.size.y;
+      text.pos.x = -(eng.render.resolution_x as f32) + text.size.x;
+      text.pos.z = -0.9;
+      text.exec(&mut eng, "hello world");
     }
     eng.end();
 }

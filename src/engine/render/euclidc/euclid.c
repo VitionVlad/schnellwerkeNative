@@ -134,7 +134,7 @@ typedef struct euclidmesh{
     VkDescriptorPool defferedDescriptorPool;
     VkDescriptorSet defferedDescriptorSets[10];
     VkDescriptorSetLayout defferedDescriptorSetLayout;
-    float lub[24];
+    float lub[28];
     uint32_t drawable;
     uint32_t texid;
     uint32_t usage;
@@ -1723,7 +1723,7 @@ void createDefferedDescriptorSetLayout(uint32_t eh, uint32_t eme) {
 }
 
 void createUniformBuffer(uint32_t eh, uint32_t eme){
-    VkDeviceSize bufferSize = sizeof(float)*24;
+    VkDeviceSize bufferSize = sizeof(float)*28;
 
     euclid.meshes[eme].uniformBuffers = malloc(sizeof(VkBuffer)*(MAX_FRAMES_IN_FLIGHT+1));
     euclid.meshes[eme].uniformBuffersMemory = malloc(sizeof(VkDeviceMemory)*(MAX_FRAMES_IN_FLIGHT+1));
@@ -1843,7 +1843,7 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         VkDescriptorBufferInfo bufferInfo = {0};
         bufferInfo.buffer = euclid.meshes[eme].uniformBuffers[i];
         bufferInfo.offset = 0;
-        bufferInfo.range = 24*sizeof(float);
+        bufferInfo.range = 28*sizeof(float);
 
         VkDescriptorBufferInfo shbufferInfo = {0};
         shbufferInfo.buffer = euclid.handle[eh].shadowUniformBuffer;
@@ -1973,7 +1973,7 @@ void createShadowDescriptorSets(uint32_t eh, uint32_t eme){
 
         bufferInfo[1].buffer = euclid.meshes[eme].uniformBuffers[MAX_FRAMES_IN_FLIGHT];
         bufferInfo[1].offset = 0;
-        bufferInfo[1].range = sizeof(float)*24;
+        bufferInfo[1].range = sizeof(float)*28;
 
         VkWriteDescriptorSet descriptorWrite[2] = {0};
         descriptorWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -2022,7 +2022,7 @@ void createDefferedDescriptorSets(uint32_t eh, uint32_t eme){
 
         bufferInfo[1].buffer = euclid.meshes[eme].uniformBuffers[MAX_FRAMES_IN_FLIGHT];
         bufferInfo[1].offset = 0;
-        bufferInfo[1].range = sizeof(float)*24;
+        bufferInfo[1].range = sizeof(float)*28;
 
         VkDescriptorImageInfo imageInfo = {0};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -2645,7 +2645,7 @@ void draw(uint32_t eh, uint32_t eme){
         vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, MAX_FRAMES_IN_FLIGHT, euclid.meshes[eme].descriptorSets);
         free(euclid.meshes[eme].descriptorSets);
         createDescriptorSets(eh, eme);
-        euclid.meshes[eh].mrec = euclid.handle[eme].mrec;
+        euclid.meshes[eme].mrec = euclid.handle[eh].mrec;
     }
 
     vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].graphicsPipeline);
@@ -2674,8 +2674,8 @@ void draw(uint32_t eh, uint32_t eme){
     euclid.meshes[eme].lub[2] = (float) euclid.handle[eh].shadowMapResolution;
     euclid.meshes[eme].lub[3] = (float) euclid.handle[eh].totalFrames;
     euclid.meshes[eme].lub[4] = (float) euclid.handle[eh].shadowMapsCount;
-    euclid.meshes[eme].lub[5] = (float) euclid.handle[eh].renderResolutionX;
-    euclid.meshes[eme].lub[6] = (float) euclid.handle[eh].renderResolutionY;
+    euclid.meshes[eme].lub[5] = (float) euclid.handle[eh].resolutionScale;
+    euclid.meshes[eme].lub[6] = (float) euclid.handle[eh].defferedCount;
     memcpy(euclid.meshes[eme].uniformBuffersMapped[euclid.handle[eh].currentFrame], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
     vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].pipelineLayout, 0, 1, &euclid.meshes[eme].descriptorSets[euclid.handle[eh].currentFrame], 0, NULL);
 

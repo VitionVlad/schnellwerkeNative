@@ -12,3 +12,4 @@ pub mod material;
 pub mod model;
 pub mod object;
 pub mod scene;
+pub mod ui;

@@ -212,7 +212,7 @@ pub enum MeshUsage {
 #[derive(Copy, Clone)]
 pub struct Mesh{
     pub meshid: u32,
-    pub ubo: [f32; 16],
+    pub ubo: [f32; 20],
 }
 
 impl Mesh{
@@ -221,12 +221,12 @@ impl Mesh{
             meshid: unsafe{
                 newmesh(ren.euclid, material.materialid, model.modelid, texture.texid,usage as u32)
             },
-            ubo: [1.0; 16]
+            ubo: [1.0; 20]
         }
     }
 
     pub fn exec(&self){
-        for i in 0..16{
+        for i in 0..20{
             unsafe {
                 setmeshbuf(self.meshid, i, self.ubo[i as usize])
             };
