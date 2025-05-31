@@ -70,7 +70,9 @@ fn main() {
       text.pos.y = eng.render.resolution_y as f32 - text.size.y;
       text.pos.x = -(eng.render.resolution_x as f32) + text.size.x;
       text.pos.z = -0.9;
-      text.exec(&mut eng, "hello world");
+
+      let fps = 1000.0/eng.render.frametime;
+      text.exec(&mut eng, &format!("fps {}", fps));
     }
     eng.end();
 }

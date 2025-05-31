@@ -135,7 +135,7 @@ typedef struct euclidmesh{
     VkDescriptorSet defferedDescriptorSets[10];
     VkDescriptorSetLayout defferedDescriptorSetLayout;
     float lub[28];
-    uint32_t drawable;
+    uint8_t drawable;
     uint32_t texid;
     uint32_t usage;
     uint32_t mrec;
@@ -1191,6 +1191,12 @@ void startrender(uint32_t eh){
     vkResetFences(euclid.handle[eh].device, 1, &euclid.handle[eh].inFlightFences[euclid.handle[eh].currentFrame]);
 
     VkResult result = vkAcquireNextImageKHR(euclid.handle[eh].device, euclid.handle[eh].swapChain, UINT64_MAX, euclid.handle[eh].imageAvailableSemaphores[euclid.handle[eh].currentFrame], VK_NULL_HANDLE, &euclid.handle[eh].imageIndex);
+    if(euclid.handle[eh].resolutionX == 0){
+        euclid.handle[eh].resolutionX = 1;
+    }
+    if(euclid.handle[eh].resolutionY == 0){
+        euclid.handle[eh].resolutionY = 1;
+    }
     if (result == VK_ERROR_OUT_OF_DATE_KHR || euclid.handle[eh].oldx != euclid.handle[eh].resolutionX || euclid.handle[eh].oldy != euclid.handle[eh].resolutionY || euclid.handle[eh].resolutionScale != euclid.handle[eh].oldResolutionScale || euclid.handle[eh].defferedCount != euclid.handle[eh].oldDefferedCount) {
         printf("\e[1;36mEuclidVk\e[0;37m: Resolution changed from %dx%d to %dx%d\n", euclid.handle[eh].oldx, euclid.handle[eh].oldy, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionY);
         euclid.handle[eh].oldx = euclid.handle[eh].resolutionX;
@@ -2636,6 +2642,10 @@ uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t te, uint32_t us
 
 void setmeshbuf(uint32_t eme, uint32_t i, float val){
     euclid.meshes[eme].lub[i+8] = val;
+}
+
+void setdrawable(uint32_t eme, uint8_t val){
+    euclid.meshes[eme].drawable = val;
 }
 
 void draw(uint32_t eh, uint32_t eme){

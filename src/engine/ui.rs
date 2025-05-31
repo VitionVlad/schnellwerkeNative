@@ -46,7 +46,7 @@ impl UItext {
             planes: vec![],
             symbol_number: symbols.len() as u32,
             material: mat,
-            size: Vec2::newdefined(40.0, 80.0),
+            size: Vec2::newdefined(20.0, 40.0),
             pos: Vec3::new(),
         }
     }
@@ -57,9 +57,13 @@ impl UItext {
                 self.planes.push(Object::new(eng, self.plane, self.material, self.font, super::render::render::MeshUsage::LightingPass, true));
             }
         }
+        for i in  0..self.planes.len(){
+            self.planes[i].mesh.draw = false;
+        }
         for i in 0..bt.len(){
             for j in 0..self.symbols.len(){
                 if bt[i] == self.symbols[j] {
+                    self.planes[i].mesh.draw = true;
                     self.planes[i].mesh.ubo[16] = self.symbol_number as f32;
                     self.planes[i].mesh.ubo[17] = j as f32;
                     self.planes[i].physic_object.scale.x = self.size.x;
