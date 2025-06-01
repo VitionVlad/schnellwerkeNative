@@ -23,8 +23,8 @@ fn main() {
     let mut viewport = UIplane::new(&mut eng, mat, image);
     viewport.object.physic_object.pos.z = 1.0;
 
-    let font = Image::new_from_files(&eng, vec!["assets/text.tiff".to_string()]);
-    let mut text = UItext::new(&mut eng, matt, font, "abcdefghijklmnopqrstuvwxyz0123456789,.;");
+    let mut text = UItext::new_from_file(&mut eng, matt, "assets/text.tiff", "abcdefghijklmnopqrstuvwxyz0123456789,.;");
+    text.signal = true;
 
     let mut scn = Scene::load_from_obj(&mut eng, "assets/model.obj", mat2);
 
