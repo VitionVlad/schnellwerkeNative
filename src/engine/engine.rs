@@ -15,6 +15,9 @@ pub struct Engine{
     cumulated_time: f32,
     pub times_to_calculate_physics: u32,
     pub obj_ph: Vec<PhysicsObject>,
+    pub fps: u32,
+    cfps: u32,
+    tmpassed: f32,
 }
 
 impl Engine{
@@ -31,10 +34,20 @@ impl Engine{
             cumulated_time: 0.0,
             times_to_calculate_physics: 0,
             obj_ph: vec![],
+            fps: 0,
+            cfps: 0,
+            tmpassed: 0.0,
         }
     }
     pub fn work(&mut self) -> bool{
         self.cumulated_time += self.render.frametime;
+        self.tmpassed += self.render.frametime;
+        self.cfps += 1;
+        if self.tmpassed >= 1000.0 {
+            self.fps = self.cfps;
+            self.cfps = 0;
+            self.tmpassed = 0.0;
+        }
         self.times_to_calculate_physics = (self.cumulated_time/self.physics_tick as f32).floor() as u32;
         if self.times_to_calculate_physics >= 1{
             self.cumulated_time -= (self.times_to_calculate_physics * self.physics_tick) as f32;

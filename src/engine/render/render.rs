@@ -232,8 +232,13 @@ impl Mesh{
         for i in 0..20{
             unsafe {
                 setmeshbuf(self.meshid, i, self.ubo[i as usize]);
-                setdrawable(self.meshid, self.draw as u8);
             };
+        }
+        unsafe {
+            setdrawable(self.meshid, match self.draw {
+                true => 1,
+                false => 0,
+            });
         }
     }
 }

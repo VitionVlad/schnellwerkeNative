@@ -21,6 +21,7 @@ fn main() {
 
     let image = Image::new_color(&eng, [i8::MAX, i8::MAX, i8::MAX, i8::MAX]);
     let mut viewport = UIplane::new(&mut eng, mat, image);
+    viewport.object.physic_object.pos.z = 1.0;
 
     let font = Image::new_from_files(&eng, vec!["assets/text.tiff".to_string()]);
     let mut text = UItext::new(&mut eng, matt, font, "abcdefghijklmnopqrstuvwxyz0123456789,.;");
@@ -68,10 +69,10 @@ fn main() {
       viewport.exec(&mut eng);
       scn.exec(&mut eng);
       text.pos.y = eng.render.resolution_y as f32 - text.size.y;
-      text.pos.x = -(eng.render.resolution_x as f32) + text.size.x;
-      text.pos.z = -0.9;
+      text.pos.x = 0.0;
+      text.pos.z = 0.9;
 
-      let fps = 1000.0/eng.render.frametime;
+      let fps = eng.fps;
       text.exec(&mut eng, &format!("fps {}", fps));
     }
     eng.end();

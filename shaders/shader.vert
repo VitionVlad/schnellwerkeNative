@@ -34,5 +34,5 @@ layout(binding = 2) uniform DefferedMatricesInput {
 void main() {
     fuv = uv;
     vec4 fpos = mi.model * vec4(pos, 1.0);
-    gl_Position = vec4(fpos.x/mi.resolutions.x, fpos.y/mi.resolutions.y, fpos.z, fpos.w);
+    gl_Position = vec4((fpos.x/mi.resolutions.x)*2.0-1.0, (fpos.y/mi.resolutions.y)*2.0-1.0, fpos.z, fpos.w);
 }
