@@ -1,6 +1,8 @@
 use std::fs;
 
 use engine::{engine::Engine, image::Image, light::LightType, material::Material, scene::Scene, ui::{UIplane, UItext}};
+
+use crate::engine::speaker::Speaker;
 mod engine;
 
 fn main() {
@@ -34,6 +36,8 @@ fn main() {
     eng.cameras[0].physic_object.solid = true;
     eng.control.mouse_lock = true;
 
+    let mut sn = Speaker::new(&mut eng, "assets/audio/sample.wav");
+
     while eng.work(){
       eng.cameras[0].physic_object.rot.x = eng.control.ypos as f32/eng.render.resolution_y as f32;
       eng.cameras[0].physic_object.rot.y = eng.control.xpos as f32/eng.render.resolution_x as f32;
@@ -63,6 +67,7 @@ fn main() {
         eng.lights[0].pos = eng.cameras[0].physic_object.pos;
         eng.lights[0].rot = eng.cameras[0].physic_object.rot;
       }
+      sn.exec(&mut eng);
 
       viewport.object.physic_object.scale.x = eng.render.resolution_x as f32;
       viewport.object.physic_object.scale.y = eng.render.resolution_y as f32;

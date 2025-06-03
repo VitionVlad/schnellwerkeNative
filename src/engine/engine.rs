@@ -1,11 +1,12 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use super::{camera::Camera, light::Light, math::vec3::Vec3, physics::PhysicsObject, render::render::{Control, Render}};
+use super::{camera::Camera, light::Light, math::vec3::Vec3, physics::PhysicsObject, render::render::{Control, Render}, audio::audio::AudioEngine};
 
 #[derive(Clone)]
 pub struct Engine{
     pub render: Render,
+    pub audio: AudioEngine,
     pub control: Control,
     pub cameras: [Camera; 10],
     pub used_camera_count: u32,
@@ -18,6 +19,7 @@ pub struct Engine{
     pub fps: u32,
     cfps: u32,
     tmpassed: f32,
+    pub primary_camera: usize,
 }
 
 impl Engine{
@@ -25,6 +27,7 @@ impl Engine{
         let rn = Render::new();
         Engine { 
             render: rn,
+            audio: AudioEngine::new(),
             control: Control::new(rn), 
             cameras: [Camera{ physic_object: PhysicsObject::new(vec![Vec3::newdefined(0.25, 0f32, 0.25), Vec3::newdefined(-0.25, -2f32, -0.25)], false), fov: 90f32, znear: 0.1f32, zfar: 100f32, is_orthographic: false, rotation_colision_calc: false }; 10],
             used_camera_count: 1,
@@ -37,9 +40,11 @@ impl Engine{
             fps: 0,
             cfps: 0,
             tmpassed: 0.0,
+            primary_camera: 0,
         }
     }
     pub fn work(&mut self) -> bool{
+        self.audio.exec();
         self.cumulated_time += self.render.frametime;
         self.tmpassed += self.render.frametime;
         self.cfps += 1;
@@ -99,6 +104,7 @@ impl Engine{
         return self.render.continue_loop();
     }
     pub fn end(&mut self){
+        self.audio.destroy();
         self.render.destroy();
     }
 }

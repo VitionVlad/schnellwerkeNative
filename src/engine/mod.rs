@@ -1,4 +1,5 @@
 pub mod render;
+pub mod audio;
 pub mod math;
 pub mod loader;
 pub mod cube;
@@ -13,3 +14,4 @@ pub mod model;
 pub mod object;
 pub mod scene;
 pub mod ui;
+pub mod speaker;
