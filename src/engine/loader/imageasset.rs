@@ -70,7 +70,7 @@ impl ImageAsset{
             }
             if 4 - componentscnt > 0{
                 for _ in 0..(4 - componentscnt){
-                    data.push(i8::MAX);
+                    data.push(tiff[i as usize] as i8);
                 }
             }
         }
