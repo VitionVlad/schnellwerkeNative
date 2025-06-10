@@ -1168,19 +1168,31 @@ void createSyncObjects(uint32_t eh){
 }
 
 void recreateSwapChain(uint32_t eh){
+    vkDestroySwapchainKHR(euclid.handle[eh].device, euclid.handle[eh].swapChain, NULL);
     for(int i = 0; i != euclid.handle[eh].swapChainImageCount; i++){
         vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].swapChainFramebuffers[i], NULL);
     }
     for(int i = 0; i != euclid.handle[eh].swapChainImageCount; i++){
         vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].swapChainImageViews[i], NULL);
     }
-    free(euclid.handle[eh].swapChainFramebuffers);
-    free(euclid.handle[eh].swapChainImageViews);
-    free(euclid.handle[eh].swapChainImages);
+    //for(int i = 0; i != euclid.handle[eh].swapChainImageCount; i++){
+    //    vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].swapChainImages[i], NULL);
+    //}
+    if(euclid.handle[eh].swapChainFramebuffers){
+        free(euclid.handle[eh].swapChainFramebuffers);
+        euclid.handle[eh].swapChainFramebuffers = NULL;
+    }
+    if(euclid.handle[eh].swapChainImageViews){
+        free(euclid.handle[eh].swapChainImageViews);
+        euclid.handle[eh].swapChainImageViews = NULL;
+    }
+    if(euclid.handle[eh].swapChainImages){
+        free(euclid.handle[eh].swapChainImages);
+        euclid.handle[eh].swapChainImages = NULL;
+    }
     vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].depthImageView, NULL);
     vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].depthImage, NULL);
     vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].depthImageMemory, NULL);
-    vkDestroySwapchainKHR(euclid.handle[eh].device, euclid.handle[eh].swapChain, NULL);
     createSwapChain(eh);
     createSwapChainImageViews(eh);
     createFrameBuffers(eh);
@@ -1198,7 +1210,7 @@ void startrender(uint32_t eh){
         euclid.handle[eh].resolutionY = 1;
     }
     if (result == VK_ERROR_OUT_OF_DATE_KHR || euclid.handle[eh].oldx != euclid.handle[eh].resolutionX || euclid.handle[eh].oldy != euclid.handle[eh].resolutionY || euclid.handle[eh].resolutionScale != euclid.handle[eh].oldResolutionScale || euclid.handle[eh].defferedCount != euclid.handle[eh].oldDefferedCount) {
-        printf("\e[1;36mEuclidVk\e[0;37m: Resolution changed from %dx%d to %dx%d\n", euclid.handle[eh].oldx, euclid.handle[eh].oldy, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionY);
+        printf("\e[1;35mEuclidVk\e[0;37m: Resolution changed from %dx%d to %dx%d\n", euclid.handle[eh].oldx, euclid.handle[eh].oldy, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionY);
         euclid.handle[eh].oldx = euclid.handle[eh].resolutionX;
         euclid.handle[eh].oldy = euclid.handle[eh].resolutionY;
         vkDeviceWaitIdle(euclid.handle[eh].device);
@@ -1212,10 +1224,10 @@ void startrender(uint32_t eh){
             vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].defferedRenderImageViews[b+3], NULL);
             vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].defferedDepthRenderImageViews[i], NULL);
         }
-        vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].defferedImageMemory, NULL);
         vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].defferedImage, NULL);
-        vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImageMemory, NULL);
+        vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].defferedImageMemory, NULL);
         vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImage, NULL);
+        vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImageMemory, NULL);
         createDefferedData(eh);
         recreateSwapChain(eh);
         euclid.handle[eh].mrec++;
@@ -2650,10 +2662,10 @@ void setdrawable(uint32_t eme, uint8_t val){
 
 void draw(uint32_t eh, uint32_t eme){
     if(euclid.handle[eh].mrec != euclid.meshes[eme].mrec){
-        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, NULL);
-        createDescriptorPool(eh, eme);
         vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, MAX_FRAMES_IN_FLIGHT, euclid.meshes[eme].descriptorSets);
+        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, NULL);
         free(euclid.meshes[eme].descriptorSets);
+        createDescriptorPool(eh, eme);
         createDescriptorSets(eh, eme);
         euclid.meshes[eme].mrec = euclid.handle[eh].mrec;
     }

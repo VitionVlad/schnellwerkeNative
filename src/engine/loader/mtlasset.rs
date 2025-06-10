@@ -26,7 +26,8 @@ impl MtlAsset{
                 spl[0] == "map_Ks" || 
                 spl[0] == "map_Ns" || 
                 spl[0] == "map_d" || 
-                spl[0] == "map_bump" || 
+                spl[0] == "map_refl" || 
+                spl[0] == "map_Bump" || 
                 spl[0] == "Pr/map_Pr" || 
                 spl[0] == "Pm/map_Pm" || 
                 spl[0] == "Ps/map_Ps" || 

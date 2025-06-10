@@ -1,6 +1,6 @@
 #include "mozart.h"
 #define MINIAUDIO_IMPLEMENTATION
-#include "miniaudio.h"
+#include <miniaudio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
