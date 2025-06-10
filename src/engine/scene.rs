@@ -20,7 +20,12 @@ impl Scene{
         }
         let mut fobj: Vec<Object> = vec![];
         for i in 0..mdst.len(){
-            fobj.push(Object::new(eng, mdst[i], material, mdtx[i], super::render::render::MeshUsage::ShadowAndDefferedPass, true));
+            for j in 0..mdtx.len(){
+                if obj.mtl.matnam[j] == obj.matnam[i]{
+                    fobj.push(Object::new(eng, mdst[i], material, mdtx[j], super::render::render::MeshUsage::ShadowAndDefferedPass, true));
+                    break;
+                }
+            }
         }
         Scene { 
             objects: fobj 

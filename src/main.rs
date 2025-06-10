@@ -31,7 +31,7 @@ fn main() {
     let mut scn = Scene::load_from_obj(&mut eng, "assets/model.obj", mat2);
 
     eng.cameras[0].physic_object.gravity = true;
-    eng.cameras[0].physic_object.pos.y = 25f32;
+    eng.cameras[0].physic_object.pos.y = 3f32;
     eng.cameras[0].physic_object.mass = 0.005f32;
     eng.cameras[0].physic_object.solid = true;
     eng.control.mouse_lock = true;

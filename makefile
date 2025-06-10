@@ -4,3 +4,4 @@ sh:
 	glslc shaders/shadow.vert -o shaders/shadow
 	glslc shaders/deffered.frag -o shaders/fdeffered
 	glslc shaders/deffered.vert -o shaders/vdeffered
+	glslc shaders/text.frag -o shaders/ftext

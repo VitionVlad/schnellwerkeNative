@@ -7,6 +7,7 @@ use super::mtlasset::MtlAsset;
 
 pub struct ModelAsset{
     pub vertices: Vec<Vec<f32>>,
+    pub matnam: Vec<String>,
     pub mtl: MtlAsset,
 }
 
@@ -28,7 +29,9 @@ impl ModelAsset{
         let mut objcnt = 0usize;
         let mut objbegind: Vec<[usize; 3]> = vec![];
 
-        let mut mtl: MtlAsset = MtlAsset { matinfo: vec![] };
+        let mut mtl: MtlAsset = MtlAsset { matinfo: vec![], matnam: vec![] };
+
+        let mut mtsl: Vec<String> = vec![];
         for line in reader.lines() {
             let va = line.unwrap_or_default();
             if va.clone().chars().next().unwrap_or_default() == '#' {
@@ -45,6 +48,10 @@ impl ModelAsset{
                 mtlp += &spl[1].to_string();
                 println!("ModelLoader: Loading mtl by path: {}", mtlp);
                 mtl = MtlAsset::load_mtl(&mtlp);
+                continue;
+            }
+            if spl[0] == "usemtl"{
+                mtsl.push(spl[1].to_owned());
                 continue;
             }
             if va.clone().as_bytes()[0] == b'o' && va.clone().as_bytes()[1] == b' '{
@@ -115,6 +122,7 @@ impl ModelAsset{
         }
         ModelAsset { 
             vertices: fnobj, 
+            matnam: mtsl,
             mtl: mtl,
         }
     }

@@ -5,6 +5,7 @@ use std::{fs::File, io::{BufRead, BufReader}};
 
 pub struct MtlAsset{
     pub matinfo: Vec<Vec<String>>,
+    pub matnam: Vec<String>,
 }
 
 impl MtlAsset{
@@ -12,11 +13,12 @@ impl MtlAsset{
         let file = File::open(path).unwrap();
         let reader = BufReader::new(file);
         let mut fmat: Vec<Vec<String>> = vec![];
+        let mut fnv: Vec<String> = vec![];
         for line in reader.lines(){
             let va= line.unwrap_or_default();
             let spl: Vec<&str> = va.split(' ').collect();
             if spl[0] == "newmtl"{
-                //fmat.push(vec![spl[1].to_string()]);
+                fnv.push(spl[1].to_string());
                 fmat.push(vec![]);
             }
             if spl[0] == "map_Ka" || 
@@ -25,18 +27,10 @@ impl MtlAsset{
                 spl[0] == "map_Ns" || 
                 spl[0] == "map_d" || 
                 spl[0] == "map_bump" || 
-                spl[0] == "bump" || 
-                spl[0] == "disp" || 
-                spl[0] == "decal" ||
                 spl[0] == "Pr/map_Pr" || 
                 spl[0] == "Pm/map_Pm" || 
                 spl[0] == "Ps/map_Ps" || 
-                spl[0] == "Pc" || 
-                spl[0] == "Pcr" || 
-                spl[0] == "Ke/map_Ke" || 
-                spl[0] == "aniso" || 
-                spl[0] == "anisor" || 
-                spl[0] == "norm"{
+                spl[0] == "Ke/map_Ke" {
                 let index = fmat.len()-1;
 
                 let pspl: Vec<&str> = path.split('/').collect();
@@ -45,7 +39,7 @@ impl MtlAsset{
                     mtlp += &pspl[i].to_string();
                     mtlp += "/";
                 }
-                mtlp += &spl[1].to_string();
+                mtlp += &spl[spl.len()-1].to_string();
 
                 println!("MTLLoader: MTL texture by path: {}", mtlp);
 
@@ -53,7 +47,8 @@ impl MtlAsset{
             }
         }
         MtlAsset { 
-            matinfo: fmat 
+            matinfo: fmat, 
+            matnam: fnv,
         }
     }
 }
