@@ -108,10 +108,26 @@ impl UItext {
     }
     pub fn exec(&mut self, eng: &mut Engine, text: &str) -> bool{
         let bt = text.as_bytes();
+        let mut mx: u32 = 1;
+        let mut my: u32 = 1;
+        let mut cx: u32 = 0;
+        for i in 0..bt.len(){
+            cx+=1;
+            if bt[i] == b'\n'{
+                my+=1;
+                if cx-1 >= mx {
+                    mx = cx-1;
+                }
+                cx = 1;
+            }
+        }
+        if cx-1 >= mx {
+            mx = cx-1;
+        }
         self.clickzone.pos1.x = self.pos.x;
         self.clickzone.pos1.y = self.pos.y;
-        self.clickzone.pos2.x = self.pos.x + self.size.x*(bt.len() as f32);
-        self.clickzone.pos2.y = self.pos.y + self.size.y;
+        self.clickzone.pos2.x = self.pos.x + self.size.x*(mx as f32);
+        self.clickzone.pos2.y = self.pos.y + self.size.y*(my as f32);
         let btst = self.clickzone.check(Vec2::newdefined(eng.control.xpos as f32, eng.control.ypos as f32));
         if self.planes.len() < bt.len() {
             for i in  self.planes.len()..bt.len(){
@@ -122,6 +138,8 @@ impl UItext {
             self.planes[i].mesh.draw = false;
             self.planes[i].mesh.exec();
         }
+        let mut posy: f32 = self.pos.y;
+        let mut bp: usize = 0;
         for i in 0..bt.len(){
             for j in 0..self.symbols.len(){
                 if bt[i] == self.symbols[j] {
@@ -136,10 +154,15 @@ impl UItext {
                     self.planes[i].physic_object.scale.x = self.size.x;
                     self.planes[i].physic_object.scale.y = self.size.y;
                     self.planes[i].physic_object.scale.z = 1.0;
-                    self.planes[i].physic_object.pos.x = self.pos.x + (i as f32)*self.size.x;
-                    self.planes[i].physic_object.pos.y = self.pos.y;
+                    self.planes[i].physic_object.pos.x = self.pos.x + ((i - bp) as f32)*self.size.x;
+                    self.planes[i].physic_object.pos.y = posy;
                     self.planes[i].physic_object.pos.z = self.pos.z;
                     self.planes[i].exec(eng);
+                    break;
+                }
+                if bt[i] == b'\n' {
+                    posy+=self.size.y;
+                    bp = i+1;
                     break;
                 }
             }

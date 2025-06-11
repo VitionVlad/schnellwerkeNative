@@ -73,12 +73,12 @@ fn main() {
       viewport.object.physic_object.scale.y = eng.render.resolution_y as f32;
       viewport.exec(&mut eng);
       scn.exec(&mut eng);
-      text.pos.y = eng.render.resolution_y as f32 - text.size.y;
+      text.pos.y = eng.render.resolution_y as f32 - text.size.y*2f32;
       text.pos.x = 0.0;
       text.pos.z = 0.9;
 
       let fps = eng.fps;
-      text.exec(&mut eng, &format!("fps {}", fps));
+      text.exec(&mut eng, &format!("fps {}\nhello world", fps));
     }
     eng.end();
 }
