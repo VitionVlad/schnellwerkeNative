@@ -139,6 +139,7 @@ typedef struct euclidmesh{
     uint32_t texid;
     uint32_t usage;
     uint32_t mrec;
+    int8_t camrend;
 } euclidmesh;
 
 struct euclidVK{
@@ -2627,6 +2628,7 @@ uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t te, uint32_t us
     }
     euclid.meshes[eme].euclidid = eh;
     euclid.meshes[eme].drawable = 1;
+    euclid.meshes[eme].camrend = -1;
     euclid.meshes[eme].texid = te;
     euclid.meshes[eme].usage = usage;
     euclid.meshes[eme].mrec = euclid.handle[eh].mrec;
@@ -2650,6 +2652,10 @@ uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t te, uint32_t us
         createdefferedPipeline(eh, eme, es, em);
     }
     return eme;
+}
+
+void setrendercamera(uint32_t eme, int8_t val){
+    euclid.meshes[eme].camrend = val;
 }
 
 void setmeshbuf(uint32_t eme, uint32_t i, float val){
@@ -2792,7 +2798,7 @@ uint32_t loopcont(uint32_t eh){
     for(uint32_t i = 0; i != euclid.handle[eh].defferedCount; i++){
         startdefferedrenderpass(eh, i);
         for(uint32_t j = 0; j != euclid.mesize; j++){
-            if(euclid.meshes[j].euclidid == eh && euclid.meshes[j].drawable == 1 && (euclid.meshes[j].usage == 1 || euclid.meshes[j].usage == 3)){
+            if(euclid.meshes[j].euclidid == eh && euclid.meshes[j].drawable == 1 && (euclid.meshes[j].usage == 1 || euclid.meshes[j].usage == 3) && (euclid.meshes[j].camrend == -1 || euclid.meshes[j].camrend == i || euclid.meshes[j].camrend - 10 != i)){
                 drawdeffered(eh, j, i);
             }
         }

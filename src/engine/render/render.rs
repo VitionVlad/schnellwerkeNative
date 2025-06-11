@@ -26,6 +26,7 @@ unsafe extern "C"{
     fn destroy(eh: cty::uint32_t);
     fn newmaterial(eh: cty::uint32_t, vert: *mut cty::uint32_t, frag: *mut cty::uint32_t, shadow: *mut cty::uint32_t, svert: cty::uint32_t, sfrag: cty::uint32_t, sshadow: cty::uint32_t, cullmode: cty::uint32_t) -> cty::uint32_t;
     fn newmodel(eh: cty::uint32_t, vert: *mut cty::c_float, uv: *mut cty::c_float, normals: *mut cty::c_float, size: cty::uint32_t) -> cty::uint32_t;
+    fn setrendercamera(eme: cty::uint32_t, val: cty::int8_t);
     fn setmeshbuf(eme: cty::uint32_t, i: cty::uint32_t, val: cty::c_float);
     fn setdrawable(eme: cty::uint32_t, val: cty::uint8_t);
     fn newmesh(eh: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t, te: cty::uint32_t, usage: cty::uint32_t) -> cty::uint32_t;
@@ -215,6 +216,9 @@ pub struct Mesh{
     pub meshid: u32,
     pub ubo: [f32; 20],
     pub draw: bool,
+    pub render_all_cameras: bool,
+    pub exclude_selected_camera: bool,
+    pub camera_number: i8,
 }
 
 impl Mesh{
@@ -225,6 +229,9 @@ impl Mesh{
             },
             ubo: [1.0; 20],
             draw: true,
+            render_all_cameras: true,
+            exclude_selected_camera: false,
+            camera_number: 0,
         }
     }
 
@@ -238,6 +245,16 @@ impl Mesh{
             setdrawable(self.meshid, match self.draw {
                 true => 1,
                 false => 0,
+            });
+            setrendercamera(self.meshid, match self.render_all_cameras{
+                true => -1,
+                false => {
+                    if self.exclude_selected_camera {
+                        self.camera_number + 10
+                    }else{
+                        self.camera_number
+                    }
+                }
             });
         }
     }

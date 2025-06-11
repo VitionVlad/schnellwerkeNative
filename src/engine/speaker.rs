@@ -38,7 +38,7 @@ impl Speaker{
     }
     pub fn exec(&mut self, eng: &mut Engine){
         if self.pos_dependency{
-            self.sound.vol = (self.power - f32::sqrt(f32::powi(eng.cameras[eng.primary_camera].physic_object.pos.x - self.pos.x, 2) + f32::powi(eng.cameras[eng.primary_camera].physic_object.pos.y - self.pos.y, 2) + f32::powi(eng.cameras[eng.primary_camera].physic_object.pos.z - self.pos.z, 2)))/self.power * self.volume;
+            self.sound.vol = f32::max((self.power - f32::sqrt(f32::powi(eng.cameras[eng.primary_camera].physic_object.pos.x - self.pos.x, 2) + f32::powi(eng.cameras[eng.primary_camera].physic_object.pos.y - self.pos.y, 2) + f32::powi(eng.cameras[eng.primary_camera].physic_object.pos.z - self.pos.z, 2)))/self.power * self.volume, 0.0f32);
         }else{
             self.sound.vol = self.volume;
         }
