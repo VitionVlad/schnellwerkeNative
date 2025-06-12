@@ -1,0 +1,98 @@
+# Blender 4.4.3 MTL File: 'zugzeit.blend'
+# www.blender.org
+
+newmtl Material.001
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/marble/albedo.tiff
+map_Ns res/marble/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/marble/normal.tiff
+
+newmtl Material.002
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/ground/albedo.tiff
+map_Ns res/ground/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/ground/normal.tiff
+
+newmtl Material.003
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/metal/albedo.tiff
+map_Ns res/metal/met.tiff
+map_refl res/metal/roughness.tiff
+map_Bump -bm 1.000000 res/metal/normal.tiff
+
+newmtl Material.006
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/wood/albedo.tiff
+map_Ns res/wood/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/wood/normal.tiff
+
+newmtl Material.180
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/bricks/albedo.tiff
+map_Ns res/bricks/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/bricks/normal.tiff
+
+newmtl Material.181
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/wood2/albedo.tiff
+map_Ns res/nometal.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/wood2/normal.png
+
+newmtl Material.193
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/metal3/albedo.tiff
+map_Ns res/metal3/roughness.tiff
+map_refl res/metal3/mett.tiff
+map_Bump -bm 1.000000 res/metal3/normal.tiff
+
+newmtl Material.194
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/metalgrr/albedo.tiff
+map_Ns res/metalgrr/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/metalgrr/normal.tiff
