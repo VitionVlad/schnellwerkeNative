@@ -2,12 +2,13 @@ use std::fs;
 
 use engine::{engine::Engine, image::Image, light::LightType, material::Material, scene::Scene, ui::{UIplane, UItext}};
 
-use crate::engine::speaker::Speaker;
+use crate::engine::{math::vec3::Vec3, speaker::Speaker};
 mod engine;
 
 fn main() {
     const SPEED: f32 = 0.0025f32;
     let mut eng = Engine::new();
+    eng.used_camera_count = 2;
     eng.lights[0].light_type = LightType::Spot;
 
     let vert = fs::read("shaders/vert").unwrap();
@@ -28,7 +29,12 @@ fn main() {
     let mut text = UItext::new_from_file(&mut eng, matt, "assets/text.tiff", "abcdefghijklmnopqrstuvwxyz0123456789,.;");
     text.signal = true;
 
-    let mut scn = Scene::load_from_obj(&mut eng, "assets/model.obj", mat2);
+    let mut gara = Scene::load_from_obj(&mut eng, "assets/zugzeit.obj", mat2);
+    gara.render_all_cameras = false;
+
+    let mut garatr = Scene::load_from_obj(&mut eng, "assets/zugzeittr.obj", mat2);
+    garatr.render_all_cameras = false;
+    garatr.camera_number = 1;
 
     eng.cameras[0].physic_object.gravity = true;
     eng.cameras[0].physic_object.pos.y = 3f32;
@@ -64,15 +70,18 @@ fn main() {
         eng.control.mouse_lock = true;
       }
       if eng.control.mousebtn[0]{
+        eng.lights[0].color = Vec3::newdefined(10.0, 10.0, 10.0);
         eng.lights[0].pos = eng.cameras[0].physic_object.pos;
         eng.lights[0].rot = eng.cameras[0].physic_object.rot;
       }
+      eng.cameras[1] = eng.cameras[0];
       sn.exec(&mut eng);
 
       viewport.object.physic_object.scale.x = eng.render.resolution_x as f32;
       viewport.object.physic_object.scale.y = eng.render.resolution_y as f32;
       viewport.exec(&mut eng);
-      scn.exec(&mut eng);
+      gara.exec(&mut eng);
+      garatr.exec(&mut eng);
       text.pos.y = eng.render.resolution_y as f32 - text.size.y*2f32;
       text.pos.x = 0.0;
       text.pos.z = 0.9;

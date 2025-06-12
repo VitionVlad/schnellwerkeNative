@@ -1870,9 +1870,9 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         shbufferInfo.range = 2400*sizeof(float);
 
         VkDescriptorBufferInfo dfbufferInfo = {0};
-        shbufferInfo.buffer = euclid.handle[eh].defferedUniformBuffer;
-        shbufferInfo.offset = 0;
-        shbufferInfo.range = 240*sizeof(float);
+        dfbufferInfo.buffer = euclid.handle[eh].defferedUniformBuffer;
+        dfbufferInfo.offset = 0;
+        dfbufferInfo.range = 240*sizeof(float);
 
         VkDescriptorImageInfo imageInfo = {0};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -2798,7 +2798,7 @@ uint32_t loopcont(uint32_t eh){
     for(uint32_t i = 0; i != euclid.handle[eh].defferedCount; i++){
         startdefferedrenderpass(eh, i);
         for(uint32_t j = 0; j != euclid.mesize; j++){
-            if(euclid.meshes[j].euclidid == eh && euclid.meshes[j].drawable == 1 && (euclid.meshes[j].usage == 1 || euclid.meshes[j].usage == 3) && (euclid.meshes[j].camrend == -1 || euclid.meshes[j].camrend == i || euclid.meshes[j].camrend - 10 != i)){
+            if(euclid.meshes[j].euclidid == eh && euclid.meshes[j].drawable == 1 && (euclid.meshes[j].usage == 1 || euclid.meshes[j].usage == 3) && (euclid.meshes[j].camrend == -1 || euclid.meshes[j].camrend == i || (euclid.meshes[j].camrend - 10 != i && euclid.meshes[j].camrend >= 10))){
                 drawdeffered(eh, j, i);
             }
         }

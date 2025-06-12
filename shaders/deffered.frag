@@ -12,7 +12,7 @@ layout(location = 0) in vec2 uv;
 
 layout(location = 1) in vec4 pos;
 
-layout(location = 2) in vec4 normal;
+layout(location = 2) in mat3 normal;
 
 layout(binding = 0) uniform DefferedMatricesInput {
     mat4 defferedViews;
@@ -29,7 +29,9 @@ layout(binding = 2) uniform sampler2DArray texSampler;
 
 void main() {
     outColor = vec4(texture(texSampler, vec3(uv, 0)).rgb, 1.0);
-    outMaterial = vec4(texture(texSampler, vec3(uv, 1)).rgb, 1.0);
-    outNormal = normal;
+    outMaterial.r = texture(texSampler, vec3(uv, 1)).r;
+    outMaterial.g = texture(texSampler, vec3(uv, 2)).r;
+    outMaterial.b = 0.0;
+    outNormal = vec4(normal * (texture(texSampler, vec3(uv, 3)).rgb), 1.0);
     outPos = pos;
 }

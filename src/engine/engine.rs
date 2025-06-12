@@ -81,7 +81,7 @@ impl Engine{
             self.render.set_shadow_uniform_data(i*4+1600, self.lights[i as usize].pos.x);
             self.render.set_shadow_uniform_data(i*4+1601, self.lights[i as usize].pos.y);
             self.render.set_shadow_uniform_data(i*4+1602, self.lights[i as usize].pos.z);
-            self.render.set_shadow_uniform_data(i*4+1603, 0.0);
+            self.render.set_shadow_uniform_data(i*4+1603, self.lights[i as usize].light_type as u32 as f32);
             self.render.set_shadow_uniform_data(i*4+2000, self.lights[i as usize].color.x);
             self.render.set_shadow_uniform_data(i*4+2001, self.lights[i as usize].color.y);
             self.render.set_shadow_uniform_data(i*4+2002, self.lights[i as usize].color.z);

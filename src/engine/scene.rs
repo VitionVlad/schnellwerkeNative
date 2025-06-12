@@ -1,10 +1,19 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use crate::engine::math::vec3::Vec3;
+
 use super::{engine::Engine, image::Image, loader::modelasset::ModelAsset, material::Material, model::Model, object::Object};
 
 pub struct Scene{
     pub objects: Vec<Object>,
+    pub use_global_values: bool,
+    pub pos: Vec3,
+    pub scale: Vec3,
+    pub rot: Vec3,
+    pub render_all_cameras: bool,
+    pub exclude_selected_camera: bool,
+    pub camera_number: i8,
 }
 
 impl Scene{
@@ -28,11 +37,24 @@ impl Scene{
             }
         }
         Scene { 
-            objects: fobj 
+            objects: fobj,
+            use_global_values: true,
+            pos: Vec3::new(),
+            rot: Vec3::new(),
+            scale: Vec3::newdefined(1.0f32, 1.0f32, 1.0f32),
+            render_all_cameras: true,
+            exclude_selected_camera: false,
+            camera_number: 0,
         }
     }
     pub fn exec(&mut self, eng: &mut Engine){
         for i in 0..self.objects.len(){
+            self.objects[i].physic_object.pos = self.pos;
+            self.objects[i].physic_object.rot = self.rot;
+            self.objects[i].physic_object.scale = self.scale;
+            self.objects[i].mesh.render_all_cameras = self.render_all_cameras;
+            self.objects[i].mesh.exclude_selected_camera = self.exclude_selected_camera;
+            self.objects[i].mesh.camera_number = self.camera_number;
             self.objects[i].exec(eng);
         }
     }
