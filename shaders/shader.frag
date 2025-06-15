@@ -74,8 +74,8 @@ float shcalc(vec3 WorldPos, float bias){
       for (int x = -1; x <= 1; x++) {
         vec2 offset = vec2(vec2(x, y)) * oneOverShadowDepthTextureSize;
         float lv = 0.0;
-        if (proj.z - bias > texture(shadowSampler, vec3(proj.x + offset.x, 1.0 - proj.y + offset.y, i)).r){
-            lv = 1.0;
+        if (proj.z - bias < texture(shadowSampler, vec3(proj.x + offset.x, 1.0 - proj.y + offset.y, i)).r){
+          lv = 1.0;
         }
         if (!(proj.x > 1.0 || proj.x < 0.0 || proj.y > 1.0 || proj.y < 0.0 || proj.z > 1.0 || proj.z < -1.0)){
           visibility += lv;
@@ -126,8 +126,7 @@ void main() {
     vec3 rma = texture(defferedSampler, vec3(uv, 1)).rgb;
     vec3 normal = texture(defferedSampler, vec3(uv, 2)).rgb;
     vec3 wrldpos = texture(defferedSampler, vec3(uv, 3)).rgb;
-    vec4 op = vec4(PBR(normal, albedo, 1.0 - shcalc(wrldpos, 0.001), rma.y, rma.x, 1.0, wrldpos), 1.0);
-    //vec4 op = vec4(normal, 1.0);
+    vec4 op = vec4(PBR(normal, albedo, shcalc(wrldpos, 0.001), rma.y, rma.x, 1.0, wrldpos), 1.0);
 
     outColor = op;
     //if (texture(defferedDepthSampler, vec3(uv, 1)).r < texture(defferedDepthSampler, vec3(uv, 0)).r){
