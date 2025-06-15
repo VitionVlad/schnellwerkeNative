@@ -64,14 +64,13 @@ impl ImageAsset{
         println!("ImageLoader: TIFF begoffset = {}", begoff);
         println!("ImageLoader: TIFF number of components per pixel = {}", componentscnt);
         let mut data: Vec<i8> = vec![];
-        for i in (begoff..size[0]*size[1]*componentscnt).step_by(componentscnt as usize){
+        let esz: u32 = size[0]*size[1]*componentscnt + begoff;
+        for i in (begoff..esz).step_by(componentscnt as usize){
             for j in 0..componentscnt{
                 data.push(tiff[i as usize + j as usize] as i8);
             }
-            if 4 - componentscnt > 0{
-                for _ in 0..(4 - componentscnt){
-                    data.push(tiff[i as usize] as i8);
-                }
+            for _ in 0..(4 - componentscnt){
+                data.push(tiff[i as usize] as i8);
             }
         }
         ImageAsset { 
