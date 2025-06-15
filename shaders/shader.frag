@@ -122,7 +122,7 @@ vec3 PBR(vec3 norm, vec3 albedo, float shadow, float metallic, float roughness, 
 }
 
 void main() {
-    vec3 albedo = texture(defferedSampler, vec3(uv, 0)).rgb;
+    vec3 albedo = pow(texture(defferedSampler, vec3(uv, 0)).rgb, vec3(2.2));
     vec3 rma = texture(defferedSampler, vec3(uv, 1)).rgb;
     vec3 normal = texture(defferedSampler, vec3(uv, 2)).rgb;
     vec3 wrldpos = texture(defferedSampler, vec3(uv, 3)).rgb;
@@ -130,7 +130,7 @@ void main() {
     //vec4 op = vec4(normal, 1.0);
 
     outColor = op;
-    if (texture(defferedDepthSampler, vec3(uv, 1)).r < texture(defferedDepthSampler, vec3(uv, 0)).r){
-        outColor = mix(vec4(texture(defferedSampler, vec3(uv, 4)).rgb, 1.0), op, 0.5);
-    }
+    //if (texture(defferedDepthSampler, vec3(uv, 1)).r < texture(defferedDepthSampler, vec3(uv, 0)).r){
+    //    outColor = mix(vec4(texture(defferedSampler, vec3(uv, 4)).rgb, 1.0), op, 0.5);
+    //}
 }
