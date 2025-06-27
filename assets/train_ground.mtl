@@ -1,0 +1,38 @@
+# Blender 4.4.3 MTL File: 'train.blend'
+# www.blender.org
+
+newmtl Material.027
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/ground/albedo.tiff
+map_Ns res/ground/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/ground/normal.tiff
+
+newmtl Material.034
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/metal3/albedo.tiff
+map_Ns res/metal3/roughness.tiff
+map_refl res/metal3/mett.tiff
+map_Bump -bm 1.000000 res/metal3/normal.tiff
+
+newmtl Material.036
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/wood_planks/albedo.tiff
+map_Ns res/wood_planks/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/wood_planks/normal.tiff

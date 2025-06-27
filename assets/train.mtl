@@ -1,0 +1,110 @@
+# Blender 4.4.3 MTL File: 'train.blend'
+# www.blender.org
+
+newmtl Material
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/wood1/albedo.tiff
+map_Ns res/wood1/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/wood1/normal.tiff
+
+newmtl Material.001
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/paintwood1/albedo.tiff
+map_Ns res/paintwood1/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/paintwood1/normal.tiff
+
+newmtl Material.002
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/leather/albedo.tiff
+map_Ns res/leather/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/leather/normal.tiff
+
+newmtl Material.006
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/fabric2/albedo.tiff
+map_Ns res/fabric2/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/fabric2/normal.tiff
+
+newmtl Material.009
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/rug1/albedo.tiff
+map_Ns res/rug1/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/rug1/normal.tiff
+
+newmtl Material.010
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/wood2/albedo.tiff
+map_Ns res/wood2/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/wood2/normal.tiff
+
+newmtl Material.011
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/fabric1/albedo.tiff
+map_Ns res/fabric1/roughness.tiff
+map_refl res/nometal.tiff
+map_Bump -bm 1.000000 res/fabric1/normal.tiff
+
+newmtl Material.019
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/metal2/albedo.tiff
+map_Ns res/metal2/roughness.tiff
+map_refl res/metal2/metal.tiff
+map_Bump -bm 1.000000 res/metal2/normal.tiff
+
+newmtl Material.085
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd res/metal1/albedo.tiff
+map_Ns res/metal1/roughness.tiff
+map_refl res/metal1/metal.tiff
+map_Bump -bm 1.000000 res/metal1/normal.tiff
