@@ -9,9 +9,9 @@ pub struct Material{
 }
 
 impl Material{
-    pub fn new(eng: &Engine, vert: Vec<u8>, frag: Vec<u8>, shadow: Vec<u8>, cullmode: CullMode) -> Material{
+    pub fn new(eng: &Engine, vert: Vec<u8>, frag: Vec<u8>, shadow: Vec<u8>, cullmodes: [CullMode; 2]) -> Material{
         Material{
-            material_shaders: MaterialShaders::new(eng.render, vert, frag, shadow, cullmode)
+            material_shaders: MaterialShaders::new(eng.render, vert, frag, shadow, cullmodes[0], cullmodes[1])
         }
     }
 }

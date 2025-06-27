@@ -17,6 +17,18 @@ pub struct Scene{
 }
 
 impl Scene{
+    pub fn new_blank() -> Scene{
+        Scene { 
+            objects: vec![], 
+            use_global_values: false, 
+            pos: Vec3::new(), 
+            scale: Vec3::new(), 
+            rot: Vec3::new(), 
+            render_all_cameras: true, 
+            exclude_selected_camera: false, 
+            camera_number: 0 
+        }
+    }
     pub fn load_from_obj(eng: &mut Engine, path: &str, material: Material) -> Scene{
         let obj = ModelAsset::load_obj(path);
         let mut mdst: Vec<Model> = vec![];

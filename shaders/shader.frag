@@ -111,7 +111,7 @@ vec3 PBR(vec3 norm, vec3 albedo, float shadow, float metallic, float roughness, 
     vec3 numerator    = NDF * G * F;
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
     vec3 specular     = numerator / denominator;  
-    float NdotL = max(dot(N, L), 0.0);                
+    float NdotL = max(dot(N, L), 0.0);
     Lo += (kD * albedo / PI + specular) * radiance * NdotL; 
   }
   vec3 ambient = vec3(0.0001) * albedo * ao;
@@ -126,10 +126,11 @@ void main() {
     vec3 rma = texture(defferedSampler, vec3(uv, 1)).rgb;
     vec3 normal = texture(defferedSampler, vec3(uv, 2)).rgb;
     vec3 wrldpos = texture(defferedSampler, vec3(uv, 3)).rgb;
-    vec4 op = vec4(PBR(normal, albedo, shcalc(wrldpos, 0.001), rma.y, rma.x, 1.0, wrldpos), 1.0);
+    vec4 op = vec4(PBR(normal, albedo, shcalc(wrldpos, 0.0), rma.y, rma.x, 1.0, wrldpos), 1.0);
 
     outColor = op;
-    //if (texture(defferedDepthSampler, vec3(uv, 1)).r < texture(defferedDepthSampler, vec3(uv, 0)).r){
-    //    outColor = mix(vec4(texture(defferedSampler, vec3(uv, 4)).rgb, 1.0), op, 0.5);
-    //}
+    if (texture(defferedDepthSampler, vec3(uv, 1)).r < texture(defferedDepthSampler, vec3(uv, 0)).r){
+      vec4 gf = vec4(PBR(texture(defferedSampler, vec3(uv, 6)).rgb, vec3(0.1), shcalc(texture(defferedSampler, vec3(uv, 7)).rgb, 0.0), 0.1, 0.1, 1.0, texture(defferedSampler, vec3(uv, 7)).rgb), 1.0);
+      outColor = mix(op, gf, gf.r);
+    }
 }

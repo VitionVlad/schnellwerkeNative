@@ -95,6 +95,7 @@ typedef struct euclidmaterial{
     VkShaderModule fragModule;
     VkShaderModule shadowModule;
     uint32_t cullMode;
+    uint32_t shcullMode;
     uint32_t polygonMode;
     float lineWidth;
 } euclidmaterial;
@@ -814,7 +815,7 @@ void createShadowData(uint32_t eh){
     depthCreateInfo.arrayLayers = euclid.handle[eh].shadowMapsCount;
     depthCreateInfo.format = VK_FORMAT_D32_SFLOAT;
     depthCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    depthCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |VK_IMAGE_USAGE_SAMPLED_BIT;
+    depthCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     depthCreateInfo.mipLevels = 1;
     depthCreateInfo.extent.depth = 1;
     depthCreateInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -1499,7 +1500,7 @@ uint32_t neweng(uint32_t shadowMapResolution){
     return eh;
 }
 
-uint32_t newmaterial(uint32_t eh, uint32_t *vert, uint32_t *frag, uint32_t *shadow, uint32_t svert, uint32_t sfrag, uint32_t sshadow, uint32_t cullmode){
+uint32_t newmaterial(uint32_t eh, uint32_t *vert, uint32_t *frag, uint32_t *shadow, uint32_t svert, uint32_t sfrag, uint32_t sshadow, uint32_t cullmode, uint32_t scullmode){
     uint32_t em = euclid.msize;
     if(euclid.msize != 0){
         euclidh *tmp = malloc(sizeof(euclidmaterial)*euclid.msize);
@@ -1538,6 +1539,7 @@ uint32_t newmaterial(uint32_t eh, uint32_t *vert, uint32_t *frag, uint32_t *shad
     }
 
     euclid.materials[em].cullMode = cullmode;
+    euclid.materials[em].shcullMode = scullmode;
     euclid.materials[em].polygonMode = VK_POLYGON_MODE_FILL;
     euclid.materials[em].lineWidth = 1.0;
 
@@ -2355,7 +2357,7 @@ void createshadowPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em){
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = (VkPolygonMode) euclid.materials[es].polygonMode;
     rasterizer.lineWidth = euclid.materials[es].lineWidth;
-    rasterizer.cullMode = (VkCullModeFlags) euclid.materials[es].cullMode;
+    rasterizer.cullMode = (VkCullModeFlags) euclid.materials[es].shcullMode;
     rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.0f;

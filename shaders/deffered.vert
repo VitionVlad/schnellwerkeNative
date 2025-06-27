@@ -33,7 +33,7 @@ layout(binding = 1) uniform MeshInput {
 
 void main() {
     fuv = uv;
-    fpos = vec4(pos.x, pos.y, pos.z, 1.0);
+    fpos = mi.model * vec4(pos.x, pos.y, pos.z, 1.0);
     ftg = tg;
     fctg = ctg;
     fnormal = normal;

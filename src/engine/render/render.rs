@@ -24,7 +24,7 @@ unsafe extern "C"{
     fn modifydeffereduniform(eh: cty::uint32_t, pos: cty::uint32_t, value: cty::c_float);
     fn neweng(shadowMapResolution: cty::uint32_t) -> cty::uint32_t;
     fn destroy(eh: cty::uint32_t);
-    fn newmaterial(eh: cty::uint32_t, vert: *mut cty::uint32_t, frag: *mut cty::uint32_t, shadow: *mut cty::uint32_t, svert: cty::uint32_t, sfrag: cty::uint32_t, sshadow: cty::uint32_t, cullmode: cty::uint32_t) -> cty::uint32_t;
+    fn newmaterial(eh: cty::uint32_t, vert: *mut cty::uint32_t, frag: *mut cty::uint32_t, shadow: *mut cty::uint32_t, svert: cty::uint32_t, sfrag: cty::uint32_t, sshadow: cty::uint32_t, cullmode: cty::uint32_t, scullmode: cty::uint32_t) -> cty::uint32_t;
     fn newmodel(eh: cty::uint32_t, vert: *mut cty::c_float, uv: *mut cty::c_float, normals: *mut cty::c_float, size: cty::uint32_t) -> cty::uint32_t;
     fn setrendercamera(eme: cty::uint32_t, val: cty::int8_t);
     fn setmeshbuf(eme: cty::uint32_t, i: cty::uint32_t, val: cty::c_float);
@@ -150,10 +150,10 @@ pub struct MaterialShaders{
 }
 
 impl MaterialShaders{
-    pub fn new(ren: Render, vert: Vec<u8>, frag: Vec<u8>, shadow: Vec<u8>, cullmode: CullMode) -> MaterialShaders{
+    pub fn new(ren: Render, vert: Vec<u8>, frag: Vec<u8>, shadow: Vec<u8>, cullmode: CullMode, shadow_cullmode: CullMode) -> MaterialShaders{
         MaterialShaders { 
             materialid: unsafe{
-                newmaterial(ren.euclid, vert.as_ptr() as *mut u32, frag.as_ptr() as *mut u32, shadow.as_ptr() as *mut u32, vert.len() as u32, frag.len() as u32, shadow.len() as u32, cullmode as u32)
+                newmaterial(ren.euclid, vert.as_ptr() as *mut u32, frag.as_ptr() as *mut u32, shadow.as_ptr() as *mut u32, vert.len() as u32, frag.len() as u32, shadow.len() as u32, cullmode as u32, shadow_cullmode as u32)
             }
         }
     }
