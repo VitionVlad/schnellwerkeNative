@@ -216,6 +216,8 @@ pub struct Mesh{
     pub meshid: u32,
     pub ubo: [f32; 20],
     pub draw: bool,
+    pub draw_shadow: bool,
+    pub keep_shadow: bool,
     pub render_all_cameras: bool,
     pub exclude_selected_camera: bool,
     pub camera_number: i8,
@@ -229,6 +231,8 @@ impl Mesh{
             },
             ubo: [1.0; 20],
             draw: true,
+            draw_shadow: true,
+            keep_shadow: true,
             render_all_cameras: true,
             exclude_selected_camera: false,
             camera_number: 0,
@@ -243,8 +247,14 @@ impl Mesh{
         }
         unsafe {
             setdrawable(self.meshid, match self.draw {
-                true => 1,
-                false => 0,
+                true => match self.draw_shadow {
+                    true => 1,
+                    false => 3,
+                },
+                false => match self.keep_shadow {
+                    true => 2,
+                    false => 0,
+                },
             });
             setrendercamera(self.meshid, match self.render_all_cameras{
                 true => -1,

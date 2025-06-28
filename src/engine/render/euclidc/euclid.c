@@ -2791,7 +2791,7 @@ uint32_t loopcont(uint32_t eh){
     for(uint32_t i = 0; i != euclid.handle[eh].shadowMapsCount; i++){
         startshadowrenderpass(eh, i);
         for(uint32_t j = 0; j != euclid.mesize; j++){
-            if(euclid.meshes[j].euclidid == eh && euclid.meshes[j].drawable == 1 && (euclid.meshes[j].usage == 2 || euclid.meshes[j].usage == 3)){
+            if(euclid.meshes[j].euclidid == eh && (euclid.meshes[j].drawable == 1 || euclid.meshes[j].drawable == 2) && (euclid.meshes[j].usage == 2 || euclid.meshes[j].usage == 3)){
                 drawshadow(eh, j, i);
             }
         }
@@ -2800,7 +2800,7 @@ uint32_t loopcont(uint32_t eh){
     for(uint32_t i = 0; i != euclid.handle[eh].defferedCount; i++){
         startdefferedrenderpass(eh, i);
         for(uint32_t j = 0; j != euclid.mesize; j++){
-            if(euclid.meshes[j].euclidid == eh && euclid.meshes[j].drawable == 1 && (euclid.meshes[j].usage == 1 || euclid.meshes[j].usage == 3) && (euclid.meshes[j].camrend == -1 || euclid.meshes[j].camrend == i || (euclid.meshes[j].camrend - 10 != i && euclid.meshes[j].camrend >= 10))){
+            if(euclid.meshes[j].euclidid == eh && (euclid.meshes[j].drawable == 1 || euclid.meshes[j].drawable == 3) && (euclid.meshes[j].usage == 1 || euclid.meshes[j].usage == 3) && (euclid.meshes[j].camrend == -1 || euclid.meshes[j].camrend == i || (euclid.meshes[j].camrend - 10 != i && euclid.meshes[j].camrend >= 10))){
                 drawdeffered(eh, j, i);
             }
         }

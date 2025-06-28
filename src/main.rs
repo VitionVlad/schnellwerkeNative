@@ -8,6 +8,7 @@ mod engine;
 fn main() {
     const SPEED: f32 = 0.0025f32;
     let mut eng = Engine::new();
+    eng.render.resolution_scale = 0.5;
     eng.used_camera_count = 2;
     eng.lights[0].light_type = LightType::Spot;
 
