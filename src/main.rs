@@ -7,9 +7,12 @@ mod engine;
 
 fn main() {
     const SPEED: f32 = 0.0025f32;
+    const TICKSZ: f32 = 1.0/250.0;
     let mut eng = Engine::new();
     eng.used_camera_count = 2;
     eng.lights[0].light_type = LightType::Spot;
+ 
+    let mut wkfc = 1.0f32;
 
     let vert = fs::read("shaders/vert").unwrap();
     let frag = fs::read("shaders/frag").unwrap();
@@ -28,8 +31,14 @@ fn main() {
 
     let mut viewport = UIplane::new(&mut eng, mat, image);
     viewport.object.physic_object.pos.z = 1.0;
+    viewport.object.mesh.ubo[16] = wkfc;
     let mut text = UItext::new_from_file(&mut eng, matt, "assets/text.tiff", "abcdefghijklmnopqrstuvwxyz0123456789,.;");
-    text.signal = true;
+    text.signal = false;
+
+    eng.cameras[0].physic_object.gravity = false;
+    eng.cameras[0].physic_object.pos.y = 3f32;
+    eng.cameras[0].physic_object.mass = 0.005f32;
+    eng.cameras[0].physic_object.solid = false;
 
     for _ in 0..2{
       eng.work();
@@ -40,20 +49,54 @@ fn main() {
       text.size.x = 10.0;
       text.size.y = 20.0;
 
-      text.exec(&mut eng, "please wait, while we load our backage...");
+      text.exec(&mut eng, "initializing power systems");
     }
 
     let mut train = Scene::load_from_obj(&mut eng, "assets/train.obj", mat2);
     train.render_all_cameras = false;
     train.camera_number = 0;
 
+    for _ in 0..2{
+      eng.work();
+
+      text.pos.y = 10.0;
+      text.pos.x = 10.0;
+      text.pos.z = 0.9;
+      text.size.x = 10.0;
+      text.size.y = 20.0;
+
+      text.exec(&mut eng, "initializing power systems\nloading vital packages");
+    }
+
     let mut trainqo = Scene::load_from_obj(&mut eng, "assets/train_quest.obj", mat3);
     trainqo.render_all_cameras = false;
     trainqo.camera_number = 0;
+    for _ in 0..2{
+      eng.work();
+
+      text.pos.y = 10.0;
+      text.pos.x = 10.0;
+      text.pos.z = 0.9;
+      text.size.x = 10.0;
+      text.size.y = 20.0;
+
+      text.exec(&mut eng, "initializing power systems\nloading vital packages\nestablishing communication lines");
+    }
 
     let mut traindr = Scene::load_from_obj(&mut eng, "assets/train_door.obj", mat3);
     traindr.render_all_cameras = false;
     traindr.camera_number = 0;
+    for _ in 0..2{
+      eng.work();
+
+      text.pos.y = 10.0;
+      text.pos.x = 10.0;
+      text.pos.z = 0.9;
+      text.size.x = 10.0;
+      text.size.y = 20.0;
+
+      text.exec(&mut eng, "initializing power systems\nloading vital packages\nestablishing communication lines\nloading armaments and supplies");
+    }
 
     let mut vrt1 = ModelAsset::load_obj("assets/train_em.obj");
     let md1 = Model::new(&mut eng, vrt1.vertices[0].clone());
@@ -69,6 +112,18 @@ fn main() {
     traingl.mesh.camera_number = 1;
     traingl.mesh.render_all_cameras = false;
     traingl.draw_distance = 300f32;
+
+    for _ in 0..2{
+      eng.work();
+
+      text.pos.y = 10.0;
+      text.pos.x = 10.0;
+      text.pos.z = 0.9;
+      text.size.x = 10.0;
+      text.size.y = 20.0;
+
+      text.exec(&mut eng, "initializing power systems\nloading vital packages\nestablishing communication lines\nloading armaments and supplies\nsynchronizing chrono-displacement engine");
+    }
 
     vrt1 = ModelAsset::load_obj("assets/train_door_gl.obj");
     let mut md3s = vec![Model::new(&mut eng, vrt1.vertices[0].clone())];
@@ -86,17 +141,38 @@ fn main() {
       trgldr[i].mesh.render_all_cameras = false;
     }
 
+    for _ in 0..2{
+      eng.work();
+
+      text.pos.y = 10.0;
+      text.pos.x = 10.0;
+      text.pos.z = 0.9;
+      text.size.x = 10.0;
+      text.size.y = 20.0;
+
+      text.exec(&mut eng, "initializing power systems\nloading vital packages\nestablishing communication lines\nloading armaments and supplies\nsynchronizing chrono-displacement engine\nfinal systems check");
+    }
+
     eng.cameras[0].physic_object.gravity = true;
     eng.cameras[0].physic_object.pos.y = 3f32;
     eng.cameras[0].physic_object.mass = 0.005f32;
     eng.cameras[0].physic_object.solid = true;
     eng.control.mouse_lock = true;
+    text.signal = true;
 
     //let mut sn = Speaker::new(&mut eng, "assets/audio/sample.wav");
 
     while eng.work(){
       eng.cameras[0].physic_object.rot.x = eng.control.ypos as f32/eng.render.resolution_y as f32;
       eng.cameras[0].physic_object.rot.y = eng.control.xpos as f32/eng.render.resolution_x as f32;
+
+      if wkfc >= 0.0{
+        wkfc -= (TICKSZ/5.0)*eng.times_to_calculate_physics as f32;
+        viewport.object.mesh.ubo[16] = wkfc;
+      }else{
+        viewport.object.mesh.ubo[16] = 0.0;
+      }
+
       if eng.cameras[0].physic_object.rot.x < -1.5 {
         eng.cameras[0].physic_object.rot.x = -1.5;
       }

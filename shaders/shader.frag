@@ -138,6 +138,8 @@ void main() {
     vec4 fgf = mix(vec4(0.0, 0.0, 0.0, 1.0), gf, glmxpw);
     op = mix(op, fgf, gf.r);
   }
-  
+
+  op = mix(op, vec4(0.0, 0.0, 0.0, 1.0), mi.addinfo.x);
+
   outColor = op;
 }
