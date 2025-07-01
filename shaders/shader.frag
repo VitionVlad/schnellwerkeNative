@@ -122,15 +122,22 @@ vec3 PBR(vec3 norm, vec3 albedo, float shadow, float metallic, float roughness, 
 }
 
 void main() {
-    vec3 albedo = pow(texture(defferedSampler, vec3(uv, 0)).rgb, vec3(2.2));
-    vec3 rma = texture(defferedSampler, vec3(uv, 1)).rgb;
-    vec3 normal = texture(defferedSampler, vec3(uv, 2)).rgb;
-    vec3 wrldpos = texture(defferedSampler, vec3(uv, 3)).rgb;
-    vec4 op = vec4(PBR(normal, albedo, shcalc(wrldpos, 0.0), rma.y, rma.x, 1.0, wrldpos), 1.0);
+  vec3 albedo = pow(texture(defferedSampler, vec3(uv, 0)).rgb, vec3(2.2));
+  vec3 rma = texture(defferedSampler, vec3(uv, 1)).rgb;
+  vec3 normal = texture(defferedSampler, vec3(uv, 2)).rgb;
+  vec3 wrldpos = texture(defferedSampler, vec3(uv, 3)).rgb;
+  vec3 glps = texture(defferedSampler, vec3(uv, 7)).rgb;
+  
+  vec4 op = vec4(PBR(normal, albedo, shcalc(wrldpos, 0.0), rma.y, rma.x, 1.0, wrldpos), 1.0);
+  float mxpw = smoothstep(10.0, 5.0, distance(dmi.deffpos[0].xyz, wrldpos));
+  op = mix(vec4(0.0, 0.0, 0.0, 1.0), op, mxpw);
 
-    outColor = op;
-    if (texture(defferedDepthSampler, vec3(uv, 1)).r < texture(defferedDepthSampler, vec3(uv, 0)).r){
-      vec4 gf = vec4(PBR(texture(defferedSampler, vec3(uv, 6)).rgb, vec3(0.1), shcalc(texture(defferedSampler, vec3(uv, 7)).rgb, 0.0), 0.1, 0.1, 1.0, texture(defferedSampler, vec3(uv, 7)).rgb), 1.0);
-      outColor = mix(op, gf, gf.r);
-    }
+  if (texture(defferedDepthSampler, vec3(uv, 1)).r < texture(defferedDepthSampler, vec3(uv, 0)).r){
+    vec4 gf = vec4(PBR(texture(defferedSampler, vec3(uv, 6)).rgb, vec3(0.1), shcalc(glps, 0.0), 0.1, 0.1, 1.0, glps), 1.0);
+    float glmxpw = smoothstep(10.0, 5.0, distance(dmi.deffpos[0].xyz, glps));
+    vec4 fgf = mix(vec4(0.0, 0.0, 0.0, 1.0), gf, glmxpw);
+    op = mix(op, fgf, gf.r);
+  }
+  
+  outColor = op;
 }

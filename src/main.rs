@@ -68,6 +68,7 @@ fn main() {
     let mut traingl = Object::new(&mut eng, md2, mat4, image, engine::render::render::MeshUsage::DefferedPass, true);
     traingl.mesh.camera_number = 1;
     traingl.mesh.render_all_cameras = false;
+    traingl.draw_distance = 300f32;
 
     vrt1 = ModelAsset::load_obj("assets/train_door_gl.obj");
     let mut md3s = vec![Model::new(&mut eng, vrt1.vertices[0].clone())];
