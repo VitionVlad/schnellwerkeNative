@@ -20,7 +20,7 @@ layout(binding = 1) uniform ShadowMatricesInput {
 layout(binding = 2) uniform DefferedMatricesInput {
     mat4 defferedViews[10];
     vec4 deffpos[10];
-    vec4 deffcol[10];
+    vec4 deffrot[10];
 } dmi;
 
 layout(binding = 3) uniform sampler2DArray texSampler;
@@ -121,21 +121,65 @@ vec3 PBR(vec3 norm, vec3 albedo, float shadow, float metallic, float roughness, 
   return color;
 }
 
+void getCameraBasis(vec3 eulerAngles, out vec3 forward, out vec3 right, out vec3 up) {
+    float pitch = -eulerAngles.x;
+    float yaw = -eulerAngles.y;
+    float roll = eulerAngles.z;
+    forward.x = cos(pitch) * sin(yaw);
+    forward.y = sin(pitch);
+    forward.z = cos(pitch) * cos(yaw);
+    forward = normalize(forward);
+    right.x = sin(yaw - 1.5708);
+    right.y = 0.0;
+    right.z = cos(yaw - 1.5708);
+    right = normalize(right);
+    up = normalize(cross(right, forward));
+}
+
+vec3 nightSkyFog(vec2 uv, vec3 cameraPos, vec3 cameraEuler, float time) {
+    vec3 forward, right, up;
+    getCameraBasis(cameraEuler, forward, right, up);
+    vec2 ndc = uv * 2.0 - 1.0;
+    float fovScale = 1.0;
+    vec3 rayDir = normalize(
+        forward +
+        ndc.x * fovScale * right +
+        ndc.y * fovScale * up
+    );
+    vec3 samplePos = cameraPos + rayDir * 20.0;
+    float fogDriftSpeed = 20.2;
+    float drift = (cameraPos.z + time * fogDriftSpeed) * 0.05;
+    float noise = sin(dot(samplePos.xz, vec2(0.05, 0.05)) + drift);
+    noise = noise * 0.5 + 0.5;
+    float heightFog = smoothstep(50.0, 0.0, samplePos.y);
+    float distFog = smoothstep(5.0, 30.0, length(samplePos - cameraPos));
+    float fogAmount = noise * heightFog * distFog * 0.5;
+    vec3 fogColor = mix(vec3(0.002, 0.002, 0.005), vec3(0.005, 0.005, 0.01), noise);
+    return fogColor * fogAmount;
+}
+
 void main() {
   vec3 albedo = pow(texture(defferedSampler, vec3(uv, 0)).rgb, vec3(2.2));
   vec3 rma = texture(defferedSampler, vec3(uv, 1)).rgb;
   vec3 normal = texture(defferedSampler, vec3(uv, 2)).rgb;
   vec3 wrldpos = texture(defferedSampler, vec3(uv, 3)).rgb;
   vec3 glps = texture(defferedSampler, vec3(uv, 7)).rgb;
+
+  vec3 fogSkyColor = nightSkyFog(uv, dmi.deffpos[0].xyz, dmi.deffrot[0].xyz, mi.addinfo.y);
   
   vec4 op = vec4(PBR(normal, albedo, shcalc(wrldpos, 0.0), rma.y, rma.x, 1.0, wrldpos), 1.0);
+
+  if(texture(defferedDepthSampler, vec3(uv, 0)).r >= 1.0){
+    op.rgb = fogSkyColor;
+  }
+
   float mxpw = smoothstep(10.0, 5.0, distance(dmi.deffpos[0].xyz, wrldpos));
-  op = mix(vec4(0.0, 0.0, 0.0, 1.0), op, mxpw);
+  op = mix(vec4(fogSkyColor, 1.0), op, mxpw);
 
   if (texture(defferedDepthSampler, vec3(uv, 1)).r < texture(defferedDepthSampler, vec3(uv, 0)).r){
     vec4 gf = vec4(PBR(texture(defferedSampler, vec3(uv, 6)).rgb, vec3(0.1), shcalc(glps, 0.0), 0.1, 0.1, 1.0, glps), 1.0);
     float glmxpw = smoothstep(10.0, 5.0, distance(dmi.deffpos[0].xyz, glps));
-    vec4 fgf = mix(vec4(0.0, 0.0, 0.0, 1.0), gf, glmxpw);
+    vec4 fgf = mix(vec4(fogSkyColor, 1.0), gf, glmxpw);
     op = mix(op, fgf, gf.r);
   }
 

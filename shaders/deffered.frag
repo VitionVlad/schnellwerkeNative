@@ -35,7 +35,7 @@ void main() {
     outColor = vec4(texture(texSampler, vec3(uv, 0)).rgb, 1.0);
     outMaterial.r = texture(texSampler, vec3(uv, 1)).r;
     outMaterial.g = texture(texSampler, vec3(uv, 2)).r;
-    outMaterial.b = 0.0;
+    outMaterial.b = 1.0;
     mat3 TBN = mat3(ftg, fctg, fnormal);
     vec3 n = texture(texSampler, vec3(uv, 3)).rgb * 2.0 - 1.0;
     outNormal = vec4(TBN * n, 1.0);
