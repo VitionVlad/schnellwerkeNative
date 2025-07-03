@@ -42,8 +42,6 @@ impl MtlAsset{
                 }
                 mtlp += &spl[spl.len()-1].to_string();
 
-                println!("MTLLoader: MTL texture by path: {}", mtlp);
-
                 fmat[index].push(mtlp);
             }
         }

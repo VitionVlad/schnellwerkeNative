@@ -88,6 +88,7 @@ typedef struct euclidh{
     uint8_t right;
     uint8_t left;
     uint8_t middle;
+    uint8_t debug;
 } euclidh;
 
 typedef struct euclidmaterial{
@@ -350,7 +351,7 @@ uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, u
             return i;
         }
     }
-    printf("\e[1;31mError\e[0;37m: Cant find suitable memory");
+    if (euclid.handle[eh].debug == 1) printf("\e[1;31mError\e[0;37m: Cant find suitable memory");
     exit(-1);
 }
 
@@ -372,8 +373,8 @@ void createInstance(uint32_t eh){
     char **nms = malloc(sizeof(char*)*layerCount);
     for(uint32_t i = 0; i != layerCount; i++){
         nms[i] = layers[i].layerName;
-        //printf("\e[1;36mEuclidVK\e[0;37m: Enabled validation layer %s\n", layers[i].layerName);
-        //printf("\e[1;36mEuclidVK\e[0;37m: Validation layer description %s\n", layers[i].description);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Enabled validation layer %s\n", layers[i].layerName);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Validation layer description %s\n", layers[i].description);
     }
     
     VkInstanceCreateInfo createInfo = {0};
@@ -392,15 +393,15 @@ void createInstance(uint32_t eh){
     vkEnumerateInstanceExtensionProperties(NULL, &lrnm, extprop);
     createInfo.enabledExtensionCount = lrnm;
     char** extnms = malloc(sizeof(char*)*lrnm);
-    printf("\e[1;36mEuclidVK\e[0;37m: Enabled extensions count = %d\n", lrnm);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Enabled extensions count = %d\n", lrnm);
     for(int i = 0; i != lrnm; i++){
-        printf("\e[1;36mEuclidVK\e[0;37m: Enabled extension %s\n", extprop[i].extensionName);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Enabled extension %s\n", extprop[i].extensionName);
         extnms[i] = extprop[i].extensionName;
     }
     createInfo.ppEnabledExtensionNames = (const char *const *) extnms;
 
     VkResult result = vkCreateInstance(&createInfo, NULL, &euclid.handle[eh].instance);
-    printf("\e[1;36mEuclidVK\e[0;37m: Vulkan instance created with result %d \n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Vulkan instance created with result %d \n", result);
     free(extprop);
     free(extnms);
 }
@@ -415,11 +416,11 @@ void getDevice(uint32_t eh){
         for(int i = 0; i != dn; i++){
             VkPhysicalDeviceProperties deviceProperties;
             vkGetPhysicalDeviceProperties(euclid.handle[eh].physicalDevices[i], &deviceProperties);
-            printf("\e[1;36mEuclidVK\e[0;37m: Device id = %d\n", i);
-            printf("\e[1;36mEuclidVK\e[0;37m: Device name = %s\n", deviceProperties.deviceName);
-            printf("\e[1;36mEuclidVK\e[0;37m: Device api version = %d\n", deviceProperties.apiVersion);
-            printf("\e[1;36mEuclidVK\e[0;37m: Device type = %d\n", deviceProperties.deviceType);
-            printf("\e[1;36mEuclidVK\e[0;37m: Device maxUniformBufferRange = %d\n", deviceProperties.limits.maxUniformBufferRange);
+            if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Device id = %d\n", i);
+            if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Device name = %s\n", deviceProperties.deviceName);
+            if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Device api version = %d\n", deviceProperties.apiVersion);
+            if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Device type = %d\n", deviceProperties.deviceType);
+            if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Device maxUniformBufferRange = %d\n", deviceProperties.limits.maxUniformBufferRange);
             vkGetPhysicalDeviceQueueFamilyProperties(euclid.handle[eh].physicalDevices[i], &euclid.handle[eh].queueFamilyCount, NULL);
 
             VkQueueFamilyProperties *queueFamilies = malloc(sizeof(VkQueueFamilyProperties)*euclid.handle[eh].queueFamilyCount);
@@ -437,11 +438,11 @@ void getDevice(uint32_t eh){
             free(queueFamilies);
         }
         if(euclid.handle[eh].chosenDevice == -1){
-            printf("\e[1;31mError\e[0;37m: Can not find a suitable device");
+            if (euclid.handle[eh].debug == 1) printf("\e[1;31mError\e[0;37m: Can not find a suitable device");
             exit(-1);
         }
     }
-    printf("\e[1;36mEuclidVK\e[0;37m: Chosen physical device id = %d\n", euclid.handle[eh].chosenDevice);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Chosen physical device id = %d\n", euclid.handle[eh].chosenDevice);
 }
 
 void getPresentFamily(uint32_t eh){
@@ -481,9 +482,9 @@ void createDevice(uint32_t eh){
     vkEnumerateDeviceExtensionProperties(euclid.handle[eh].physicalDevices[euclid.handle[eh].chosenDevice], NULL, &extensionCount, extprop);
 
     char** extnms = malloc(sizeof(char*)*extensionCount);
-    printf("\e[1;36mEuclidVK\e[0;37m: Enabled device extensions count = %d\n", extensionCount);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Enabled device extensions count = %d\n", extensionCount);
     for(int i = 0; i != extensionCount; i++){
-        printf("\e[1;36mEuclidVK\e[0;37m: Enabled device extension(%d) %s\n", i, extprop[i].extensionName);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Enabled device extension(%d) %s\n", i, extprop[i].extensionName);
         extnms[i] = extprop[i].extensionName;
     }
 
@@ -502,11 +503,11 @@ void createDevice(uint32_t eh){
     createInfo.pNext = NULL;
     createInfo.flags = 0;
     VkResult result = vkCreateDevice(euclid.handle[eh].physicalDevices[euclid.handle[eh].chosenDevice], &createInfo, NULL, &euclid.handle[eh].device);
-    printf("\e[1;36mEuclidVK\e[0;37m: Device created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Device created with result = %d\n", result);
     vkGetDeviceQueue(euclid.handle[eh].device, euclid.handle[eh].chosenqueuefam, 0, &euclid.handle[eh].graphicsQueue);
     vkGetDeviceQueue(euclid.handle[eh].device, euclid.handle[eh].chosenpresentqueue, 0, &euclid.handle[eh].presentQueue);
-    printf("\e[1;36mEuclidVK\e[0;37m: Chosen present queue = %d\n", euclid.handle[eh].chosenpresentqueue);
-    printf("\e[1;36mEuclidVK\e[0;37m: Chosen queue family with result = %d\n", euclid.handle[eh].chosenqueuefam);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Chosen present queue = %d\n", euclid.handle[eh].chosenpresentqueue);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Chosen queue family with result = %d\n", euclid.handle[eh].chosenqueuefam);
     free(extnms);
     free(extprop);
 }
@@ -523,14 +524,14 @@ void createSwapChain(uint32_t eh){
         formats = malloc(sizeof(VkSurfaceFormatKHR)*formatCount);
         vkGetPhysicalDeviceSurfaceFormatsKHR(euclid.handle[eh].physicalDevices[euclid.handle[eh].chosenDevice], euclid.handle[eh].surface, &formatCount, formats);
         for(int i = 0; i != formatCount; i++){
-            printf("\e[1;36mEuclidVK\e[0;37m: Avaible format = %d avaible color space = %d\n", formats[i].format, formats[i].colorSpace);
+            if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Avaible format = %d avaible color space = %d\n", formats[i].format, formats[i].colorSpace);
             if (formats[i].format == VK_FORMAT_B8G8R8A8_SRGB && formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 chosenFormat = i;
                 break;
             }
         }
     }else{
-        printf("\e[1;31mError\e[0;37m: No formats avaible");
+        if (euclid.handle[eh].debug == 1) printf("\e[1;31mError\e[0;37m: No formats avaible");
         exit(-1);
     }
 
@@ -541,10 +542,10 @@ void createSwapChain(uint32_t eh){
         modes = malloc(sizeof(VkPresentModeKHR)*presentModeCount);
         vkGetPhysicalDeviceSurfacePresentModesKHR(euclid.handle[eh].physicalDevices[euclid.handle[eh].chosenDevice], euclid.handle[eh].surface, &presentModeCount, modes);
         for(int i = 0; i != presentModeCount; i++){
-            printf("\e[1;36mEuclidVK\e[0;37m: Present mode avaible = %d\n", modes[i]);
+            if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Present mode avaible = %d\n", modes[i]);
         }
     }else{
-        printf("\e[1;31mError\e[0;37m: No present mode avaible");
+        if (euclid.handle[eh].debug == 1) printf("\e[1;31mError\e[0;37m: No present mode avaible");
         exit(-1);
     }
 
@@ -553,7 +554,7 @@ void createSwapChain(uint32_t eh){
         imageCount = capabilities.maxImageCount;
     }
 
-    printf("\e[1;36mEuclidVK\e[0;37m: SwapChain image count = %d\n", imageCount);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: SwapChain image count = %d\n", imageCount);
 
     VkSwapchainCreateInfoKHR createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -587,7 +588,7 @@ void createSwapChain(uint32_t eh){
     createInfo.flags = 0;
 
     VkResult result = vkCreateSwapchainKHR(euclid.handle[eh].device, &createInfo, NULL, &euclid.handle[eh].swapChain);
-    printf("\e[1;36mEuclidVK\e[0;37m: SwapChain created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: SwapChain created with result = %d\n", result);
     vkGetSwapchainImagesKHR(euclid.handle[eh].device, euclid.handle[eh].swapChain, &imageCount, NULL);
     euclid.handle[eh].swapChainImages = malloc(sizeof(VkImage)*imageCount);
     vkGetSwapchainImagesKHR(euclid.handle[eh].device, euclid.handle[eh].swapChain, &imageCount, euclid.handle[eh].swapChainImages);
@@ -619,7 +620,7 @@ void createSwapChainImageViews(uint32_t eh){
         createInfo.flags = 0;
         createInfo.pNext = NULL;
         VkResult result = vkCreateImageView(euclid.handle[eh].device, &createInfo, NULL, &euclid.handle[eh].swapChainImageViews[i]);
-        printf("\e[1;36mEuclidVK\e[0;37m: SwapChain Image View %d created with result = %d\n", i, result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: SwapChain Image View %d created with result = %d\n", i, result);
     }
 }
 
@@ -685,7 +686,7 @@ void createRenderPass(uint32_t eh){
     renderPassInfo.pNext = NULL;
 
     VkResult result = vkCreateRenderPass(euclid.handle[eh].device, &renderPassInfo, NULL, &euclid.handle[eh].renderPass);
-    printf("\e[1;36mEuclidVK\e[0;37m: Renderpass created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Renderpass created with result = %d\n", result);
 }
 
 void createShadowRenderPass(uint32_t eh){
@@ -736,7 +737,7 @@ void createShadowRenderPass(uint32_t eh){
     renderPassInfo.pNext = NULL;
 
     VkResult result = vkCreateRenderPass(euclid.handle[eh].device, &renderPassInfo, NULL, &euclid.handle[eh].shadowRenderPass);
-    printf("\e[1;36mEuclidVK\e[0;37m: Shadow renderpass created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Shadow renderpass created with result = %d\n", result);
 }
 
 void createDefferedRenderPass(uint32_t eh){
@@ -805,7 +806,7 @@ void createDefferedRenderPass(uint32_t eh){
     renderPassInfo.pNext = NULL;
 
     VkResult result = vkCreateRenderPass(euclid.handle[eh].device, &renderPassInfo, NULL, &euclid.handle[eh].defferedRenderPass);
-    printf("\e[1;36mEuclidVK\e[0;37m: Deffered renderpass created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Deffered renderpass created with result = %d\n", result);
 }
 
 void createShadowData(uint32_t eh){
@@ -825,7 +826,7 @@ void createShadowData(uint32_t eh){
     depthCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     depthCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkResult result = vkCreateImage(euclid.handle[eh].device, &depthCreateInfo, NULL, &euclid.handle[eh].shadowImage);
-    printf("\e[1;36mEuclidVK\e[0;37m: Shadow image created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Shadow image created with result = %d\n", result);
 
     VkMemoryRequirements memRequirements;
     vkGetImageMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].shadowImage, &memRequirements);
@@ -836,7 +837,7 @@ void createShadowData(uint32_t eh){
     allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, eh);
 
     result = vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &euclid.handle[eh].shadowImageMemory);
-    printf("\e[1;36mEuclidVK\e[0;37m: Shadow image memory allocated with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Shadow image memory allocated with result = %d\n", result);
 
     vkBindImageMemory(euclid.handle[eh].device, euclid.handle[eh].shadowImage, euclid.handle[eh].shadowImageMemory, 0);
 
@@ -855,7 +856,7 @@ void createShadowData(uint32_t eh){
     dicreateInfo.subresourceRange.baseArrayLayer = 0;
     dicreateInfo.subresourceRange.layerCount = euclid.handle[eh].shadowMapsCount;
     result = vkCreateImageView(euclid.handle[eh].device, &dicreateInfo, NULL, &euclid.handle[eh].shadowImageView);
-    printf("\e[1;36mEuclidVK\e[0;37m: Shadow imageview created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Shadow imageview created with result = %d\n", result);
 
     for (int i = 0; i != euclid.handle[eh].shadowMapsCount; i++) {
         dicreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -872,7 +873,7 @@ void createShadowData(uint32_t eh){
         dicreateInfo.subresourceRange.baseArrayLayer = i;
         dicreateInfo.subresourceRange.layerCount = 1;
         result = vkCreateImageView(euclid.handle[eh].device, &dicreateInfo, NULL, &euclid.handle[eh].shadowRenderImageViews[i]);
-        printf("\e[1;36mEuclidVK\e[0;37m: Shadow render imageview created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Shadow render imageview created with result = %d\n", result);
 
         VkImageView attachments[] = {
             euclid.handle[eh].shadowRenderImageViews[i],
@@ -888,7 +889,7 @@ void createShadowData(uint32_t eh){
         framebufferInfo.layers = 1;
     
         result = vkCreateFramebuffer(euclid.handle[eh].device, &framebufferInfo, NULL, &euclid.handle[eh].shadowFramebuffers[i]);
-        printf("\e[1;36mEuclidVK\e[0;37m: Shadow framebuffer created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Shadow framebuffer created with result = %d\n", result);
     }
 }
 
@@ -915,7 +916,7 @@ void createDefferedData(uint32_t eh){
         depthCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         depthCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         VkResult result = vkCreateImage(euclid.handle[eh].device, &depthCreateInfo, NULL, &euclid.handle[eh].defferedDepthImage);
-        printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth image created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth image created with result = %d\n", result);
 
         VkMemoryRequirements memRequirements;
         vkGetImageMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImage, &memRequirements);
@@ -926,7 +927,7 @@ void createDefferedData(uint32_t eh){
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, eh);
 
         result = vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &euclid.handle[eh].defferedDepthImageMemory);
-        printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth image memory allocated with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth image memory allocated with result = %d\n", result);
 
         vkBindImageMemory(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImage, euclid.handle[eh].defferedDepthImageMemory, 0);
     }
@@ -947,7 +948,7 @@ void createDefferedData(uint32_t eh){
         defferedCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         defferedCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         VkResult result = vkCreateImage(euclid.handle[eh].device, &defferedCreateInfo, NULL, &euclid.handle[eh].defferedImage);
-        printf("\e[1;36mEuclidVK\e[0;37m: Deffered image created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Deffered image created with result = %d\n", result);
 
         VkMemoryRequirements memdefRequirements;
         vkGetImageMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].defferedImage, &memdefRequirements);
@@ -958,7 +959,7 @@ void createDefferedData(uint32_t eh){
         allodefcInfo.memoryTypeIndex = findMemoryType(memdefRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, eh);
 
         result = vkAllocateMemory(euclid.handle[eh].device, &allodefcInfo, NULL, &euclid.handle[eh].defferedImageMemory);
-        printf("\e[1;36mEuclidVK\e[0;37m: Deffered image memory allocated with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Deffered image memory allocated with result = %d\n", result);
 
         vkBindImageMemory(euclid.handle[eh].device, euclid.handle[eh].defferedImage, euclid.handle[eh].defferedImageMemory, 0);
     }
@@ -978,7 +979,7 @@ void createDefferedData(uint32_t eh){
     dicreateInfo.subresourceRange.baseArrayLayer = 0;
     dicreateInfo.subresourceRange.layerCount = euclid.handle[eh].defferedCount;
     result = vkCreateImageView(euclid.handle[eh].device, &dicreateInfo, NULL, &euclid.handle[eh].defferedDepthImageView);
-    printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth imageview created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth imageview created with result = %d\n", result);
 
     VkImageViewCreateInfo defcreateInfo = {0};
     defcreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -995,7 +996,7 @@ void createDefferedData(uint32_t eh){
     defcreateInfo.subresourceRange.baseArrayLayer = 0;
     defcreateInfo.subresourceRange.layerCount = euclid.handle[eh].defferedCount*4;
     result = vkCreateImageView(euclid.handle[eh].device, &defcreateInfo, NULL, &euclid.handle[eh].defferedImageView);
-    printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth imageview created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth imageview created with result = %d\n", result);
 
     for (uint32_t i = 0, b = 0; i != euclid.handle[eh].defferedCount; i++, b+=4) {
         dicreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1012,7 +1013,7 @@ void createDefferedData(uint32_t eh){
         dicreateInfo.subresourceRange.baseArrayLayer = i;
         dicreateInfo.subresourceRange.layerCount = 1;
         result = vkCreateImageView(euclid.handle[eh].device, &dicreateInfo, NULL, &euclid.handle[eh].defferedDepthRenderImageViews[i]);
-        printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth render imageview (%d) created with result = %d\n", i, result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Deffered depth render imageview (%d) created with result = %d\n", i, result);
 
         for(uint32_t j = 0; j != 4; j++){
             defcreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1029,7 +1030,7 @@ void createDefferedData(uint32_t eh){
             defcreateInfo.subresourceRange.baseArrayLayer = b+j;
             defcreateInfo.subresourceRange.layerCount = 1;
             result = vkCreateImageView(euclid.handle[eh].device, &defcreateInfo, NULL, &euclid.handle[eh].defferedRenderImageViews[b+j]);
-            printf("\e[1;36mEuclidVK\e[0;37m: Deffered render imageview (%d) created with result = %d\n", b+j, result);
+            if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Deffered render imageview (%d) created with result = %d\n", b+j, result);
         }
 
         VkImageView attachments[] = {
@@ -1050,7 +1051,7 @@ void createDefferedData(uint32_t eh){
         framebufferInfo.layers = 1;
     
         result = vkCreateFramebuffer(euclid.handle[eh].device, &framebufferInfo, NULL, &euclid.handle[eh].defferedFramebuffers[i]);
-        printf("\e[1;36mEuclidVK\e[0;37m: Deffered framebuffer (%d) created with result = %d\n", i, result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Deffered framebuffer (%d) created with result = %d\n", i, result);
     }
 }
 
@@ -1071,7 +1072,7 @@ void createFrameBuffers(uint32_t eh){
     depthCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     depthCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkResult result = vkCreateImage(euclid.handle[eh].device, &depthCreateInfo, NULL, &euclid.handle[eh].depthImage);
-    printf("\e[1;36mEuclidVK\e[0;37m: depth image created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: depth image created with result = %d\n", result);
 
     VkMemoryRequirements memRequirements;
     vkGetImageMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].depthImage, &memRequirements);
@@ -1082,7 +1083,7 @@ void createFrameBuffers(uint32_t eh){
     allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, eh);
 
     result = vkAllocateMemory(euclid.handle[eh].device, &allocInfo, NULL, &euclid.handle[eh].depthImageMemory);
-    printf("\e[1;36mEuclidVK\e[0;37m: depth image memory allocated with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: depth image memory allocated with result = %d\n", result);
 
     vkBindImageMemory(euclid.handle[eh].device, euclid.handle[eh].depthImage, euclid.handle[eh].depthImageMemory, 0);
 
@@ -1101,7 +1102,7 @@ void createFrameBuffers(uint32_t eh){
     dicreateInfo.subresourceRange.baseArrayLayer = 0;
     dicreateInfo.subresourceRange.layerCount = 1;
     result = vkCreateImageView(euclid.handle[eh].device, &dicreateInfo, NULL, &euclid.handle[eh].depthImageView);
-    printf("\e[1;36mEuclidVK\e[0;37m: depth imageview created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: depth imageview created with result = %d\n", result);
 
     euclid.handle[eh].swapChainFramebuffers = malloc(sizeof(VkFramebuffer)*euclid.handle[eh].swapChainImageCount);
 
@@ -1121,7 +1122,7 @@ void createFrameBuffers(uint32_t eh){
         framebufferInfo.layers = 1;
     
         result = vkCreateFramebuffer(euclid.handle[eh].device, &framebufferInfo, NULL, &euclid.handle[eh].swapChainFramebuffers[i]);
-        printf("\e[1;36mEuclidVK\e[0;37m: SwapChain framebuffers created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: SwapChain framebuffers created with result = %d\n", result);
     }
 }
 
@@ -1132,7 +1133,7 @@ void createCommandPool(uint32_t eh){
     poolInfo.queueFamilyIndex = euclid.handle[eh].chosenqueuefam;
 
     VkResult result = vkCreateCommandPool( euclid.handle[eh].device, &poolInfo, NULL, & euclid.handle[eh].commandPool);
-    printf("\e[1;36mEuclidVK\e[0;37m: Command pool created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Command pool created with result = %d\n", result);
 }
 
 void createCommandBuffer(uint32_t eh){
@@ -1145,7 +1146,7 @@ void createCommandBuffer(uint32_t eh){
         allocInfo.commandBufferCount = 1;
 
         VkResult result = vkAllocateCommandBuffers( euclid.handle[eh].device, &allocInfo, & euclid.handle[eh].commandBuffers[i]);
-        printf("\e[1;36mEuclidVK\e[0;37m: Command buffer created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Command buffer created with result = %d\n", result);
     }
 }
 
@@ -1161,11 +1162,11 @@ void createSyncObjects(uint32_t eh){
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
         VkResult result = vkCreateSemaphore(euclid.handle[eh].device, &semaphoreInfo, NULL, &euclid.handle[eh].imageAvailableSemaphores[i]);
-        printf("\e[1;36mEuclidVK\e[0;37m: imageAvailableSemaphore created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: imageAvailableSemaphore created with result = %d\n", result);
         result = vkCreateSemaphore(euclid.handle[eh].device, &semaphoreInfo, NULL, &euclid.handle[eh].renderFinishedSemaphores[i]);
-        printf("\e[1;36mEuclidVK\e[0;37m: renderFinishedSemaphore created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: renderFinishedSemaphore created with result = %d\n", result);
         result = vkCreateFence(euclid.handle[eh].device, &fenceInfo, NULL, &euclid.handle[eh].inFlightFences[i]);
-        printf("\e[1;36mEuclidVK\e[0;37m: inFlightFence created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: inFlightFence created with result = %d\n", result);
     }
 }
 
@@ -1212,7 +1213,7 @@ void startrender(uint32_t eh){
         euclid.handle[eh].resolutionY = 1;
     }
     if (result == VK_ERROR_OUT_OF_DATE_KHR || euclid.handle[eh].oldx != euclid.handle[eh].resolutionX || euclid.handle[eh].oldy != euclid.handle[eh].resolutionY || euclid.handle[eh].resolutionScale != euclid.handle[eh].oldResolutionScale || euclid.handle[eh].defferedCount != euclid.handle[eh].oldDefferedCount) {
-        printf("\e[1;35mEuclidVk\e[0;37m: Resolution changed from %dx%d to %dx%d\n", euclid.handle[eh].oldx, euclid.handle[eh].oldy, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionY);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;35mEuclidVk\e[0;37m: Resolution changed from %dx%d to %dx%d\n", euclid.handle[eh].oldx, euclid.handle[eh].oldy, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionY);
         euclid.handle[eh].oldx = euclid.handle[eh].resolutionX;
         euclid.handle[eh].oldy = euclid.handle[eh].resolutionY;
         vkDeviceWaitIdle(euclid.handle[eh].device);
@@ -1393,6 +1394,7 @@ uint32_t neweng(uint32_t shadowMapResolution){
     }
     euclid.handle[eh].chosenDevice = -1;
     euclid.handle[eh].usedPresentMode = 0;
+    euclid.handle[eh].debug = 0;
     createInstance(eh);
     getDevice(eh);
     glfwInit();
@@ -1446,7 +1448,7 @@ uint32_t neweng(uint32_t shadowMapResolution){
         samplerInfo.maxLod = 0.0f;
 
         VkResult result = vkCreateSampler(euclid.handle[eh].device, &samplerInfo, NULL, &euclid.handle[eh].attachmentSampler);
-        printf("\e[1;36mEuclidTEX\e[0;37m: Attachment sampler created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidTEX\e[0;37m: Attachment sampler created with result = %d\n", result);
     }
 
     {
@@ -1457,7 +1459,7 @@ uint32_t neweng(uint32_t shadowMapResolution){
         bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkResult result = vkCreateBuffer(euclid.handle[eh].device, &bufferInfo, NULL, &euclid.handle[eh].shadowUniformBuffer);
-        printf("\e[1;36mEuclidVK\e[0;37m: Shadow uniform buffer created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Shadow uniform buffer created with result = %d\n", result);
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffer, &memRequirements);
         
@@ -1481,7 +1483,7 @@ uint32_t neweng(uint32_t shadowMapResolution){
         bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkResult result = vkCreateBuffer(euclid.handle[eh].device, &bufferInfo, NULL, &euclid.handle[eh].defferedUniformBuffer);
-        printf("\e[1;36mEuclidVK\e[0;37m: Deffered uniform buffer created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Deffered uniform buffer created with result = %d\n", result);
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(euclid.handle[eh].device, euclid.handle[eh].defferedUniformBuffer, &memRequirements);
         
@@ -1520,14 +1522,14 @@ uint32_t newmaterial(uint32_t eh, uint32_t *vert, uint32_t *frag, uint32_t *shad
     vcreateInfo.codeSize = svert;
     vcreateInfo.pCode = (uint32_t*) &vert[0];
     VkResult result = vkCreateShaderModule(euclid.handle[eh].device, &vcreateInfo, NULL, &euclid.materials[em].vertModule);
-    printf("\e[1;36mEuclidMT\e[0;37m: Vertex shader module created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMT\e[0;37m: Vertex shader module created with result = %d\n", result);
 
     VkShaderModuleCreateInfo fcreateInfo = {0};
     fcreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     fcreateInfo.codeSize = sfrag;
     fcreateInfo.pCode = (uint32_t*) &frag[0];
     result = vkCreateShaderModule(euclid.handle[eh].device, &fcreateInfo, NULL, &euclid.materials[em].fragModule);
-    printf("\e[1;36mEuclidMT\e[0;37m: Fragment shader module created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMT\e[0;37m: Fragment shader module created with result = %d\n", result);
 
     if(sshadow != 0){
         VkShaderModuleCreateInfo screateInfo = {0};
@@ -1535,7 +1537,7 @@ uint32_t newmaterial(uint32_t eh, uint32_t *vert, uint32_t *frag, uint32_t *shad
         screateInfo.codeSize = sshadow;
         screateInfo.pCode = (uint32_t*) &shadow[0];
         result = vkCreateShaderModule(euclid.handle[eh].device, &screateInfo, NULL, &euclid.materials[em].shadowModule);
-        printf("\e[1;36mEuclidMT\e[0;37m: Shadow shader module created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMT\e[0;37m: Shadow shader module created with result = %d\n", result);
     }
 
     euclid.materials[em].cullMode = cullmode;
@@ -1543,7 +1545,7 @@ uint32_t newmaterial(uint32_t eh, uint32_t *vert, uint32_t *frag, uint32_t *shad
     euclid.materials[em].polygonMode = VK_POLYGON_MODE_FILL;
     euclid.materials[em].lineWidth = 1.0;
 
-    printf("\e[1;36mEuclidMT\e[0;37m: Shader module created by id = %d\n", em);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMT\e[0;37m: Shader module created by id = %d\n", em);
     return em;
 }
 
@@ -1620,7 +1622,7 @@ uint32_t newmodel(uint32_t eh, float *vertices, float *uv, float *normals, uint3
     bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     VkResult result = vkCreateBuffer(euclid.handle[eh].device, &bufferInfo, NULL, &euclid.models[em].vertexBuffer);
-    printf("\e[1;36mEuclidMD\e[0;37m: Vertex buffer created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMD\e[0;37m: Vertex buffer created with result = %d\n", result);
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(euclid.handle[eh].device, euclid.models[em].vertexBuffer, &memRequirements);
 
@@ -1690,7 +1692,7 @@ void createDescriptorSetLayout(uint32_t eh, uint32_t eme) {
     layoutInfo.bindingCount = 7;
     layoutInfo.pBindings = uboLayoutBinding;
     VkResult result = vkCreateDescriptorSetLayout(euclid.handle[eh].device, &layoutInfo, NULL, &euclid.meshes[eme].descriptorSetLayout);
-    printf("\e[1;36mEuclidMS\e[0;37m: Descriptor set layout created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Descriptor set layout created with result = %d\n", result);
 }
 
 void createShadowDescriptorSetLayout(uint32_t eh, uint32_t eme) {
@@ -1712,7 +1714,7 @@ void createShadowDescriptorSetLayout(uint32_t eh, uint32_t eme) {
     layoutInfo.bindingCount = 2;
     layoutInfo.pBindings = uboLayoutBinding;
     VkResult result = vkCreateDescriptorSetLayout(euclid.handle[eh].device, &layoutInfo, NULL, &euclid.meshes[eme].shadowDescriptorSetLayout);
-    printf("\e[1;36mEuclidMS\e[0;37m: Shadow Descriptor set layout created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Shadow Descriptor set layout created with result = %d\n", result);
 }
 
 void createDefferedDescriptorSetLayout(uint32_t eh, uint32_t eme) {
@@ -1740,7 +1742,7 @@ void createDefferedDescriptorSetLayout(uint32_t eh, uint32_t eme) {
     layoutInfo.bindingCount = 3;
     layoutInfo.pBindings = uboLayoutBinding;
     VkResult result = vkCreateDescriptorSetLayout(euclid.handle[eh].device, &layoutInfo, NULL, &euclid.meshes[eme].defferedDescriptorSetLayout);
-    printf("\e[1;36mEuclidMS\e[0;37m: Deffered Descriptor set layout created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Deffered Descriptor set layout created with result = %d\n", result);
 }
 
 void createUniformBuffer(uint32_t eh, uint32_t eme){
@@ -1756,7 +1758,7 @@ void createUniformBuffer(uint32_t eh, uint32_t eme){
         bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkResult result = vkCreateBuffer(euclid.handle[eh].device, &bufferInfo, NULL, &euclid.meshes[eme].uniformBuffers[i]);
-        printf("\e[1;36mEuclidMD\e[0;37m: Uniform buffer created with result = %d\n", result);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMD\e[0;37m: Uniform buffer created with result = %d\n", result);
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(euclid.handle[eh].device, euclid.meshes[eme].uniformBuffers[i], &memRequirements);
         
@@ -1802,7 +1804,7 @@ void createDescriptorPool(uint32_t eh, uint32_t eme){
     poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
 
     VkResult result = vkCreateDescriptorPool(euclid.handle[eh].device, &poolInfo, NULL, &euclid.meshes[eme].descriptorPool);
-    printf("\e[1;36mEuclidMS\e[0;37m: Descriptor pool created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Descriptor pool created with result = %d\n", result);
 }
 
 void createShadowDescriptorPool(uint32_t eh, uint32_t eme){
@@ -1820,7 +1822,7 @@ void createShadowDescriptorPool(uint32_t eh, uint32_t eme){
     poolInfo.maxSets = 100;
 
     VkResult result = vkCreateDescriptorPool(euclid.handle[eh].device, &poolInfo, NULL, &euclid.meshes[eme].shadowDescriptorPool);
-    printf("\e[1;36mEuclidMS\e[0;37m: Shadow descriptor pool created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Shadow descriptor pool created with result = %d\n", result);
 }
 
 void createDefferedDescriptorPool(uint32_t eh, uint32_t eme){
@@ -1841,7 +1843,7 @@ void createDefferedDescriptorPool(uint32_t eh, uint32_t eme){
     poolInfo.maxSets = 10;
 
     VkResult result = vkCreateDescriptorPool(euclid.handle[eh].device, &poolInfo, NULL, &euclid.meshes[eme].defferedDescriptorPool);
-    printf("\e[1;36mEuclidMS\e[0;37m: Deffered descriptor pool created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Deffered descriptor pool created with result = %d\n", result);
 }
 
 void createDescriptorSets(uint32_t eh, uint32_t eme){
@@ -1858,7 +1860,7 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
 
     euclid.meshes[eme].descriptorSets = malloc(sizeof(VkDescriptorSet)*MAX_FRAMES_IN_FLIGHT);
     VkResult result = vkAllocateDescriptorSets(euclid.handle[eh].device, &allocInfo, euclid.meshes[eme].descriptorSets);
-    printf("\e[1;36mEuclidMS\e[0;37m: Descriptor sets allocated with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Descriptor sets allocated with result = %d\n", result);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo bufferInfo = {0};
@@ -1984,7 +1986,7 @@ void createShadowDescriptorSets(uint32_t eh, uint32_t eme){
     allocInfo.descriptorSetCount = 100;
     allocInfo.pSetLayouts = ldcs;
     VkResult result = vkAllocateDescriptorSets(euclid.handle[eh].device, &allocInfo, euclid.meshes[eme].shadowDescriptorSets);
-    printf("\e[1;36mEuclidMS\e[0;37m: Shadow descriptor sets allocated with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Shadow descriptor sets allocated with result = %d\n", result);
 
     for (size_t i = 0; i < 100; i++) {
         VkDescriptorBufferInfo bufferInfo[2] = {0};
@@ -2033,7 +2035,7 @@ void createDefferedDescriptorSets(uint32_t eh, uint32_t eme){
     allocInfo.descriptorSetCount = 10;
     allocInfo.pSetLayouts = ldcs;
     VkResult result = vkAllocateDescriptorSets(euclid.handle[eh].device, &allocInfo, euclid.meshes[eme].defferedDescriptorSets);
-    printf("\e[1;36mEuclidMS\e[0;37m: Deffered descriptor sets allocated with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Deffered descriptor sets allocated with result = %d\n", result);
 
     for (size_t i = 0; i < 10; i++) {
         VkDescriptorBufferInfo bufferInfo[2] = {0};
@@ -2242,7 +2244,7 @@ void createPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em){
     pipelineLayoutInfo.pSetLayouts = &euclid.meshes[eme].descriptorSetLayout;
 
     VkResult result = vkCreatePipelineLayout(euclid.handle[eh].device, &pipelineLayoutInfo, NULL, &euclid.meshes[eme].pipelineLayout);
-    printf("\e[1;36mEuclidMS\e[0;37m: Pipeline layout created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Pipeline layout created with result = %d\n", result);
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {0};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -2263,7 +2265,7 @@ void createPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em){
     pipelineInfo.basePipelineIndex = -1;
 
     result = vkCreateGraphicsPipelines(euclid.handle[eh].device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &euclid.meshes[eme].graphicsPipeline);
-    printf("\e[1;36mEuclidMS\e[0;37m: Pipeline created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Pipeline created with result = %d\n", result);
 }
 
 void createshadowPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em){
@@ -2407,7 +2409,7 @@ void createshadowPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em){
     pipelineLayoutInfo.pSetLayouts = &euclid.meshes[eme].shadowDescriptorSetLayout;
 
     VkResult result = vkCreatePipelineLayout(euclid.handle[eh].device, &pipelineLayoutInfo, NULL, &euclid.meshes[eme].shadowPipelineLayout);
-    printf("\e[1;36mEuclidMS\e[0;37m: Shadow pipeline layout created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Shadow pipeline layout created with result = %d\n", result);
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {0};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -2428,7 +2430,7 @@ void createshadowPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em){
     pipelineInfo.basePipelineIndex = -1;
 
     result = vkCreateGraphicsPipelines(euclid.handle[eh].device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &euclid.meshes[eme].shadowPipeline);
-    printf("\e[1;36mEuclidMS\e[0;37m: Shadow pipeline created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Shadow pipeline created with result = %d\n", result);
 }
 
 void createdefferedPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em){
@@ -2590,7 +2592,7 @@ void createdefferedPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em)
     pipelineLayoutInfo.pSetLayouts = &euclid.meshes[eme].defferedDescriptorSetLayout;
 
     VkResult result = vkCreatePipelineLayout(euclid.handle[eh].device, &pipelineLayoutInfo, NULL, &euclid.meshes[eme].defferedPipelineLayout);
-    printf("\e[1;36mEuclidMS\e[0;37m: Deffered pipeline layout created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Deffered pipeline layout created with result = %d\n", result);
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {0};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -2611,7 +2613,7 @@ void createdefferedPipeline(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em)
     pipelineInfo.basePipelineIndex = -1;
 
     result = vkCreateGraphicsPipelines(euclid.handle[eh].device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &euclid.meshes[eme].defferedPipeline);
-    printf("\e[1;36mEuclidMS\e[0;37m: Deffered pipeline created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Deffered pipeline created with result = %d\n", result);
 }
 
 uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t te, uint32_t usage){
@@ -2959,7 +2961,7 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     VkDeviceMemory stagingBufferMemory;
 
     VkDeviceSize imageSize = xsize * ysize * zsize * 4;
-    printf("\e[1;36mEuclidTEX\e[0;37m: passed image size = %dx%dx%d, total size number = %d\n", xsize, ysize, zsize, imageSize);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidTEX\e[0;37m: passed image size = %dx%dx%d, total size number = %d\n", xsize, ysize, zsize, imageSize);
 
     VkBufferCreateInfo bufferInfo = {0};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -2967,7 +2969,7 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     VkResult result = vkCreateBuffer(euclid.handle[eh].device, &bufferInfo, NULL, &stagingBuffer);
-    printf("\e[1;36mEuclidTEX\e[0;37m: Staging buffer created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidTEX\e[0;37m: Staging buffer created with result = %d\n", result);
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(euclid.handle[eh].device, stagingBuffer, &memRequirements);
     VkMemoryAllocateInfo allocInfo = {0};
@@ -3000,7 +3002,7 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.flags = 0;
     result = vkCreateImage(euclid.handle[eh].device, &imageInfo, NULL, &euclid.textures[te].texture);
-    printf("\e[1;36mEuclidTEX\e[0;37m: Texture created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidTEX\e[0;37m: Texture created with result = %d\n", result);
 
     VkMemoryRequirements memRequirementsi;
     vkGetImageMemoryRequirements(euclid.handle[eh].device, euclid.textures[te].texture, &memRequirementsi);
@@ -3011,7 +3013,7 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     allocInfoi.memoryTypeIndex = findMemoryType(memRequirementsi.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, eh);
     
     result = vkAllocateMemory(euclid.handle[eh].device, &allocInfoi, NULL, &euclid.textures[te].textureImageMemory);
-    printf("\e[1;36mEuclidTEX\e[0;37m: Texture memory alocated with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidTEX\e[0;37m: Texture memory alocated with result = %d\n", result);
 
     vkBindImageMemory(euclid.handle[eh].device, euclid.textures[te].texture, euclid.textures[te].textureImageMemory, 0);
 
@@ -3090,7 +3092,7 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     viewInfo.subresourceRange.layerCount = zsize;
 
     result = vkCreateImageView(euclid.handle[eh].device, &viewInfo, NULL, &euclid.textures[te].textureImageView);
-    printf("\e[1;36mEuclidTEX\e[0;37m: Texture view created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidTEX\e[0;37m: Texture view created with result = %d\n", result);
 
     VkSamplerCreateInfo samplerInfo = {0};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -3115,13 +3117,13 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     samplerInfo.maxLod = euclid.textures[te].mipLevels;
 
     result = vkCreateSampler(euclid.handle[eh].device, &samplerInfo, NULL, &euclid.textures[te].sampler);
-    printf("\e[1;36mEuclidTEX\e[0;37m: Sampler created with result = %d\n", result);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidTEX\e[0;37m: Sampler created with result = %d\n", result);
 
     return te;
 }
 
 void destroy(uint32_t eh){
-    printf("\e[1;36mEuclidVK\e[0;37m: Destroing handle by id = %d...\n", eh);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroing handle by id = %d...\n", eh);
     vkDeviceWaitIdle(euclid.handle[eh].device);
     vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].defferedImageView, NULL);
     for(uint32_t i = 0; i != euclid.handle[eh].defferedCount; i++){
@@ -3133,7 +3135,7 @@ void destroy(uint32_t eh){
     vkDestroyBuffer(euclid.handle[eh].device, euclid.handle[eh].defferedUniformBuffer, NULL);
     vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].defferedUniformBuffersMemory, NULL);
     free(euclid.handle[eh].defferedUniformBuffersMapped);
-    printf("\e[1;36mEuclidVK\e[0;37m: Destroyed deffered data\n");
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed deffered data\n");
     vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].shadowImageView, NULL);
     for(uint32_t i = 0; i != euclid.handle[eh].shadowMapsCount; i++){
         vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].shadowFramebuffers[i], NULL);
@@ -3144,7 +3146,7 @@ void destroy(uint32_t eh){
     vkDestroyBuffer(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffer, NULL);
     vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].shadowUniformBuffersMemory, NULL);
     free(euclid.handle[eh].shadowUniformBuffersMapped);
-    printf("\e[1;36mEuclidVK\e[0;37m: Destroyed shadow data\n");
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed shadow data\n");
     for(uint32_t i = 0; i != euclid.mesize; i++){
         //fix
         if(euclid.meshes[i].usage == 0){
@@ -3184,43 +3186,43 @@ void destroy(uint32_t eh){
         free(euclid.meshes[i].uniformBuffersMemory);
         free(euclid.meshes[i].uniformBuffersMapped);
     }
-    printf("\e[1;36mEuclidVK\e[0;37m: Destroyed uniform buffers\n");
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed uniform buffers\n");
     for(uint32_t i = 0; i != euclid.tsize; i++){
         vkDestroyImageView(euclid.handle[eh].device, euclid.textures[i].textureImageView, NULL);
         vkDestroyImage(euclid.handle[eh].device, euclid.textures[i].texture, NULL);
         vkFreeMemory(euclid.handle[eh].device, euclid.textures[i].textureImageMemory, NULL);
     }
-    printf("\e[1;36mEuclidVK\e[0;37m: Destroyed textures\n");
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed textures\n");
     for(uint32_t i = 0; i != euclid.mosize; i++){
         vkDestroyBuffer(euclid.handle[eh].device, euclid.models[i].vertexBuffer, NULL);
         vkFreeMemory(euclid.handle[eh].device, euclid.models[i].vertexBufferMemory, NULL);
     }
-    printf("\e[1;36mEuclidVK\e[0;37m: Destroyed vertexbuffers\n");
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed vertexbuffers\n");
     for(uint32_t i = 0; i != euclid.msize; i++){
         vkDestroyShaderModule(euclid.handle[eh].device, euclid.materials[i].fragModule, NULL);
         vkDestroyShaderModule(euclid.handle[eh].device, euclid.materials[i].vertModule, NULL);
     }
-    printf("\e[1;36mEuclidVK\e[0;37m: Destroyed materials\n");
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed materials\n");
     for(int i = 0; i != MAX_FRAMES_IN_FLIGHT; i++){
         vkDestroySemaphore(euclid.handle[eh].device, euclid.handle[eh].imageAvailableSemaphores[i], NULL);
         vkDestroySemaphore(euclid.handle[eh].device, euclid.handle[eh].renderFinishedSemaphores[i], NULL);
         vkDestroyFence(euclid.handle[eh].device, euclid.handle[eh].inFlightFences[i], NULL);
     }
-    printf("\e[1;36mEuclidVK\e[0;37m: Destroyed sync objects\n");
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed sync objects\n");
     vkFreeCommandBuffers(euclid.handle[eh].device, euclid.handle[eh].commandPool, MAX_FRAMES_IN_FLIGHT, euclid.handle[eh].commandBuffers);
     vkDestroyCommandPool(euclid.handle[eh].device, euclid.handle[eh].commandPool, NULL);
-    printf("\e[1;36mEuclidVK\e[0;37m: Destroyed command pool and buffer\n");
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed command pool and buffer\n");
     for(int i = 0; i != euclid.handle[eh].swapChainImageCount; i++){
         vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].swapChainFramebuffers[i], NULL);
     }
-    printf("\e[1;36mEuclidVK\e[0;37m: Destroyed framebuffers\n");
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed framebuffers\n");
     vkDestroyRenderPass(euclid.handle[eh].device, euclid.handle[eh].renderPass, NULL);
     vkDestroyRenderPass(euclid.handle[eh].device, euclid.handle[eh].shadowRenderPass, NULL);
     vkDestroyRenderPass(euclid.handle[eh].device, euclid.handle[eh].defferedRenderPass, NULL);
     for(int i = 0; i != euclid.handle[eh].swapChainImageCount; i++){
         vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].swapChainImageViews[i], NULL);
     }
-    printf("\e[1;36mEuclidVK\e[0;37m: Destroyed imageviews\n");
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed imageviews\n");
     vkDestroySwapchainKHR(euclid.handle[eh].device, euclid.handle[eh].swapChain, NULL);
     vkDestroySurfaceKHR(euclid.handle[eh].instance, euclid.handle[eh].surface, NULL);
     vkDestroyDevice(euclid.handle[eh].device, NULL);
@@ -3233,5 +3235,5 @@ void destroy(uint32_t eh){
     free(euclid.handle[eh].inFlightFences);
     free(euclid.handle[eh].commandBuffers);
     free(euclid.handle[eh].physicalDevices);
-    printf("\e[1;36mEuclidVK\e[0;37m: Destroyed handle by id = %d\n", eh);
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed handle by id = %d\n", eh);
 }

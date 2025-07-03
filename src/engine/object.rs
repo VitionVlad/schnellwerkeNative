@@ -33,7 +33,7 @@ impl Object {
             draw: true,
             draw_shadow: true,
             draw_distance: 30f32,
-            view_reaction_distance: 3f32,
+            view_reaction_distance: 2f32,
             usage: usage,
             eng_ph_id: id,
             blank: false,
@@ -48,7 +48,7 @@ impl Object {
             draw: true,
             draw_shadow: true,
             draw_distance: 30f32,
-            view_reaction_distance: 3f32,
+            view_reaction_distance: 2f32,
             eng_ph_id: 0,
             blank: true,
         }
@@ -146,6 +146,9 @@ impl Object {
                     mt.vec4mul(c1[7]),
                 ];
 
+                let lbg = Self::getbgp(c1.to_vec());
+                let lsg = Self::getbsp(c1.to_vec());
+
                 let mut behind = false;
                 let cmp = eng.cameras[eng.primary_camera as usize].physic_object.pos;
                 let dst1 = f32::sqrt(f32::powi(bg.x-cmp.x, 2)+f32::powi(bg.y-cmp.y, 2)+f32::powi(bg.z-cmp.z, 2));
@@ -164,9 +167,17 @@ impl Object {
 
                 self.is_looking_at = false;
 
-                if Self::in_range(sg.x, bg.x, 0.0) && Self::in_range(sg.y, bg.y, 0.0) && !behind && fdst <= self.view_reaction_distance{
+                if Self::in_range(lsg.x, lbg.x, 0.0) && Self::in_range(lsg.y, lbg.y, 0.0) && !behind && fdst <= self.view_reaction_distance{
                     self.is_looking_at = true;
                 }
+            }else if self.usage == MeshUsage::LightingPass{
+                self.mesh.draw = self.draw;
+                self.mesh.keep_shadow = false;
+                self.mesh.draw_shadow = true;
+            }else{
+                self.mesh.draw = self.draw;
+                self.mesh.keep_shadow = self.draw;
+                self.mesh.draw_shadow = self.draw;
             }
             ubm.transpose();
             for i in 0..16{

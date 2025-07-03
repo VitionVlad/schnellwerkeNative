@@ -46,7 +46,6 @@ impl ModelAsset{
                     mtlp += "/";
                 }
                 mtlp += &spl[1].to_string();
-                println!("ModelLoader: Loading mtl by path: {}", mtlp);
                 mtl = MtlAsset::load_mtl(&mtlp);
                 continue;
             }
@@ -63,21 +62,18 @@ impl ModelAsset{
                 let spl: Vec<&str> = va.split(' ').collect();
                 let pos: [f32; 3] = [spl[1].parse::<f32>().unwrap(), spl[2].parse::<f32>().unwrap(), spl[3].parse::<f32>().unwrap()];
                 vert.push(pos);
-                println!("ModelLoader: obj vert = ({}, {}, {})", pos[0], pos[1], pos[2]);
                 continue;
             }
             if va.clone().as_bytes()[0] == b'v' && va.clone().as_bytes()[1] == b't'{
                 let spl: Vec<&str> = va.split(' ').collect();
                 let uvc: [f32; 2] = [spl[1].parse::<f32>().unwrap(), spl[2].parse::<f32>().unwrap()];
                 uv.push(uvc);
-                println!("ModelLoader: obj uv = ({}, {})", uvc[0], uvc[1]);
                 continue;
             }
             if va.clone().as_bytes()[0] == b'v' && va.clone().as_bytes()[1] == b'n'{
                 let spl: Vec<&str> = va.split(' ').collect();
                 let normal: [f32; 3] = [spl[1].parse::<f32>().unwrap(), spl[2].parse::<f32>().unwrap(), spl[3].parse::<f32>().unwrap()];
                 norm.push(normal);
-                println!("ModelLoader: obj normal = ({}, {}, {})", normal[0], normal[1], normal[2]);
                 continue;
             }
             if va.clone().as_bytes()[0] == b'f' && va.clone().as_bytes()[1] == b' '{
@@ -97,7 +93,6 @@ impl ModelAsset{
                 iuv.push(uvi[0]);
                 iuv.push(uvi[1]);
                 iuv.push(uvi[2]);
-                println!("ModelLoader: obj face = p({}, {}, {}) u({}, {}, {}) n({}, {}, {})", posi[0], posi[1], posi[2], uvi[0], uvi[1], uvi[2], normali[0], normali[1], normali[2]);
                 continue;
             }
         }

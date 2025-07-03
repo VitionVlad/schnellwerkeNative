@@ -22,17 +22,21 @@ fn main() {
     let dfragem = fs::read("shaders/fdeffem").unwrap();
     let shadow = fs::read("shaders/shadow").unwrap();
     let textf = fs::read("shaders/ftext").unwrap();
+    let plsh = fs::read("shaders/pltx").unwrap();
     let mat = Material::new(&eng, vert.clone(), frag, vec![], [engine::render::render::CullMode::CullModeNone, engine::render::render::CullMode::CullModeNone]);
-    let matt = Material::new(&eng, vert, textf, vec![], [engine::render::render::CullMode::CullModeNone, engine::render::render::CullMode::CullModeNone]);
+    let matt = Material::new(&eng, vert.clone(), textf, vec![], [engine::render::render::CullMode::CullModeNone, engine::render::render::CullMode::CullModeNone]);
     let mat2 = Material::new(&eng, dvert.clone(), dfrag, shadow.clone(), [engine::render::render::CullMode::CullModeBackBit, engine::render::render::CullMode::CullModeFrontBit]);
     let mat3 = Material::new(&eng, dvert.clone(), dfragqo, shadow.clone(), [engine::render::render::CullMode::CullModeBackBit, engine::render::render::CullMode::CullModeFrontBit]);
     let mat4 = Material::new(&eng, dvert, dfragem, shadow, [engine::render::render::CullMode::CullModeBackBit, engine::render::render::CullMode::CullModeFrontBit]);
+    let mat5 = Material::new(&eng, vert, plsh, vec![], [engine::render::render::CullMode::CullModeNone, engine::render::render::CullMode::CullModeNone]);
     let image = Image::new_color(&eng, [i8::MAX, i8::MAX, i8::MAX, i8::MAX]);
 
     let mut viewport = UIplane::new(&mut eng, mat, image);
     viewport.object.physic_object.pos.z = 1.0;
     viewport.object.mesh.ubo[16] = wkfc;
-    let mut text = UItext::new_from_file(&mut eng, matt, "assets/text.tiff", "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_");
+
+    let ti = Image::new_from_files(&eng, ["assets/text.tiff".to_string()].to_vec());
+    let mut text = UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_");
     text.signal = false;
 
     eng.cameras[0].physic_object.gravity = false;
@@ -83,7 +87,7 @@ fn main() {
       text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...");
     }
 
-    let mut traindr = Scene::load_from_obj(&mut eng, "assets/train_door.obj", mat3);
+    let mut traindr = Scene::load_from_obj(&mut eng, "assets/train_door.obj", mat2);
     traindr.render_all_cameras = false;
     traindr.camera_number = 0;
     for _ in 0..2{
@@ -125,22 +129,6 @@ fn main() {
       text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...DONE\nLoading armaments and supplies...DONE\nSynchronizing chrono-displacement engine...");
     }
 
-    vrt1 = ModelAsset::load_obj("assets/train_door_gl.obj");
-    let mut md3s = vec![Model::new(&mut eng, vrt1.vertices[0].clone())];
-    for i in 1..vrt1.vertices.len(){
-      md3s.push(Model::new(&mut eng, vrt1.vertices[i].clone()));
-    }
-
-    let mut trgldr = vec![Object::new(&mut eng, md3s[0], mat4, image, engine::render::render::MeshUsage::DefferedPass, true)];
-    trgldr[0].mesh.camera_number = 1;
-    trgldr[0].mesh.render_all_cameras = false;
-
-    for i in 1..md3s.len(){
-      trgldr.push(Object::new(&mut eng, md3s[i], mat4, image, engine::render::render::MeshUsage::DefferedPass, true));
-      trgldr[i].mesh.camera_number = 1;
-      trgldr[i].mesh.render_all_cameras = false;
-    }
-
     for _ in 0..2{
       eng.work();
 
@@ -152,6 +140,8 @@ fn main() {
 
       text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...DONE\nLoading armaments and supplies...DONE\nSynchronizing chrono-displacement engine...DONE\nFinal systems check...");
     }
+
+    let mut intspr = UIplane::new_from_file(&mut eng, mat5, ["assets/interact.tiff".to_string()].to_vec());
 
     eng.cameras[0].physic_object.gravity = true;
     eng.cameras[0].physic_object.pos.y = 3f32;
@@ -220,12 +210,29 @@ fn main() {
       trainem.exec(&mut eng);
       traingl.exec(&mut eng);
       traindr.exec(&mut eng);
-      for i in 0..trgldr.len(){
-        trgldr[i].exec(&mut eng);
+
+      intspr.object.draw = false;
+      for i in 0..trainqo.objects.len(){
+        if trainqo.objects[i].is_looking_at{
+          intspr.object.draw = true;
+        }
       }
+      for i in 0..traindr.objects.len(){
+        if traindr.objects[i].is_looking_at{
+          intspr.object.draw = true;
+        }
+      }
+
+      intspr.object.physic_object.pos.z = 0.9;
+      intspr.object.physic_object.scale.x = 32.0;
+      intspr.object.physic_object.scale.y = 32.0;
+      intspr.object.physic_object.pos.x = eng.render.resolution_x as f32/2.0 - 16.0;
+      intspr.object.physic_object.pos.y = eng.render.resolution_y as f32 * 0.75 - 16.0;
+      intspr.exec(&mut eng);
+
       text.pos.y = eng.render.resolution_y as f32 - text.size.y;
       text.pos.x = 0.0;
-      text.pos.z = 0.9;
+      text.pos.z = 0.8;
       text.size.x = 15.0;
       text.size.y = 30.0;
 
