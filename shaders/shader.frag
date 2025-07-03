@@ -136,26 +136,45 @@ void getCameraBasis(vec3 eulerAngles, out vec3 forward, out vec3 right, out vec3
     up = normalize(cross(right, forward));
 }
 
-vec3 nightSkyFog(vec2 uv, vec3 cameraPos, vec3 cameraEuler, float time) {
-    vec3 forward, right, up;
-    getCameraBasis(cameraEuler, forward, right, up);
-    vec2 ndc = uv * 2.0 - 1.0;
-    float fovScale = 1.0;
-    vec3 rayDir = normalize(
-        forward +
-        ndc.x * fovScale * right +
-        ndc.y * fovScale * up
-    );
-    vec3 samplePos = cameraPos + rayDir * 20.0;
-    float fogDriftSpeed = 20.2;
-    float drift = (cameraPos.z + time * fogDriftSpeed) * 0.05;
-    float noise = sin(dot(samplePos.xz, vec2(0.05, 0.05)) + drift);
-    noise = noise * 0.5 + 0.5;
-    float heightFog = smoothstep(50.0, 0.0, samplePos.y);
-    float distFog = smoothstep(5.0, 30.0, length(samplePos - cameraPos));
-    float fogAmount = noise * heightFog * distFog * 0.5;
-    vec3 fogColor = mix(vec3(0.002, 0.002, 0.005), vec3(0.005, 0.005, 0.01), noise);
-    return fogColor * fogAmount;
+vec3 nightSkyFog(vec2 uv, vec3 cameraPos, vec3 cameraEuler, float time, bool rng) {
+  vec3 forward, right, up;
+  getCameraBasis(cameraEuler, forward, right, up);
+  vec2 ndc = uv * 2.0 - 1.0;
+  float fovScale = 1.0;
+  vec3 rayDir = normalize(
+      forward +
+      ndc.x * fovScale * right +
+      ndc.y * fovScale * up
+  );
+  vec3 samplePos = cameraPos + rayDir * 20.0;
+  float fogDriftSpeed = -20.2;
+  float drift = (cameraPos.z + time * fogDriftSpeed) * 0.05;
+  float noise = sin(dot(samplePos.xz, vec2(0.05, 0.05)) + drift);
+  noise = noise * 0.5 + 0.5;
+  float heightFog = smoothstep(50.0, 0.0, samplePos.y);
+  float distFog = smoothstep(5.0, 30.0, length(samplePos - cameraPos));
+  float fogAmount = noise * heightFog * distFog * 0.5;
+  vec3 colmx1 = vec3(0.002, 0.002, 0.005);
+  vec3 colmx2 = vec3(0.005, 0.005, 0.01);
+  vec3 fogColor = mix(colmx1, colmx2, noise);
+
+  float tGround = -(cameraPos.y) / rayDir.y;
+  bool hitGround = (rayDir.y < -0.001) && (tGround > 0.0);
+  if (hitGround && rng) {
+    vec3 groundPos = vec3(0.0, cameraPos.y, cameraPos.z) + rayDir * tGround;
+    float groundDist = length(groundPos - vec3(0.0, cameraPos.y, cameraPos.z));
+    if (groundDist <= 15.0) {
+        vec2 groundUV = groundPos.xz * 0.2;
+        groundUV.y -= time * 2.0;
+        float groundPattern = cos(groundUV.y) * 0.5 + 0.5;
+        groundPattern = pow(groundPattern, 3.0);
+        vec3 groundColor = mix(vec3(0.01, 0.03, 0.01), vec3(0.035, 0.025, 0.02), min(max(groundPattern, 0.0), 1.0));
+        float groundFogFactor = smoothstep(10.0, 0.0, groundDist);
+        fogColor = mix(fogColor, groundColor, groundFogFactor);
+    }
+  }
+
+  return fogColor * fogAmount;
 }
 
 void main() {
@@ -165,7 +184,7 @@ void main() {
   vec3 wrldpos = texture(defferedSampler, vec3(uv, 3)).rgb;
   vec3 glps = texture(defferedSampler, vec3(uv, 7)).rgb;
 
-  vec3 fogSkyColor = nightSkyFog(uv, dmi.deffpos[0].xyz, dmi.deffrot[0].xyz, mi.addinfo.y);
+  vec3 fogSkyColor = nightSkyFog(uv, dmi.deffpos[0].xyz, dmi.deffrot[0].xyz, mi.addinfo.y, rma.b == 0.0);
   
   vec4 op = vec4(PBR(normal, albedo, shcalc(wrldpos, 0.0), rma.y, rma.x, 1.0, wrldpos), 1.0);
 

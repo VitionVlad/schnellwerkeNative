@@ -32,7 +32,7 @@ fn main() {
     let mut viewport = UIplane::new(&mut eng, mat, image);
     viewport.object.physic_object.pos.z = 1.0;
     viewport.object.mesh.ubo[16] = wkfc;
-    let mut text = UItext::new_from_file(&mut eng, matt, "assets/text.tiff", "abcdefghijklmnopqrstuvwxyz0123456789,.;");
+    let mut text = UItext::new_from_file(&mut eng, matt, "assets/text.tiff", "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_");
     text.signal = false;
 
     eng.cameras[0].physic_object.gravity = false;
@@ -49,7 +49,7 @@ fn main() {
       text.size.x = 10.0;
       text.size.y = 20.0;
 
-      text.exec(&mut eng, "initializing power systems...");
+      text.exec(&mut eng, "Initializing power systems...");
     }
 
     let mut train = Scene::load_from_obj(&mut eng, "assets/train.obj", mat2);
@@ -65,7 +65,7 @@ fn main() {
       text.size.x = 10.0;
       text.size.y = 20.0;
 
-      text.exec(&mut eng, "initializing power systems...done\nloading vital packages...");
+      text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...");
     }
 
     let mut trainqo = Scene::load_from_obj(&mut eng, "assets/train_quest.obj", mat3);
@@ -80,7 +80,7 @@ fn main() {
       text.size.x = 10.0;
       text.size.y = 20.0;
 
-      text.exec(&mut eng, "initializing power systems...done\nloading vital packages...done\nestablishing communication lines...");
+      text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...");
     }
 
     let mut traindr = Scene::load_from_obj(&mut eng, "assets/train_door.obj", mat3);
@@ -95,7 +95,7 @@ fn main() {
       text.size.x = 10.0;
       text.size.y = 20.0;
 
-      text.exec(&mut eng, "initializing power systems...done\nloading vital packages...done\nestablishing communication lines...done\nloading armaments and supplies...");
+      text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...DONE\nLoading armaments and supplies...");
     }
 
     let mut vrt1 = ModelAsset::load_obj("assets/train_em.obj");
@@ -122,7 +122,7 @@ fn main() {
       text.size.x = 10.0;
       text.size.y = 20.0;
 
-      text.exec(&mut eng, "initializing power systems...done\nloading vital packages...done\nestablishing communication lines...done\nloading armaments and supplies...done\nsynchronizing chrono-displacement engine...");
+      text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...DONE\nLoading armaments and supplies...DONE\nSynchronizing chrono-displacement engine...");
     }
 
     vrt1 = ModelAsset::load_obj("assets/train_door_gl.obj");
@@ -150,7 +150,7 @@ fn main() {
       text.size.x = 10.0;
       text.size.y = 20.0;
 
-      text.exec(&mut eng, "initializing power systems...done\nloading vital packages...done\nestablishing communication lines...done\nloading armaments and supplies...done\nsynchronizing chrono-displacement engine...done\nfinal systems check...");
+      text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...DONE\nLoading armaments and supplies...DONE\nSynchronizing chrono-displacement engine...DONE\nFinal systems check...");
     }
 
     eng.cameras[0].physic_object.gravity = true;
@@ -230,7 +230,7 @@ fn main() {
       text.size.y = 30.0;
 
       let fps = eng.fps;
-      text.exec(&mut eng, &format!("fps {}", fps));
+      text.exec(&mut eng, &format!("fps:{}", fps));
     }
     eng.end();
 }
