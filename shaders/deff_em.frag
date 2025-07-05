@@ -36,6 +36,6 @@ void main() {
     outMaterial.r = 0.1;
     outMaterial.g = 0.1;
     outMaterial.b = 0.1;
-    outNormal = vec4(fnormal, 1.0);
+    outNormal = vec4(fnormal.x, -fnormal.y, fnormal.z, 1.0);
     outPos = pos;
 }

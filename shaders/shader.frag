@@ -77,7 +77,7 @@ float shcalc(vec3 WorldPos, float bias){
         if (proj.z - bias < texture(shadowSampler, vec3(proj.x + offset.x, 1.0 - proj.y + offset.y, i)).r){
           lv = 1.0;
         }
-        if (!(proj.x > 1.0 || proj.x < 0.0 || proj.y > 1.0 || proj.y < 0.0 || proj.z > 1.0 || proj.z < -1.0)){
+        if (!(proj.x > 0.99 || proj.x < 0.001 || proj.y > 0.99 || proj.y < 0.001 || proj.z > 1.0 || proj.z < -1.0)){
           visibility += lv;
         }
       }

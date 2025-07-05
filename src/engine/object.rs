@@ -14,6 +14,7 @@ pub struct Object{
     pub draw_shadow: bool,
     pub draw_distance: f32,
     pub view_reaction_distance: f32,
+    pub render_in_behind: bool,
     usage: MeshUsage,
     eng_ph_id: usize,
     blank: bool,
@@ -34,6 +35,7 @@ impl Object {
             draw_shadow: true,
             draw_distance: 30f32,
             view_reaction_distance: 2f32,
+            render_in_behind: true,
             usage: usage,
             eng_ph_id: id,
             blank: false,
@@ -49,6 +51,7 @@ impl Object {
             draw_shadow: true,
             draw_distance: 30f32,
             view_reaction_distance: 2f32,
+            render_in_behind: true,
             eng_ph_id: 0,
             blank: true,
         }
@@ -114,9 +117,13 @@ impl Object {
             t.scale(self.physic_object.scale);
             ubm.mul(&t);
             if self.usage == MeshUsage::DefferedPass || self.usage == MeshUsage::ShadowAndDefferedPass{
-                let th = self.physic_object.clone();
-                self.physic_object = eng.obj_ph[self.eng_ph_id];
-                eng.obj_ph[self.eng_ph_id] = th;
+                if self.physic_object.is_static{
+                    eng.obj_ph[self.eng_ph_id] = self.physic_object;
+                }else{
+                    let th = self.physic_object.clone();
+                    self.physic_object = eng.obj_ph[self.eng_ph_id];
+                    eng.obj_ph[self.eng_ph_id] = th;
+                }
 
                 let mut mt = eng.cameras[eng.primary_camera as usize].get_projection(eng.render.resolution_x as f32/eng.render.resolution_y as f32);
                 mt.transpose();
@@ -154,7 +161,7 @@ impl Object {
                 let dst1 = f32::sqrt(f32::powi(bg.x-cmp.x, 2)+f32::powi(bg.y-cmp.y, 2)+f32::powi(bg.z-cmp.z, 2));
                 let dst2 = f32::sqrt(f32::powi(sg.x-cmp.x, 2)+f32::powi(sg.y-cmp.y, 2)+f32::powi(sg.z-cmp.z, 2));
                 let fdst = f32::min(dst1, dst2);
-                if (c1[0].z < 0.0 && c1[1].z < 0.0 && c1[2].z < 0.0 && c1[3].z < 0.0 && c1[4].z < 0.0 && c1[5].z < 0.0 && c1[6].z < 0.0 && c1[7].z < 0.0) || fdst >= self.draw_distance{
+                if (c1[0].z < 0.0 && c1[1].z < 0.0 && c1[2].z < 0.0 && c1[3].z < 0.0 && c1[4].z < 0.0 && c1[5].z < 0.0 && c1[6].z < 0.0 && c1[7].z < 0.0 && self.render_in_behind) || fdst >= self.draw_distance{
                     self.mesh.draw = false;
                     self.mesh.keep_shadow = self.draw_shadow;
                     self.mesh.draw_shadow = self.draw_shadow;

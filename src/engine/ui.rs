@@ -81,7 +81,11 @@ pub struct UItext{
     pub pos: Vec3,
     pub clickzone: Clickzone,
     pub signal: bool,
+    pub per_symbol: bool,
     pub allow_when_mouse_locked: bool,
+    pub draw: bool,
+    pub symbol_pressed: u8,
+    pub symbol_index: usize,
     blank: bool,
 }
 
@@ -98,8 +102,12 @@ impl UItext {
             pos: Vec3::new(),
             clickzone: Clickzone { pos1: Vec2::newdefined(0.0, 0.0), pos2: Vec2::newdefined(0.0, 0.0) },
             signal: false,
+            per_symbol: true,
             allow_when_mouse_locked: false,
             blank: false,
+            symbol_pressed: b' ',
+            symbol_index: 0,
+            draw: true,
         }
     }
     pub fn new_blank() -> UItext{
@@ -114,8 +122,12 @@ impl UItext {
             pos: Vec3::new(),
             clickzone: Clickzone { pos1: Vec2::newdefined(0.0, 0.0), pos2: Vec2::newdefined(0.0, 0.0) },
             signal: false,
+            per_symbol: true,
             allow_when_mouse_locked: false,
             blank: true,
+            symbol_pressed: b' ',
+            symbol_index: 0,
+            draw: false,
         }
     }
     pub fn new_from_file(eng: &mut Engine, mat: Material, image: &str, symbols: &str) -> UItext{
@@ -131,8 +143,12 @@ impl UItext {
             pos: Vec3::new(),
             clickzone: Clickzone { pos1: Vec2::newdefined(0.0, 0.0), pos2: Vec2::newdefined(0.0, 0.0) },
             signal: false,
+            per_symbol: true,
             allow_when_mouse_locked: false,
             blank: false,
+            symbol_pressed: b' ',
+            symbol_index: 0,
+            draw: true,
         }
     }
     pub fn exec(&mut self, eng: &mut Engine, text: &str) -> bool{
@@ -158,7 +174,8 @@ impl UItext {
             self.clickzone.pos1.y = self.pos.y;
             self.clickzone.pos2.x = self.pos.x + self.size.x*(mx as f32);
             self.clickzone.pos2.y = self.pos.y + self.size.y*(my as f32);
-            let btst = self.clickzone.check(Vec2::newdefined(eng.control.xpos as f32, eng.control.ypos as f32));
+            let mut btst = self.clickzone.check(Vec2::newdefined(eng.control.xpos as f32, eng.control.ypos as f32));
+            let mut lbtst = btst;
             if self.planes.len() < bt.len() {
                 for i in  self.planes.len()..bt.len(){
                     self.planes.push(Object::new(eng, self.plane, self.material, self.font, super::render::render::MeshUsage::LightingPass, true));
@@ -170,30 +187,46 @@ impl UItext {
             }
             let mut posy: f32 = self.pos.y;
             let mut bp: usize = 0;
-            for i in 0..bt.len(){
-                for j in 0..self.symbols.len(){
-                    if bt[i] == self.symbols[j] {
-                        self.planes[i].mesh.draw = true;
-                        self.planes[i].mesh.ubo[16] = self.symbol_number as f32;
-                        self.planes[i].mesh.ubo[17] = j as f32;
-                        if self.signal && btst && (self.allow_when_mouse_locked || (!self.allow_when_mouse_locked && !eng.control.mouse_lock)){
-                            self.planes[i].mesh.ubo[18] = 1.0;
-                        }else{
-                            self.planes[i].mesh.ubo[18] = 0.0;
+            if self.draw{
+                for i in 0..bt.len(){
+                    for j in 0..self.symbols.len(){
+                        if bt[i] == self.symbols[j] {
+                            self.planes[i].mesh.draw = true;
+                            self.planes[i].mesh.ubo[16] = self.symbol_number as f32;
+                            self.planes[i].mesh.ubo[17] = j as f32;
+                            self.planes[i].physic_object.scale.x = self.size.x;
+                            self.planes[i].physic_object.scale.y = self.size.y;
+                            self.planes[i].physic_object.scale.z = 1.0;
+                            self.planes[i].physic_object.pos.x = self.pos.x + ((i - bp) as f32)*self.size.x;
+                            self.planes[i].physic_object.pos.y = posy;
+                            self.planes[i].physic_object.pos.z = self.pos.z;
+
+                            if self.per_symbol{
+                                self.clickzone.pos1.x = self.planes[i].physic_object.pos.x;
+                                self.clickzone.pos1.y = self.planes[i].physic_object.pos.y;
+                                self.clickzone.pos2.x = self.planes[i].physic_object.pos.x + self.size.x;
+                                self.clickzone.pos2.y = self.planes[i].physic_object.pos.y + self.size.y;
+                                lbtst = self.clickzone.check(Vec2::newdefined(eng.control.xpos as f32, eng.control.ypos as f32));
+                                if lbtst{
+                                    self.symbol_pressed = self.symbols[j];
+                                    self.symbol_index = i;
+                                    btst = true;
+                                }
+                            }
+                            if self.signal && lbtst && (self.allow_when_mouse_locked || (!self.allow_when_mouse_locked && !eng.control.mouse_lock)){
+                                self.planes[i].mesh.ubo[18] = 1.0;
+                            }else{
+                                self.planes[i].mesh.ubo[18] = 0.0;
+                            }
+
+                            self.planes[i].exec(eng);
+                            break;
                         }
-                        self.planes[i].physic_object.scale.x = self.size.x;
-                        self.planes[i].physic_object.scale.y = self.size.y;
-                        self.planes[i].physic_object.scale.z = 1.0;
-                        self.planes[i].physic_object.pos.x = self.pos.x + ((i - bp) as f32)*self.size.x;
-                        self.planes[i].physic_object.pos.y = posy;
-                        self.planes[i].physic_object.pos.z = self.pos.z;
-                        self.planes[i].exec(eng);
-                        break;
-                    }
-                    if bt[i] == b'\n' {
-                        posy+=self.size.y;
-                        bp = i+1;
-                        break;
+                        if bt[i] == b'\n' {
+                            posy+=self.size.y;
+                            bp = i+1;
+                            break;
+                        }
                     }
                 }
             }
