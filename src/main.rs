@@ -2,7 +2,7 @@ use std::fs;
 
 use engine::{engine::Engine, image::Image, light::LightType, material::Material, scene::Scene, ui::{UIplane, UItext}};
 
-use crate::engine::{loader::modelasset::ModelAsset, math::vec3::Vec3, model::Model, object::Object};
+use crate::engine::{loader::modelasset::ModelAsset, math::{vec2::Vec2, vec3::Vec3}, model::Model, object::Object};
 mod engine;
 
 /*
@@ -178,7 +178,19 @@ fn main() {
 
     let mut tm: i32 = 0;
 
+    let mut relpos = Vec2::new();
+
+    let mut savpos = Vec2::new();
+
+    let mut relposx = 0.0;
+
     while eng.work(){
+      if !eng.control.mouse_lock {
+        relpos.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - savpos.x;
+        relpos.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - savpos.y;
+        relposx = 0.0;
+      }
+
       eng.lights[0].color = Vec3::newdefined(1.0, 1.0, 0.9);
       eng.lights[0].pos = Vec3::newdefined(0.0, 4.25, 0.0);
       eng.lights[0].rot = Vec3::newdefined(1.5708, 0.0, 0.0);
@@ -206,15 +218,20 @@ fn main() {
       }
       
       if eng.control.mouse_lock{
-        eng.cameras[0].physic_object.rot.x = eng.control.ypos as f32/eng.render.resolution_y as f32;
-        eng.cameras[0].physic_object.rot.y = eng.control.xpos as f32/eng.render.resolution_x as f32;
+        eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
+        eng.cameras[0].physic_object.rot.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - relpos.y;
+        savpos.x = eng.cameras[0].physic_object.rot.x;
+        savpos.y = eng.cameras[0].physic_object.rot.y;
 
         if eng.cameras[0].physic_object.rot.x < -1.5 {
-          eng.cameras[0].physic_object.rot.x = -1.5;
+          relposx = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x + 1.5;
+          eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
         }
         if eng.cameras[0].physic_object.rot.x > 1.5 {
-          eng.cameras[0].physic_object.rot.x = 1.5;
+          relposx = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - 1.5;
+          eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
         }
+
         if eng.control.get_key_state(40){
           eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
           eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
@@ -235,6 +252,7 @@ fn main() {
           eng.control.mouse_lock = false;
         }
       }
+
       if eng.control.get_key_state(0){
         eng.control.mouse_lock = true;
       }
@@ -326,7 +344,7 @@ fn main() {
 
         if text.exec(&mut eng, "0123456789") && eng.control.mousebtn[2] && tm <= 0{
           enpsc[curpos] = text.symbol_pressed as char;
-          tm = 50;
+          tm = 150;
         }
 
         if enpsc[0] == '2' && enpsc[1] == '8' && tm <= 0{
@@ -370,7 +388,7 @@ fn main() {
 
         if text.exec(&mut eng, "0123456789") && eng.control.mousebtn[2] && tm <= 0{
           enpsc[curpos] = text.symbol_pressed as char;
-          tm = 50;
+          tm = 150;
         }
 
         if enpsc[0] == '1' && enpsc[1] == '9' && enpsc[2] == '1' && enpsc[3] == '6' && tm <= 0{
@@ -402,7 +420,7 @@ fn main() {
         text.size = text2.size;
         text.draw = true;
         text.pos.y = eng.render.resolution_y as f32 / 2.0;
-        text.pos.x = eng.render.resolution_x as f32 / 2.0 - text.size.x*13.0;
+        text.pos.x = eng.render.resolution_x as f32 / 2.0 - text.size.x*5.0;
         text.signal = true;
         text.per_symbol = true;
 
@@ -414,9 +432,9 @@ fn main() {
           }
         }
 
-        if text.exec(&mut eng, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") && eng.control.mousebtn[2] && tm <= 0{
+        if text.exec(&mut eng, "QWERTYUIOP\n ASDFGHKL\n ZXCVBNM") && eng.control.mousebtn[2] && tm <= 0{
           enpsc[curpos] = text.symbol_pressed as char;
-          tm = 50;
+          tm = 150;
         }
 
         if enpsc[0] == 'E' && enpsc[1] == 'N' && enpsc[2] == 'D' && tm <= 0{
@@ -447,7 +465,7 @@ fn main() {
         text.size = text2.size;
         text.draw = true;
         text.pos.y = eng.render.resolution_y as f32 / 2.0;
-        text.pos.x = eng.render.resolution_x as f32 / 2.0 - text.size.x*13.0;
+        text.pos.x = eng.render.resolution_x as f32 / 2.0 - text.size.x*5.0;
         text.signal = true;
         text.per_symbol = true;
 
@@ -459,17 +477,17 @@ fn main() {
           }
         }
 
-        if text.exec(&mut eng, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") && eng.control.mousebtn[2] && tm <= 0{
+        if text.exec(&mut eng, "QWERTYUIOP\n ASDFGHKL\n ZXCVBNM") && eng.control.mousebtn[2] && tm <= 0{
           enpsc[curpos] = text.symbol_pressed as char;
-          tm = 50;
+          tm = 150;
         }
 
         if enpsc[0] == 'P' && enpsc[1] == 'A' && enpsc[2] == 'R' && enpsc[3] == 'I' && enpsc[4] == 'S' && tm <= 0{
+          wkfc = 10f32;
           traindr.objects[6].physic_object.solid = false;
           traindr.objects[6].physic_object.pos.x -= TICKSZ*10.0*eng.times_to_calculate_physics as f32;
           eng.control.mouse_lock = true;
           qa = -1;
-          wkfc = 10f32;
           for i in 0..traindr.objects.len(){
             traindr.objects[i].draw = true;
             traindr.objects[i].physic_object.solid = true;
