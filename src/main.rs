@@ -175,6 +175,12 @@ fn main() {
     wk.play = false;
     wk.pos_dependency = false;
     wk.volume = 0.35;
+
+    let mut mwk = Speaker::new(&mut eng, "assets/audio/metsteps.mp3");
+    mwk.use_pan = false;
+    mwk.play = false;
+    mwk.pos_dependency = false;
+    mwk.volume = 0.35;
     
     let mut gr = Speaker::new(&mut eng, "assets/audio/gear.mp3");
     gr.use_pan = false;
@@ -218,6 +224,7 @@ fn main() {
       eng.lights[0].color = Vec3::newdefined(1.0, 1.0, 0.9);
       eng.lights[0].pos = Vec3::newdefined(0.0, 4.25, 0.0);
       eng.lights[0].rot = Vec3::newdefined(1.5708, 0.0, 0.0);
+
       if eng.cameras[0].physic_object.pos.z > 11.7{
         eng.lights[0].pos = Vec3::newdefined(0.0, 4.25, 23.3);
       }
@@ -227,7 +234,13 @@ fn main() {
       if eng.cameras[0].physic_object.pos.z > 58.5{
         eng.lights[0].pos = Vec3::newdefined(0.0, 4.25, 69.897);
       }
-      
+
+      if (eng.cameras[0].physic_object.pos.z > 9.7 && eng.cameras[0].physic_object.pos.z < 13.7) || (eng.cameras[0].physic_object.pos.z > 33.1 && eng.cameras[0].physic_object.pos.z < 37.1) || (eng.cameras[0].physic_object.pos.z > 56.5 && eng.cameras[0].physic_object.pos.z < 60.5){
+        trains.volume = 0.5;
+      }else{
+        trains.volume = 0.25;
+      }
+
       viewport.object.mesh.ubo[17] += TICKSZ;
 
       if tm > 0{
@@ -237,6 +250,7 @@ fn main() {
       }
       
       wk.play = false;
+      mwk.play = false;
       if eng.control.mouse_lock{
         eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
         eng.cameras[0].physic_object.rot.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - relpos.y;
@@ -256,22 +270,38 @@ fn main() {
           if eng.control.get_key_state(40){
             eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
             eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-            wk.play = true;
+            if trains.volume == 0.5{
+              mwk.play = true;
+            }else{
+              wk.play = true;
+            }
           }
           if eng.control.get_key_state(44){
             eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
             eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-            wk.play = true;
+            if trains.volume == 0.5{
+              mwk.play = true;
+            }else{
+              wk.play = true;
+            }
           }
           if eng.control.get_key_state(25){
             eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
             eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-            wk.play = true;
+            if trains.volume == 0.5{
+              mwk.play = true;
+            }else{
+              wk.play = true;
+            }
           }
           if eng.control.get_key_state(22){
             eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
             eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-            wk.play = true;
+            if trains.volume == 0.5{
+              mwk.play = true;
+            }else{
+              wk.play = true;
+            }
           }
         }
       }
@@ -587,6 +617,7 @@ fn main() {
       mars.exec(&mut eng);
       trains.exec(&mut eng);
       wk.exec(&mut eng);
+      mwk.exec(&mut eng);
       gr.exec(&mut eng);
     }
     eng.end();
