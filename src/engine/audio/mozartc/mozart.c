@@ -15,26 +15,15 @@ typedef struct MozartSound{
 } MozartSound;
 
 struct Mozart{
-    MozartHandle *mh;
+    MozartHandle mh[100];
     uint32_t mhn;
-    MozartSound *ms;
+    MozartSound ms[10000];
     uint32_t msn;
 } mz;
 
 uint32_t newmozart(){
     uint32_t mhi = mz.mhn;
-    if(mhi > 0){
-        MozartHandle *tmp = malloc(sizeof(MozartHandle)*mhi);
-        memcpy(tmp, mz.mh, sizeof(MozartHandle)*mhi);
-        free(mz.mh);
-        mz.mhn++;
-        mz.mh = malloc(sizeof(MozartHandle)*mz.mhn);
-        memcpy(mz.mh, tmp, sizeof(MozartHandle)*mhi);
-        free(tmp);
-    }else{
-        mz.mhn++;
-        mz.mh = malloc(sizeof(MozartHandle)*mz.mhn);
-    }
+    mz.mhn++;
 
     ma_result result;
     result = ma_engine_init(NULL, &mz.mh[mhi].engine);
@@ -51,23 +40,12 @@ void mozartsetvolume(uint32_t mhi, float vol){
 
 uint32_t newsound(uint32_t mhi, const char* path){
     uint32_t msn = mz.msn;
-    if(msn > 0){
-        MozartHandle *tmp = malloc(sizeof(MozartHandle)*msn);
-        memcpy(tmp, mz.ms, sizeof(MozartHandle)*msn);
-        free(mz.ms);
-        mz.msn++;
-        mz.ms = malloc(sizeof(MozartHandle)*mz.msn);
-        memcpy(mz.ms, tmp, sizeof(MozartHandle)*msn);
-        free(tmp);
-    }else{
-        mz.msn++;
-        mz.ms = malloc(sizeof(MozartHandle)*mz.msn);
-    }
+    mz.msn++;
 
     mz.ms[msn].sec = mhi;
     ma_result result = ma_sound_init_from_file(&mz.mh[mhi].engine, path, 0, NULL, NULL, &mz.ms[msn].sound);
     if (result == MA_SUCCESS) {
-        printf("\e[1;36mMozartSound\e[0;37m: Sound created from file with success \n");
+        printf("\e[1;36mMozartSound\e[0;37m: Sound created from file with success, new sound id = %d \n", msn);
     }
 
     return msn;

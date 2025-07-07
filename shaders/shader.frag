@@ -2,7 +2,7 @@
 
 layout(location = 0) out vec4 outColor;
 
-layout(location = 0) in vec2 uv;
+layout(location = 0) in vec2 fuv;
 
 layout(binding = 0) uniform MeshInput {
     vec4 resolutions;
@@ -178,7 +178,13 @@ vec3 nightSkyFog(vec2 uv, vec3 cameraPos, vec3 cameraEuler, float time, bool rng
 }
 
 void main() {
-  vec3 albedo = pow(texture(defferedSampler, vec3(uv, 0)).rgb, vec3(2.2));
+  vec2 uv = fuv;
+
+  float time = mi.addinfo.y;
+  vec2 vibration = vec2(0.0, cos(time * 15.0)) * 0.0015;
+  uv += vibration;
+
+  vec3 albedo = pow(texture(defferedSampler, vec3(uv, 0)).rgb, vec3(2.2));\
   vec3 rma = texture(defferedSampler, vec3(uv, 1)).rgb;
   vec3 normal = texture(defferedSampler, vec3(uv, 2)).rgb;
   vec3 wrldpos = texture(defferedSampler, vec3(uv, 3)).rgb;
@@ -201,6 +207,12 @@ void main() {
     vec4 fgf = mix(vec4(fogSkyColor, 1.0), gf, glmxpw);
     op = mix(op, fgf, gf.r);
   }
+
+  if (uv.x > 1.0 || uv.x < 0.0 || uv.y > 1.0 || uv.y < 0.0) {
+    op = vec4(0.0, 0.0, 0.0, 1.0);
+  }
+
+  op = mix(op, vec4(0.0, 0.0, 0.0, 1.0), distance(vec2(0.5), uv)/0.7);
 
   op = mix(op, vec4(0.0, 0.0, 0.0, 1.0), mi.addinfo.x);
 

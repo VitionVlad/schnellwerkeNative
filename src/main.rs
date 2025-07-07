@@ -2,7 +2,7 @@ use std::fs;
 
 use engine::{engine::Engine, image::Image, light::LightType, material::Material, scene::Scene, ui::{UIplane, UItext}};
 
-use crate::engine::{loader::modelasset::ModelAsset, math::{vec2::Vec2, vec3::Vec3}, model::Model, object::Object};
+use crate::engine::{loader::modelasset::ModelAsset, math::{vec2::Vec2, vec3::Vec3}, model::Model, object::Object, speaker::Speaker};
 mod engine;
 
 /*
@@ -164,7 +164,31 @@ fn main() {
     text.signal = true;
     text.per_symbol = true;
 
-    //let mut sn = Speaker::new(&mut eng, "assets/audio/sample.wav");
+    let mut trains = Speaker::new(&mut eng, "assets/audio/train.mp3");
+    trains.use_pan = false;
+    trains.play = true;
+    trains.pos_dependency = false;
+    trains.volume = 0.25;
+
+    let mut wk = Speaker::new(&mut eng, "assets/audio/walking.mp3");
+    wk.use_pan = false;
+    wk.play = false;
+    wk.pos_dependency = false;
+    wk.volume = 0.35;
+    
+    let mut gr = Speaker::new(&mut eng, "assets/audio/gear.mp3");
+    gr.use_pan = false;
+    gr.play = false;
+    gr.pos_dependency = false;
+    gr.volume = 1.0;
+
+    let mut mars = Speaker::new(&mut eng, "assets/audio/marseillaise.mp3");
+    mars.use_pan = true;
+    mars.play = true;
+    mars.pos_dependency = true;
+    mars.pos = Vec3::newdefined(1.54, 1.3, 47.42);
+    mars.power = 10f32;
+    mars.volume = 1.0;
 
     eng.lights[0].color = Vec3::newdefined(1.0, 1.0, 0.9);
     eng.lights[0].pos = Vec3::newdefined(0.0, 4.25, 0.0);
@@ -203,20 +227,16 @@ fn main() {
       if eng.cameras[0].physic_object.pos.z > 58.5{
         eng.lights[0].pos = Vec3::newdefined(0.0, 4.25, 69.897);
       }
-
-      if wkfc >= 0.0{
-        wkfc -= (TICKSZ/5.0)*eng.times_to_calculate_physics as f32;
-        viewport.object.mesh.ubo[16] = wkfc;
-      }else{
-        viewport.object.mesh.ubo[16] = 0.0;
-      }
       
       viewport.object.mesh.ubo[17] += TICKSZ;
 
       if tm > 0{
         tm -= eng.times_to_calculate_physics as i32;
+      }else{
+        gr.play = false;
       }
       
+      wk.play = false;
       if eng.control.mouse_lock{
         eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
         eng.cameras[0].physic_object.rot.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - relpos.y;
@@ -232,35 +252,47 @@ fn main() {
           eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
         }
 
-        if eng.control.get_key_state(40){
-          eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-          eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-        }
-        if eng.control.get_key_state(44){
-          eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-          eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-        }
-        if eng.control.get_key_state(25){
-          eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-          eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-        }
-        if eng.control.get_key_state(22){
-          eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-          eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.x) * f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-        }
-        if eng.control.get_key_state(49){
-          eng.control.mouse_lock = false;
+        if wkfc <= 0.0{
+          if eng.control.get_key_state(40){
+            eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
+            eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
+            wk.play = true;
+          }
+          if eng.control.get_key_state(44){
+            eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
+            eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
+            wk.play = true;
+          }
+          if eng.control.get_key_state(25){
+            eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
+            eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
+            wk.play = true;
+          }
+          if eng.control.get_key_state(22){
+            eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
+            eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
+            wk.play = true;
+          }
         }
       }
 
-      if eng.control.get_key_state(0){
-        eng.control.mouse_lock = true;
+      if wkfc >= 0.0{
+        wkfc -= (TICKSZ/5.0)*eng.times_to_calculate_physics as f32;
+        viewport.object.mesh.ubo[16] = wkfc;
+        relpos.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32;
+        relpos.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - 3.14;
+        eng.cameras[0].physic_object.rot.x = 0.0;
+        eng.cameras[0].physic_object.rot.y = 3.14;
+        eng.cameras[0].physic_object.pos.x = 0.0;
+        eng.cameras[0].physic_object.pos.z = -8.0;
+      }else{
+        viewport.object.mesh.ubo[16] = 0.0;
       }
-      if eng.control.mousebtn[0]{
-        if qa != -1{
-          eng.control.mouse_lock = true;
-        }
+
+      if eng.control.get_key_state(49) && tm <= 0{
+        eng.control.mouse_lock = !eng.control.mouse_lock;
         qa = -1;
+        tm = 100;
       }
 
       intspr.object.draw = false;
@@ -344,7 +376,8 @@ fn main() {
 
         if text.exec(&mut eng, "0123456789") && eng.control.mousebtn[2] && tm <= 0{
           enpsc[curpos] = text.symbol_pressed as char;
-          tm = 150;
+          tm = 100;
+          gr.play = true;
         }
 
         if enpsc[0] == '2' && enpsc[1] == '8' && tm <= 0{
@@ -388,7 +421,8 @@ fn main() {
 
         if text.exec(&mut eng, "0123456789") && eng.control.mousebtn[2] && tm <= 0{
           enpsc[curpos] = text.symbol_pressed as char;
-          tm = 150;
+          tm = 100;
+          gr.play = true;
         }
 
         if enpsc[0] == '1' && enpsc[1] == '9' && enpsc[2] == '1' && enpsc[3] == '6' && tm <= 0{
@@ -434,7 +468,8 @@ fn main() {
 
         if text.exec(&mut eng, "QWERTYUIOP\n ASDFGHKL\n ZXCVBNM") && eng.control.mousebtn[2] && tm <= 0{
           enpsc[curpos] = text.symbol_pressed as char;
-          tm = 150;
+          tm = 100;
+          gr.play = true;
         }
 
         if enpsc[0] == 'E' && enpsc[1] == 'N' && enpsc[2] == 'D' && tm <= 0{
@@ -479,7 +514,8 @@ fn main() {
 
         if text.exec(&mut eng, "QWERTYUIOP\n ASDFGHKL\n ZXCVBNM") && eng.control.mousebtn[2] && tm <= 0{
           enpsc[curpos] = text.symbol_pressed as char;
-          tm = 150;
+          tm = 100;
+          gr.play = true;
         }
 
         if enpsc[0] == 'P' && enpsc[1] == 'A' && enpsc[2] == 'R' && enpsc[3] == 'I' && enpsc[4] == 'S' && tm <= 0{
@@ -514,15 +550,15 @@ fn main() {
           eng.cameras[0].fov = 15.0;
         }
       }
+ 
       if !inspecting && eng.cameras[0].fov < 90.0{
         eng.cameras[0].fov += TICKSZ*150.0*eng.times_to_calculate_physics as f32;
         if eng.cameras[0].fov > 90.0{
           eng.cameras[0].fov = 90.0;
         }
       }
-      
+
       eng.cameras[1] = eng.cameras[0];
-      //sn.exec(&mut eng);
       traingl.physic_object.solid = false;
       trainem.physic_object.solid = false;
       viewport.object.physic_object.scale.x = eng.render.resolution_x as f32;
@@ -548,8 +584,10 @@ fn main() {
       text.size.x = 15.0;
       text.size.y = 30.0;
 
-      //let fps = eng.fps;
-      //text.exec(&mut eng, &format!("fps:{}", fps));
+      mars.exec(&mut eng);
+      trains.exec(&mut eng);
+      wk.exec(&mut eng);
+      gr.exec(&mut eng);
     }
     eng.end();
 }

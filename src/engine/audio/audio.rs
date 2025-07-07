@@ -36,7 +36,7 @@ impl AudioEngine{
 }
 
 pub struct Sound{
-    pub index: u32,
+    index: u32,
     pub vol: f32,
     pub pan: f32,
 }
