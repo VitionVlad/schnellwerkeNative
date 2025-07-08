@@ -169,13 +169,60 @@ uint32_t get_resy(uint32_t eh){
     return euclid.handle[eh].resolutionY;
 }
 
+static int mini(int x, int y)
+{
+    return x < y ? x : y;
+}
+
+static int maxi(int x, int y)
+{
+    return x > y ? x : y;
+}
+
+GLFWmonitor* get_current_monitor(GLFWwindow *window)
+{
+    int nmonitors, i;
+    int wx, wy, ww, wh;
+    int mx, my, mw, mh;
+    int overlap, bestoverlap;
+    GLFWmonitor *bestmonitor;
+    GLFWmonitor **monitors;
+    const GLFWvidmode *mode;
+
+    bestoverlap = 0;
+    bestmonitor = NULL;
+
+    glfwGetWindowPos(window, &wx, &wy);
+    glfwGetWindowSize(window, &ww, &wh);
+    monitors = glfwGetMonitors(&nmonitors);
+
+    for (i = 0; i < nmonitors; i++) {
+        mode = glfwGetVideoMode(monitors[i]);
+        glfwGetMonitorPos(monitors[i], &mx, &my);
+        mw = mode->width;
+        mh = mode->height;
+
+        overlap =
+            maxi(0, mini(wx + ww, mx + mw) - maxi(wx, mx)) *
+            maxi(0, mini(wy + wh, my + mh) - maxi(wy, my));
+
+        if (bestoverlap < overlap) {
+            bestoverlap = overlap;
+            bestmonitor = monitors[i];
+        }
+    }
+
+    return bestmonitor;
+}
+
 void setresolution(uint32_t eh, uint32_t xs, uint32_t ys){
     glfwSetWindowSize(euclid.handle[eh].window, xs, ys);
 }
 
 void setfullscreen(uint32_t eh){
-    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    glfwSetWindowMonitor(euclid.handle[eh].window, glfwGetPrimaryMonitor(), 0, 0, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionX, mode->refreshRate);
+    const GLFWvidmode* mode = glfwGetVideoMode(get_current_monitor(euclid.handle[eh].window));
+    glfwGetWindowSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
+    glfwSetWindowMonitor(euclid.handle[eh].window, get_current_monitor(euclid.handle[eh].window), 0, 0, mode->width, mode->height, mode->refreshRate);
 }
 
 void quitfullscreen(uint32_t eh){

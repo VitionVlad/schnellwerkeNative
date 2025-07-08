@@ -5,6 +5,7 @@ use crate::engine::render::render::{MaterialShaders, Texture, Vertexes};
 
 use super::{engine::Engine, image::Image, material::Material, math::{vec2::Vec2, vec3::Vec3}, model::Model, object::Object, plane::PLANEUI};
 
+#[derive(Clone)]
 pub struct Clickzone{
     pos1: Vec2,
     pos2: Vec2,
@@ -70,6 +71,7 @@ impl UIplane {
     }
 }
 
+#[derive(Clone)]
 pub struct UItext{
     plane: Model,
     pub font: Image,

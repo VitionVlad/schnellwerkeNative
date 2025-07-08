@@ -44,11 +44,24 @@ fn main() {
     viewport.object.mesh.ubo[16] = wkfc;
 
     let ti = Image::new_from_files(&eng, ["assets/text.tiff".to_string()].to_vec());
-    let mut text = UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_");
-    text.signal = false;
+    let mut text: [UItext; 10] = [
+      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
+      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
+      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
+      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
+      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
+      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
+      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
+      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
+      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
+      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
+    ];
 
-    let mut text2 = UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_");
-    text2.signal = false;
+    text[0] = UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_");
+    text[0].signal = false;
+
+    text[1] = UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_");
+    text[1].signal = false;
 
     eng.cameras[0].physic_object.gravity = false;
     eng.cameras[0].physic_object.pos.y = 3f32;
@@ -58,13 +71,13 @@ fn main() {
     for _ in 0..2{
       eng.work();
 
-      text.pos.y = eng.render.resolution_y as f32/2.0-10.0;
-      text.pos.x = 10.0;
-      text.pos.z = 0.9;
-      text.size.x = 10.0;
-      text.size.y = 20.0;
+      text[0].pos.y = eng.render.resolution_y as f32/2.0-10.0;
+      text[0].pos.x = 10.0;
+      text[0].pos.z = 0.9;
+      text[0].size.x = 10.0;
+      text[0].size.y = 20.0;
 
-      text.exec(&mut eng, "Initializing power systems...");
+      text[0].exec(&mut eng, "Initializing power systems...");
     }
 
     let mut train = Scene::load_from_obj(&mut eng, "assets/train.obj", mat2);
@@ -74,13 +87,13 @@ fn main() {
     for _ in 0..2{
       eng.work();
 
-      text.pos.y = eng.render.resolution_y as f32/2.0-30.0;
-      text.pos.x = 10.0;
-      text.pos.z = 0.9;
-      text.size.x = 10.0;
-      text.size.y = 20.0;
+      text[0].pos.y = eng.render.resolution_y as f32/2.0-30.0;
+      text[0].pos.x = 10.0;
+      text[0].pos.z = 0.9;
+      text[0].size.x = 10.0;
+      text[0].size.y = 20.0;
 
-      text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...");
+      text[0].exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...");
     }
 
     let mut trainqo = Scene::load_from_obj(&mut eng, "assets/train_quest.obj", mat3);
@@ -89,13 +102,13 @@ fn main() {
     for _ in 0..2{
       eng.work();
 
-      text.pos.y = eng.render.resolution_y as f32/2.0-50.0;
-      text.pos.x = 10.0;
-      text.pos.z = 0.9;
-      text.size.x = 10.0;
-      text.size.y = 20.0;
+      text[0].pos.y = eng.render.resolution_y as f32/2.0-50.0;
+      text[0].pos.x = 10.0;
+      text[0].pos.z = 0.9;
+      text[0].size.x = 10.0;
+      text[0].size.y = 20.0;
 
-      text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...");
+      text[0].exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...");
     }
 
     let mut traindr = Scene::load_from_obj(&mut eng, "assets/train_door.obj", mat2);
@@ -105,13 +118,13 @@ fn main() {
     for _ in 0..2{
       eng.work();
 
-      text.pos.y = eng.render.resolution_y as f32/2.0-70.0;
-      text.pos.x = 10.0;
-      text.pos.z = 0.9;
-      text.size.x = 10.0;
-      text.size.y = 20.0;
+      text[0].pos.y = eng.render.resolution_y as f32/2.0-70.0;
+      text[0].pos.x = 10.0;
+      text[0].pos.z = 0.9;
+      text[0].size.x = 10.0;
+      text[0].size.y = 20.0;
 
-      text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...DONE\nLoading armaments and supplies...");
+      text[0].exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...DONE\nLoading armaments and supplies...");
     }
 
     let mut vrt1 = ModelAsset::load_obj("assets/train_em.obj");
@@ -133,25 +146,25 @@ fn main() {
     for _ in 0..2{
       eng.work();
 
-      text.pos.y = eng.render.resolution_y as f32/2.0-90.0;
-      text.pos.x = 10.0;
-      text.pos.z = 0.9;
-      text.size.x = 10.0;
-      text.size.y = 20.0;
+      text[0].pos.y = eng.render.resolution_y as f32/2.0-90.0;
+      text[0].pos.x = 10.0;
+      text[0].pos.z = 0.9;
+      text[0].size.x = 10.0;
+      text[0].size.y = 20.0;
 
-      text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...DONE\nLoading armaments and supplies...DONE\nSynchronizing chrono-displacement engine...");
+      text[0].exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...DONE\nLoading armaments and supplies...DONE\nSynchronizing chrono-displacement engine...");
     }
 
     for _ in 0..2{
       eng.work();
 
-      text.pos.y = eng.render.resolution_y as f32/2.0-110.0;
-      text.pos.x = 10.0;
-      text.pos.z = 0.9;
-      text.size.x = 10.0;
-      text.size.y = 20.0;
+      text[0].pos.y = eng.render.resolution_y as f32/2.0-110.0;
+      text[0].pos.x = 10.0;
+      text[0].pos.z = 0.9;
+      text[0].size.x = 10.0;
+      text[0].size.y = 20.0;
 
-      text.exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...DONE\nLoading armaments and supplies...DONE\nSynchronizing chrono-displacement engine...DONE\nFinal systems check...");
+      text[0].exec(&mut eng, "Initializing power systems...DONE\nLoading vital packages...DONE\nEstablishing communication lines...DONE\nLoading armaments and supplies...DONE\nSynchronizing chrono-displacement engine...DONE\nFinal systems check...");
     }
 
     let mut intspr = UIplane::new_from_file(&mut eng, mat5, ["assets/interact.tiff".to_string()].to_vec());
@@ -161,8 +174,8 @@ fn main() {
     eng.cameras[0].physic_object.mass = 0.005f32;
     eng.cameras[0].physic_object.solid = true;
     eng.control.mouse_lock = true;
-    text.signal = true;
-    text.per_symbol = true;
+    text[0].signal = true;
+    text[0].per_symbol = true;
 
     let mut trains = Speaker::new(&mut eng, "assets/audio/train.mp3");
     trains.use_pan = false;
@@ -214,6 +227,10 @@ fn main() {
 
     let mut relposx = 0.0;
 
+    let mut menusel = 0;
+
+    let mut resmod = 0;
+
     while eng.work(){
       if !eng.control.mouse_lock {
         relpos.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - savpos.x;
@@ -251,6 +268,12 @@ fn main() {
       
       wk.play = false;
       mwk.play = false;
+
+      for i in 0..10{
+        text[i].draw = false;
+        text[i].signal = false;
+      }
+
       if eng.control.mouse_lock{
         eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
         eng.cameras[0].physic_object.rot.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - relpos.y;
@@ -323,6 +346,7 @@ fn main() {
         eng.control.mouse_lock = !eng.control.mouse_lock;
         qa = -1;
         tm = 100;
+        menusel = 0;
       }
 
       intspr.object.draw = false;
@@ -365,47 +389,43 @@ fn main() {
         }
       }
 
-      text.draw = false;
-      text2.draw = false;
-      text.signal = false;
-      text2.signal = false;
       if qa == -1 && wkfc < 2.5{
-        text2.exec(&mut eng, " ");
-        text.exec(&mut eng, " ");
+        text[1].exec(&mut eng, " ");
+        text[0].exec(&mut eng, " ");
       }
 
       if wkfc > 2.5 {
-        text.draw = true;
-        text2.draw = false;
-        text.signal = false;
-        text2.signal = false;
-        text2.exec(&mut eng, " ");
-        text.pos.y = eng.render.resolution_y as f32 / 2.0;
-        text.pos.x = eng.render.resolution_x as f32 / 2.0 - text.size.x * 1.5;
-        text.exec(&mut eng, "END");
+        text[0].draw = true;
+        text[1].draw = false;
+        text[0].signal = false;
+        text[1].signal = false;
+        text[1].exec(&mut eng, " ");
+        text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+        text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 1.5;
+        text[0].exec(&mut eng, "END");
       }
 
       if qa == 0{
         eng.control.mouse_lock = false;
-        text2.draw = true;
-        text2.pos.y = eng.render.resolution_y as f32 / 4.0;
-        text2.pos.x = eng.render.resolution_x as f32 / 2.0 - text2.size.x*7.0;
-        text2.exec(&mut eng, &format!("Enter code: {}{}", enpsc[0], enpsc[1]));
+        text[1].draw = true;
+        text[1].pos.y = eng.render.resolution_y as f32 / 4.0;
+        text[1].pos.x = eng.render.resolution_x as f32 / 2.0 - text[1].size.x*7.0;
+        text[1].exec(&mut eng, &format!("Enter code: {}{}", enpsc[0], enpsc[1]));
 
-        text.size = text2.size;
-        text.draw = true;
-        text.pos.y = eng.render.resolution_y as f32 / 2.0;
-        text.pos.x = eng.render.resolution_x as f32 / 2.0 - text.size.x*5.0;
-        text.signal = true;
-        text.per_symbol = true;
+        text[0].size = text[1].size;
+        text[0].draw = true;
+        text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+        text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x*5.0;
+        text[0].signal = true;
+        text[0].per_symbol = true;
 
         let mut curpos = 0;
         if enpsc[0] != '-'{
           curpos = 1;
         }
 
-        if text.exec(&mut eng, "0123456789") && eng.control.mousebtn[2] && tm <= 0{
-          enpsc[curpos] = text.symbol_pressed as char;
+        if text[0].exec(&mut eng, "0123456789") && eng.control.mousebtn[2] && tm <= 0{
+          enpsc[curpos] = text[0].symbol_pressed as char;
           tm = 100;
           gr.play = true;
         }
@@ -429,17 +449,17 @@ fn main() {
         }
 
         eng.control.mouse_lock = false;
-        text2.draw = true;
-        text2.pos.y = eng.render.resolution_y as f32 / 4.0;
-        text2.pos.x = eng.render.resolution_x as f32 / 2.0 - text2.size.x*8.0;
-        text2.exec(&mut eng, &format!("Enter code: {}{}{}{}", enpsc[0], enpsc[1], enpsc[2], enpsc[3]));
+        text[1].draw = true;
+        text[1].pos.y = eng.render.resolution_y as f32 / 4.0;
+        text[1].pos.x = eng.render.resolution_x as f32 / 2.0 - text[1].size.x*8.0;
+        text[1].exec(&mut eng, &format!("Enter code: {}{}{}{}", enpsc[0], enpsc[1], enpsc[2], enpsc[3]));
 
-        text.size = text2.size;
-        text.draw = true;
-        text.pos.y = eng.render.resolution_y as f32 / 2.0;
-        text.pos.x = eng.render.resolution_x as f32 / 2.0 - text.size.x*5.0;
-        text.signal = true;
-        text.per_symbol = true;
+        text[0].size = text[1].size;
+        text[0].draw = true;
+        text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+        text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x*5.0;
+        text[0].signal = true;
+        text[0].per_symbol = true;
 
         let mut curpos = 0;
         for i in 0..4{
@@ -449,8 +469,8 @@ fn main() {
           }
         }
 
-        if text.exec(&mut eng, "0123456789") && eng.control.mousebtn[2] && tm <= 0{
-          enpsc[curpos] = text.symbol_pressed as char;
+        if text[0].exec(&mut eng, "0123456789") && eng.control.mousebtn[2] && tm <= 0{
+          enpsc[curpos] = text[0].symbol_pressed as char;
           tm = 100;
           gr.play = true;
         }
@@ -476,17 +496,17 @@ fn main() {
         }
 
         eng.control.mouse_lock = false;
-        text2.draw = true;
-        text2.pos.y = eng.render.resolution_y as f32 / 4.0;
-        text2.pos.x = eng.render.resolution_x as f32 / 2.0 - text2.size.x*8.0;
-        text2.exec(&mut eng, &format!("Enter code: {}{}{}", enpsc[0], enpsc[1], enpsc[2]));
+        text[1].draw = true;
+        text[1].pos.y = eng.render.resolution_y as f32 / 4.0;
+        text[1].pos.x = eng.render.resolution_x as f32 / 2.0 - text[1].size.x*8.0;
+        text[1].exec(&mut eng, &format!("Enter code: {}{}{}", enpsc[0], enpsc[1], enpsc[2]));
 
-        text.size = text2.size;
-        text.draw = true;
-        text.pos.y = eng.render.resolution_y as f32 / 2.0;
-        text.pos.x = eng.render.resolution_x as f32 / 2.0 - text.size.x*5.0;
-        text.signal = true;
-        text.per_symbol = true;
+        text[0].size = text[1].size;
+        text[0].draw = true;
+        text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+        text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x*5.0;
+        text[0].signal = true;
+        text[0].per_symbol = true;
 
         let mut curpos = 0;
         for i in 0..3{
@@ -496,8 +516,8 @@ fn main() {
           }
         }
 
-        if text.exec(&mut eng, "QWERTYUIOP\n ASDFGHKL\n ZXCVBNM") && eng.control.mousebtn[2] && tm <= 0{
-          enpsc[curpos] = text.symbol_pressed as char;
+        if text[0].exec(&mut eng, "QWERTYUIOP\n ASDFGHKL\n ZXCVBNM") && eng.control.mousebtn[2] && tm <= 0{
+          enpsc[curpos] = text[0].symbol_pressed as char;
           tm = 100;
           gr.play = true;
         }
@@ -522,17 +542,17 @@ fn main() {
         }
 
         eng.control.mouse_lock = false;
-        text2.draw = true;
-        text2.pos.y = eng.render.resolution_y as f32 / 4.0;
-        text2.pos.x = eng.render.resolution_x as f32 / 2.0 - text2.size.x*8.0;
-        text2.exec(&mut eng, &format!("Enter code:{}{}{}{}{}", enpsc[0], enpsc[1], enpsc[2], enpsc[3], enpsc[4]));
+        text[1].draw = true;
+        text[1].pos.y = eng.render.resolution_y as f32 / 4.0;
+        text[1].pos.x = eng.render.resolution_x as f32 / 2.0 - text[1].size.x*8.0;
+        text[1].exec(&mut eng, &format!("Enter code:{}{}{}{}{}", enpsc[0], enpsc[1], enpsc[2], enpsc[3], enpsc[4]));
 
-        text.size = text2.size;
-        text.draw = true;
-        text.pos.y = eng.render.resolution_y as f32 / 2.0;
-        text.pos.x = eng.render.resolution_x as f32 / 2.0 - text.size.x*5.0;
-        text.signal = true;
-        text.per_symbol = true;
+        text[0].size = text[1].size;
+        text[0].draw = true;
+        text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+        text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x*5.0;
+        text[0].signal = true;
+        text[0].per_symbol = true;
 
         let mut curpos = 0;
         for i in 0..5{
@@ -542,8 +562,8 @@ fn main() {
           }
         }
 
-        if text.exec(&mut eng, "QWERTYUIOP\n ASDFGHKL\n ZXCVBNM") && eng.control.mousebtn[2] && tm <= 0{
-          enpsc[curpos] = text.symbol_pressed as char;
+        if text[0].exec(&mut eng, "QWERTYUIOP\n ASDFGHKL\n ZXCVBNM") && eng.control.mousebtn[2] && tm <= 0{
+          enpsc[curpos] = text[0].symbol_pressed as char;
           tm = 100;
           gr.play = true;
         }
@@ -608,17 +628,243 @@ fn main() {
       intspr.object.physic_object.pos.y = eng.render.resolution_y as f32 * 0.75 - 16.0;
       intspr.exec(&mut eng);
 
-      text.pos.y = eng.render.resolution_y as f32 - text.size.y;
-      text.pos.x = 0.0;
-      text.pos.z = 0.8;
-      text.size.x = 15.0;
-      text.size.y = 30.0;
+      //text[0].pos.y = eng.render.resolution_y as f32 - text[0].size.y;
+      //text[0].pos.x = 0.0;
+      //text[0].pos.z = 0.8;
+      //text[0].size.x = 15.0;
+      //text[0].size.y = 30.0;
 
       mars.exec(&mut eng);
       trains.exec(&mut eng);
       wk.exec(&mut eng);
       mwk.exec(&mut eng);
       gr.exec(&mut eng);
+
+      if !eng.control.mouse_lock && qa == -1{
+        match menusel {
+          0 => {
+            text[0].size.x = 40.0;
+            text[0].size.y = 80.0;
+            text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 1.5;
+            text[0].pos.y = eng.render.resolution_y as f32 / 3.0;
+            text[0].draw = true;
+            text[0].signal = false;
+            text[0].exec(&mut eng, "ZUG");
+
+            text[1].size.x = 20.0;
+            text[1].size.y = 40.0;
+            text[1].pos.x = eng.render.resolution_x as f32 / 2.0 - text[1].size.x * 4.0;
+            text[1].pos.y = eng.render.resolution_y as f32 / 2.0 + text[1].size.y * 0.5;
+            text[1].draw = true;
+            text[1].signal = true;
+            text[1].per_symbol = false;
+            if text[1].exec(&mut eng, "Continue") && eng.control.mousebtn[2] && tm <= 0{
+              eng.control.mouse_lock = true;
+              gr.play = true;
+              tm = 100;
+            }
+
+            text[2].size.x = 20.0;
+            text[2].size.y = 40.0;
+            text[2].pos.x = eng.render.resolution_x as f32 / 2.0 - text[2].size.x * 4.0;
+            text[2].pos.y = eng.render.resolution_y as f32 / 2.0 + text[2].size.y * 1.5;
+            text[2].draw = true;
+            text[2].signal = true;
+            text[2].per_symbol = false;
+            if text[2].exec(&mut eng, "New game") && eng.control.mousebtn[2] && tm <= 0{
+              wkfc = 2f32;
+              traindr.objects[6].physic_object.solid = false;
+              traindr.objects[6].physic_object.pos.x -= TICKSZ*10.0*eng.times_to_calculate_physics as f32;
+              eng.control.mouse_lock = true;
+              qa = -1;
+              for i in 0..traindr.objects.len(){
+                traindr.objects[i].draw = true;
+                traindr.objects[i].physic_object.solid = true;
+                traindr.objects[i].draw_shadow = true;
+                traindr.objects[i].physic_object.pos.x = 0.0;
+              }
+            
+              eng.cameras[0].physic_object.pos.x = 0.0;
+              eng.cameras[0].physic_object.pos.z = 0.0;
+
+              gr.play = true;
+              tm = 100;
+            }
+
+            text[3].size.x = 20.0;
+            text[3].size.y = 40.0;
+            text[3].pos.x = eng.render.resolution_x as f32 / 2.0 - text[3].size.x * 4.0;
+            text[3].pos.y = eng.render.resolution_y as f32 / 2.0 + text[3].size.y * 2.5;
+            text[3].draw = true;
+            text[3].signal = true;
+            text[3].per_symbol = false;
+            if text[3].exec(&mut eng, "Settings") && eng.control.mousebtn[2] && tm <= 0{
+              menusel = 1;
+              gr.play = true;
+              tm = 100;
+            }
+
+            text[4].size.x = 20.0;
+            text[4].size.y = 40.0;
+            text[4].pos.x = eng.render.resolution_x as f32 / 2.0 - text[4].size.x * 2.0;
+            text[4].pos.y = eng.render.resolution_y as f32 / 2.0 + text[4].size.y * 3.5;
+            text[4].draw = true;
+            text[4].signal = true;
+            text[4].per_symbol = false;
+            if text[4].exec(&mut eng, "Quit") && eng.control.mousebtn[2]{
+              break;
+            }
+          },
+          1 => {
+            text[0].size.x = 40.0;
+            text[0].size.y = 80.0;
+            text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 4.0;
+            text[0].pos.y = eng.render.resolution_y as f32 / 3.0;
+            text[0].draw = true;
+            text[0].signal = false;
+            text[0].exec(&mut eng, "Settings");
+
+            text[1].size.x = 20.0;
+            text[1].size.y = 40.0;
+            text[1].pos.x = eng.render.resolution_x as f32 / 2.0 - text[1].size.x * 3.5;
+            text[1].pos.y = eng.render.resolution_y as f32 / 2.0 + text[1].size.y * 0.5;
+            text[1].draw = true;
+            text[1].signal = true;
+            text[1].per_symbol = false;
+            if text[1].exec(&mut eng, "Display") && eng.control.mousebtn[2] && tm <= 0{
+              menusel = 2;
+              gr.play = true;
+              tm = 100;
+            }
+
+            text[2].size.x = 20.0;
+            text[2].size.y = 40.0;
+            text[2].pos.x = eng.render.resolution_x as f32 / 2.0 - text[2].size.x * 2.5;
+            text[2].pos.y = eng.render.resolution_y as f32 / 2.0 + text[2].size.y * 1.5;
+            text[2].draw = true;
+            text[2].signal = true;
+            text[2].per_symbol = false;
+            if text[2].exec(&mut eng, "Audio") && eng.control.mousebtn[2] && tm <= 0{
+              menusel = 3;
+              gr.play = true;
+              tm = 100;
+            }
+
+            text[3].size.x = 20.0;
+            text[3].size.y = 40.0;
+            text[3].pos.x = eng.render.resolution_x as f32 / 2.0 - text[3].size.x * 2.0;
+            text[3].pos.y = eng.render.resolution_y as f32 / 2.0 + text[3].size.y * 2.5;
+            text[3].draw = true;
+            text[3].signal = true;
+            text[3].per_symbol = false;
+            if text[3].exec(&mut eng, "Back") && eng.control.mousebtn[2] && tm <= 0{
+              menusel = 0;
+              gr.play = true;
+              tm = 100;
+            }
+
+            text[4].draw = false;
+            text[4].signal = false;
+            text[4].exec(&mut eng, " ");
+          },
+          2 => {
+            text[0].size.x = 40.0;
+            text[0].size.y = 80.0;
+            text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 3.5;
+            text[0].pos.y = eng.render.resolution_y as f32 / 3.0;
+            text[0].draw = true;
+            text[0].signal = false;
+            text[0].exec(&mut eng, "Display");
+
+            text[1].size.x = 20.0;
+            text[1].size.y = 40.0;
+            text[1].pos.x = eng.render.resolution_x as f32 / 2.0 - text[1].size.x * 8.0;
+            text[1].pos.y = eng.render.resolution_y as f32 / 2.0 + text[1].size.y * 0.5;
+            text[1].draw = true;
+            text[1].signal = true;
+            text[1].per_symbol = false;
+
+            let rscale = ((eng.render.resolution_scale * 10.0) as i32) as f32 / 10.0;
+
+            if text[1].exec(&mut eng, &format!("Render scale: {}", rscale.to_string())) && eng.control.mousebtn[2] && tm <= 0{
+              eng.render.resolution_scale = ((eng.render.resolution_scale * 10.0) as i32 - 1) as f32 /10.0;
+              if eng.render.resolution_scale < 0.2 {
+                eng.render.resolution_scale = 1.0;
+              }
+              gr.play = true;
+              tm = 100;
+            }
+
+            let rsx = eng.render.resolution_x;
+            let rsy = eng.render.resolution_y;
+
+            let str = format!("resolution: {}x{}", rsx.to_string(), rsy.to_string());
+
+            text[2].size.x = 20.0;
+            text[2].size.y = 40.0;
+            text[2].pos.x = eng.render.resolution_x as f32 / 2.0 - text[2].size.x * str.len() as f32 / 2.0;
+            text[2].pos.y = eng.render.resolution_y as f32 / 2.0 + text[2].size.y * 1.5;
+            text[2].draw = true;
+            text[2].signal = true;
+            text[2].per_symbol = false;
+
+            if text[2].exec(&mut eng, &str) && eng.control.mousebtn[2] && tm <= 0{
+              match resmod {
+                  0 => {
+                    eng.render.set_new_resolution(1280, 720);
+                    resmod += 1;
+                  },
+                  1 => {
+                    eng.render.set_new_resolution(1600, 900);
+                    resmod += 1;
+                  },
+                  2 => {
+                    eng.render.set_new_resolution(1920, 1080);
+                    resmod += 1;
+                  },
+                  3 => {
+                    eng.render.set_new_resolution(2560, 1440);
+                    resmod += 1;
+                  },
+                  4 => {
+                    eng.render.set_new_resolution(3840, 2160);
+                    resmod = 0;
+                  },
+                  _ => {},
+              }
+              gr.play = true;
+              tm = 100;
+            }
+
+            text[3].size.x = 20.0;
+            text[3].size.y = 40.0;
+            text[3].pos.x = eng.render.resolution_x as f32 / 2.0 - text[3].size.x * 6.0;
+            text[3].pos.y = eng.render.resolution_y as f32 / 2.0 + text[3].size.y * 2.5;
+            text[3].draw = true;
+            text[3].signal = true;
+            text[3].per_symbol = false;
+
+            let flscr = eng.render.fullscreen;
+
+            if text[3].exec(&mut eng, &format!("Fullscreen {}", match flscr { true => "+", false => "-"})) && eng.control.mousebtn[2] && tm <= 0{
+              eng.render.fullscreen = !eng.render.fullscreen;
+              gr.play = true;
+              tm = 100;
+            }
+
+            text[4].draw = false;
+            text[4].signal = false;
+            text[4].exec(&mut eng, " ");
+          },
+          _ => {},
+        }
+      }else{
+        for i in 2..10{
+          text[i].draw = false;
+          text[i].signal = false;
+          text[i].exec(&mut eng, " ");
+        }
+      }
     }
     eng.end();
 }
