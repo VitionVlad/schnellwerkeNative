@@ -796,10 +796,11 @@ fn main() {
               tm = 100;
             }
 
-            let rsx = eng.render.resolution_x;
-            let rsy = eng.render.resolution_y;
+            let flscr = eng.render.fullscreen;
 
-            let str = format!("resolution: {}x{}", rsx.to_string(), rsy.to_string());
+            let rsy = eng.render.shadow_map_resolution;
+
+            let str = format!("Shadows quality: {}", match rsy { 500 => "Low", 1000 => "Medium", 2000 => "High", 4000 => "Very high", _ => "" });
 
             text[2].size.x = 20.0;
             text[2].size.y = 40.0;
@@ -812,23 +813,19 @@ fn main() {
             if text[2].exec(&mut eng, &str) && eng.control.mousebtn[2] && tm <= 0{
               match resmod {
                   0 => {
-                    eng.render.set_new_resolution(1280, 720);
+                    eng.render.shadow_map_resolution = 500;
                     resmod += 1;
                   },
                   1 => {
-                    eng.render.set_new_resolution(1600, 900);
+                    eng.render.shadow_map_resolution = 1000;
                     resmod += 1;
                   },
                   2 => {
-                    eng.render.set_new_resolution(1920, 1080);
+                    eng.render.shadow_map_resolution = 2000;
                     resmod += 1;
                   },
                   3 => {
-                    eng.render.set_new_resolution(2560, 1440);
-                    resmod += 1;
-                  },
-                  4 => {
-                    eng.render.set_new_resolution(3840, 2160);
+                    eng.render.shadow_map_resolution = 4000;
                     resmod = 0;
                   },
                   _ => {},
@@ -845,13 +842,72 @@ fn main() {
             text[3].signal = true;
             text[3].per_symbol = false;
 
-            let flscr = eng.render.fullscreen;
-
             if text[3].exec(&mut eng, &format!("Fullscreen {}", match flscr { true => "+", false => "-"})) && eng.control.mousebtn[2] && tm <= 0{
               eng.render.fullscreen = !eng.render.fullscreen;
               gr.play = true;
               tm = 100;
             }
+
+            text[4].size.x = 20.0;
+            text[4].size.y = 40.0;
+            text[4].pos.x = eng.render.resolution_x as f32 / 2.0 - text[4].size.x * 2.0;
+            text[4].pos.y = eng.render.resolution_y as f32 / 2.0 + text[4].size.y * 3.5;
+            text[4].draw = true;
+            text[4].signal = true;
+            text[4].per_symbol = false;
+            if text[4].exec(&mut eng, "Back") && eng.control.mousebtn[2]{
+              menusel = 1;
+              gr.play = true;
+              tm = 100;
+            }
+          },
+          3 => {
+            text[0].size.x = 40.0;
+            text[0].size.y = 80.0;
+            text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 2.5;
+            text[0].pos.y = eng.render.resolution_y as f32 / 3.0;
+            text[0].draw = true;
+            text[0].signal = false;
+            text[0].exec(&mut eng, "Audio");
+
+            let mut rscale = (eng.audio.vol * 100f32) as i32;
+
+            let str = format!("Volume: {}", rscale);
+            
+            text[1].size.x = 20.0;
+            text[1].size.y = 40.0;
+            text[1].pos.x = eng.render.resolution_x as f32 / 2.0 - text[1].size.x * (str.len()/2) as f32;
+            text[1].pos.y = eng.render.resolution_y as f32 / 2.0 + text[1].size.y * 0.5;
+            text[1].draw = true;
+            text[1].signal = true;
+            text[1].per_symbol = false;
+
+            if text[1].exec(&mut eng, &str) && eng.control.mousebtn[2] && tm <= 0{
+              rscale -= 10;
+              if rscale < 0{
+                rscale = 100;
+              }
+              eng.audio.vol = rscale as f32/100f32;
+              gr.play = true;
+              tm = 100;
+            }
+
+            text[2].size.x = 20.0;
+            text[2].size.y = 40.0;
+            text[2].pos.x = eng.render.resolution_x as f32 / 2.0 - text[2].size.x * 2.0;
+            text[2].pos.y = eng.render.resolution_y as f32 / 2.0 + text[2].size.y * 1.5;
+            text[2].draw = true;
+            text[2].signal = true;
+            text[2].per_symbol = false;
+            if text[2].exec(&mut eng, "Back") && eng.control.mousebtn[2] && tm <= 0{
+              menusel = 1;
+              gr.play = true;
+              tm = 100;
+            }
+
+            text[3].draw = false;
+            text[3].signal = false;
+            text[3].exec(&mut eng, " ");
 
             text[4].draw = false;
             text[4].signal = false;
