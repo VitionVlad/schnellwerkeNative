@@ -29,6 +29,8 @@ typedef struct euclidh{
     uint32_t usedPresentMode;
     uint32_t resolutionX;
     uint32_t resolutionY;
+    uint32_t sresolutionX;
+    uint32_t sresolutionY;
     uint32_t oldx;
     uint32_t oldy;
     VkImageView *swapChainImageViews;
@@ -142,6 +144,7 @@ typedef struct euclidmesh{
     uint32_t usage;
     uint32_t mrec;
     int8_t camrend;
+    uint32_t savpapparam[2];
 } euclidmesh;
 
 struct euclidVK{
@@ -221,12 +224,21 @@ void setresolution(uint32_t eh, uint32_t xs, uint32_t ys){
 
 void setfullscreen(uint32_t eh){
     const GLFWvidmode* mode = glfwGetVideoMode(get_current_monitor(euclid.handle[eh].window));
-    glfwGetWindowSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
-    glfwSetWindowMonitor(euclid.handle[eh].window, get_current_monitor(euclid.handle[eh].window), 0, 0, mode->width, mode->height, mode->refreshRate);
+    euclid.handle[eh].sresolutionX = euclid.handle[eh].resolutionX;
+    euclid.handle[eh].sresolutionY = euclid.handle[eh].resolutionY;
+    glfwSetWindowAttrib(euclid.handle[eh].window, GLFW_DECORATED, GLFW_FALSE);
+    glfwSetWindowAttrib(euclid.handle[eh].window, GLFW_RESIZABLE, GLFW_FALSE);
+    glfwSetWindowSize(euclid.handle[eh].window, mode->width, mode->height+1);
+    glfwSetWindowPos(euclid.handle[eh].window, 0, 0);
 }
 
 void quitfullscreen(uint32_t eh){
-    glfwSetWindowMonitor(euclid.handle[eh].window, NULL, 100, 100, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionX, 0);
+    euclid.handle[eh].resolutionX = euclid.handle[eh].sresolutionX;
+    euclid.handle[eh].resolutionY = euclid.handle[eh].sresolutionY;
+    glfwSetWindowAttrib(euclid.handle[eh].window, GLFW_DECORATED, GLFW_TRUE);
+    glfwSetWindowAttrib(euclid.handle[eh].window, GLFW_RESIZABLE, GLFW_TRUE);
+    glfwSetWindowSize(euclid.handle[eh].window, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionX);
+    glfwSetWindowPos(euclid.handle[eh].window, 50, 50);
 }
 
 uint8_t getKeyPressed(uint32_t eh, uint32_t index){
@@ -1244,6 +1256,7 @@ void recreateSwapChain(uint32_t eh){
     vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].depthImage, NULL);
     vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].depthImageMemory, NULL);
     createSwapChain(eh);
+    createRenderPass(eh);
     createSwapChainImageViews(eh);
     createFrameBuffers(eh);
 }
@@ -1278,6 +1291,7 @@ void startrender(uint32_t eh){
         vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].defferedImageMemory, NULL);
         vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImage, NULL);
         vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImageMemory, NULL);
+        vkDestroyRenderPass(euclid.handle[eh].device, euclid.handle[eh].renderPass, NULL);
         createDefferedData(eh);
         recreateSwapChain(eh);
         euclid.handle[eh].mrec++;
@@ -1446,6 +1460,7 @@ uint32_t neweng(uint32_t shadowMapResolution){
     getDevice(eh);
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
     euclid.handle[eh].window = glfwCreateWindow(800, 600, "Schnellwerke", NULL, NULL);
     euclid.handle[eh].resolutionX = 800;
     euclid.handle[eh].resolutionY = 600;
@@ -2683,6 +2698,10 @@ uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t te, uint32_t us
     euclid.meshes[eme].texid = te;
     euclid.meshes[eme].usage = usage;
     euclid.meshes[eme].mrec = euclid.handle[eh].mrec;
+
+    euclid.meshes[eme].savpapparam[0] = es;
+    euclid.meshes[eme].savpapparam[1] = em;
+
     createUniformBuffer(eh, eme);
     if(usage == 0){
         createDescriptorPool(eh, eme);
@@ -2718,12 +2737,14 @@ void setdrawable(uint32_t eme, uint8_t val){
 }
 
 void draw(uint32_t eh, uint32_t eme){
-    if(euclid.handle[eh].mrec != euclid.meshes[eme].mrec){
+    if(euclid.handle[eh].mrec != euclid.meshes[eme].mrec && euclid.meshes[eme].usage == 0){
         vkFreeDescriptorSets(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, MAX_FRAMES_IN_FLIGHT, euclid.meshes[eme].descriptorSets);
         vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.meshes[eme].descriptorPool, NULL);
         free(euclid.meshes[eme].descriptorSets);
         createDescriptorPool(eh, eme);
         createDescriptorSets(eh, eme);
+        vkDestroyPipeline(euclid.handle[eh].device, euclid.meshes[eme].graphicsPipeline, NULL);
+        createPipeline(eh, eme, euclid.meshes[eme].savpapparam[0], euclid.meshes[eme].savpapparam[1]);
         euclid.meshes[eme].mrec = euclid.handle[eh].mrec;
     }
 

@@ -242,6 +242,9 @@ fn main() {
       eng.lights[0].pos = Vec3::newdefined(0.0, 4.25, 0.0);
       eng.lights[0].rot = Vec3::newdefined(1.5708, 0.0, 0.0);
 
+      intspr.object.draw = false;
+      inspecting = false;
+
       if eng.cameras[0].physic_object.pos.z > 11.7{
         eng.lights[0].pos = Vec3::newdefined(0.0, 4.25, 23.3);
       }
@@ -327,6 +330,44 @@ fn main() {
             }
           }
         }
+
+        for i in 0..trainqo.objects.len(){
+          if trainqo.objects[i].is_looking_at{
+            intspr.object.draw = true;
+          }
+          if trainqo.objects[i].is_looking_at && eng.control.mousebtn[2]{
+            intspr.object.draw = false;
+            inspecting = true;
+          }
+        }
+        for i in 0..traindr.objects.len(){
+          if traindr.objects[i].physic_object.pos.x != 0.0{
+            traindr.objects[i].physic_object.solid = false;
+            traindr.objects[i].physic_object.pos.x -= TICKSZ*10.0*eng.times_to_calculate_physics as f32;
+            if traindr.objects[i].physic_object.pos.x < -1.725{
+              traindr.objects[i].physic_object.pos.x = -1.725;
+              traindr.objects[i].draw = false;
+              traindr.objects[i].draw_shadow = false;
+              traindr.objects[i].physic_object.solid = false;
+            }
+          }
+          if traindr.objects[i].is_looking_at && traindr.objects[i].physic_object.solid && qa == -1{
+            intspr.object.draw = true;
+            if eng.control.mousebtn[2] && i != 0 && i != 2 && i != 4 && i != 6{
+              traindr.objects[i].physic_object.solid = false;
+              traindr.objects[i].physic_object.pos.x -= TICKSZ*10.0*eng.times_to_calculate_physics as f32;
+            }
+            if eng.control.mousebtn[2] && (i == 0 || i == 2 || i == 4 || i == 6){
+              enpsc[0] = '-';
+              enpsc[1] = '-';
+              enpsc[2] = '-';
+              enpsc[3] = '-';
+              enpsc[4] = '-';
+              qa = i as i32 /2;
+              tm = 50;
+            }
+          }
+        }
       }
 
       if wkfc >= 0.0{
@@ -347,46 +388,6 @@ fn main() {
         qa = -1;
         tm = 100;
         menusel = 0;
-      }
-
-      intspr.object.draw = false;
-      inspecting = false;
-      for i in 0..trainqo.objects.len(){
-        if trainqo.objects[i].is_looking_at{
-          intspr.object.draw = true;
-        }
-        if trainqo.objects[i].is_looking_at && eng.control.mousebtn[2]{
-          intspr.object.draw = false;
-          inspecting = true;
-        }
-      }
-      for i in 0..traindr.objects.len(){
-        if traindr.objects[i].physic_object.pos.x != 0.0{
-          traindr.objects[i].physic_object.solid = false;
-          traindr.objects[i].physic_object.pos.x -= TICKSZ*10.0*eng.times_to_calculate_physics as f32;
-          if traindr.objects[i].physic_object.pos.x < -1.725{
-            traindr.objects[i].physic_object.pos.x = -1.725;
-            traindr.objects[i].draw = false;
-            traindr.objects[i].draw_shadow = false;
-            traindr.objects[i].physic_object.solid = false;
-          }
-        }
-        if traindr.objects[i].is_looking_at && traindr.objects[i].physic_object.solid && qa == -1{
-          intspr.object.draw = true;
-          if eng.control.mousebtn[2] && i != 0 && i != 2 && i != 4 && i != 6{
-            traindr.objects[i].physic_object.solid = false;
-            traindr.objects[i].physic_object.pos.x -= TICKSZ*10.0*eng.times_to_calculate_physics as f32;
-          }
-          if eng.control.mousebtn[2] && (i == 0 || i == 2 || i == 4 || i == 6){
-            enpsc[0] = '-';
-            enpsc[1] = '-';
-            enpsc[2] = '-';
-            enpsc[3] = '-';
-            enpsc[4] = '-';
-            qa = i as i32 /2;
-            tm = 50;
-          }
-        }
       }
 
       if qa == -1 && wkfc < 2.5{
