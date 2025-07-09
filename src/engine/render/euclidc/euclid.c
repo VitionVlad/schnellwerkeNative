@@ -237,7 +237,7 @@ void quitfullscreen(uint32_t eh){
     euclid.handle[eh].resolutionY = euclid.handle[eh].sresolutionY;
     glfwSetWindowAttrib(euclid.handle[eh].window, GLFW_DECORATED, GLFW_TRUE);
     glfwSetWindowAttrib(euclid.handle[eh].window, GLFW_RESIZABLE, GLFW_TRUE);
-    glfwSetWindowSize(euclid.handle[eh].window, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionX);
+    glfwSetWindowSize(euclid.handle[eh].window, euclid.handle[eh].resolutionX, euclid.handle[eh].resolutionY);
     glfwSetWindowPos(euclid.handle[eh].window, 50, 50);
 }
 
