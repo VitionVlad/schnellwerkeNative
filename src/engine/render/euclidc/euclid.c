@@ -222,6 +222,19 @@ void setresolution(uint32_t eh, uint32_t xs, uint32_t ys){
     glfwSetWindowSize(euclid.handle[eh].window, xs, ys);
 }
 
+void settitle(uint32_t eh, const char* title){
+    glfwSetWindowTitle(euclid.handle[eh].window, title);
+}
+
+void seticon(uint32_t eh, uint32_t xs, uint32_t ys, char *pixels){
+    GLFWimage img;
+    img.height = ys;
+    img.width = xs;
+    img.pixels = pixels;
+
+    glfwSetWindowIcon(euclid.handle[eh].window, 1, &img);
+}
+
 void setfullscreen(uint32_t eh){
     const GLFWvidmode* mode = glfwGetVideoMode(get_current_monitor(euclid.handle[eh].window));
     euclid.handle[eh].sresolutionX = euclid.handle[eh].resolutionX;

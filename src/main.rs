@@ -2,7 +2,7 @@ use std::fs;
 
 use engine::{engine::Engine, image::Image, light::LightType, material::Material, scene::Scene, ui::{UIplane, UItext}};
 
-use crate::engine::{loader::modelasset::ModelAsset, math::{vec2::Vec2, vec3::Vec3}, model::Model, object::Object, speaker::Speaker};
+use crate::engine::{loader::{imageasset::ImageAsset, modelasset::ModelAsset}, math::{vec2::Vec2, vec3::Vec3}, model::Model, object::Object, speaker::Speaker};
 mod engine;
 
 /*
@@ -19,6 +19,10 @@ fn main() {
     let mut eng = Engine::new();
     eng.used_camera_count = 2;
     eng.lights[0].light_type = LightType::Spot;
+
+    let icn = ImageAsset::load_tiff("assets/icon.tiff");
+    eng.render.set_icon(icn.size[0], icn.size[1], icn.data);
+    eng.render.set_title("ZUG");
  
     let mut wkfc = 2.0f32;
 
@@ -44,12 +48,7 @@ fn main() {
     viewport.object.mesh.ubo[16] = wkfc;
 
     let ti = Image::new_from_files(&eng, ["assets/text.tiff".to_string()].to_vec());
-    let mut text: [UItext; 10] = [
-      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
-      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
-      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
-      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
-      UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
+    let mut text: [UItext; 5] = [
       UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
       UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
       UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_"),
@@ -272,7 +271,7 @@ fn main() {
       wk.play = false;
       mwk.play = false;
 
-      for i in 0..10{
+      for i in 0..5{
         text[i].draw = false;
         text[i].signal = false;
       }
@@ -916,7 +915,7 @@ fn main() {
           _ => {},
         }
       }else{
-        for i in 2..10{
+        for i in 2..5{
           text[i].draw = false;
           text[i].signal = false;
           text[i].exec(&mut eng, " ");

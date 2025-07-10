@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use std::ffi::CString;
+
 use cty::uint32_t;
 
 unsafe extern "C"{
@@ -8,6 +10,8 @@ unsafe extern "C"{
     fn get_resx(eh: cty::uint32_t) -> cty::uint32_t;
     fn get_resy(eh: cty::uint32_t) -> cty::uint32_t;
     fn setresolution(eh: cty::uint32_t, xs: cty::uint32_t, ys: cty::uint32_t);
+    fn seticon(eh: cty::uint32_t, xs: cty::uint32_t, ys: cty::uint32_t, pixels: *mut cty::c_char);
+    fn settitle(eh: cty::uint32_t, title: *const cty::c_char);
     fn setfullscreen(eh: cty::uint32_t);
     fn quitfullscreen(eh: cty::uint32_t);
     fn getKeyPressed(eh: cty::uint32_t, index: cty::uint32_t) -> cty::uint8_t;
@@ -90,6 +94,12 @@ impl Render{
     }
     pub fn set_new_resolution(&self, resx: u32, resy: u32){
         unsafe { setresolution(self.euclid, resx, resy); }
+    }
+    pub fn set_icon(&self, resx: u32, resy: u32, data: Vec<i8>){
+        unsafe { seticon(self.euclid, resx, resy, data.as_ptr() as *mut i8) }
+    }
+    pub fn set_title(&self, title: &str){
+        unsafe { settitle(self.euclid, CString::new(title).unwrap().as_ptr()); }
     }
     pub fn destroy(&self){
         unsafe{

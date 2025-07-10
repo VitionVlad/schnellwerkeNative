@@ -6,6 +6,8 @@ float get_frametime(uint32_t eh);
 uint32_t get_resx(uint32_t eh);
 uint32_t get_resy(uint32_t eh);
 void setresolution(uint32_t eh, uint32_t xs, uint32_t ys);
+void seticon(uint32_t eh, uint32_t xs, uint32_t ys, char *pixels);
+void settitle(uint32_t eh, const char* title);
 void setfullscreen(uint32_t eh);
 void quitfullscreen(uint32_t eh);
 uint8_t getKeyPressed(uint32_t eh, uint32_t index);
