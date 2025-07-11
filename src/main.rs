@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use std::{fs::{self, File}, io::{Seek, Write}, path::Path};
 
 use engine::{engine::Engine, image::Image, light::LightType, material::Material, scene::Scene, ui::{UIplane, UItext}};
@@ -11,7 +13,6 @@ q2s: 1916
 q3s: END
 q4s: PARIS
 */
-
 
 fn main() {
     const SPEED: f32 = 0.0025f32;
@@ -119,6 +120,8 @@ fn main() {
     }
 
     saveset(&mut eng, &mut file);
+
+    let mut oldr = [eng.render.resolution_x, eng.render.resolution_y];
 
     let icn = ImageAsset::load_tiff("assets/icon.tiff");
     eng.render.set_icon(icn.size[0], icn.size[1], icn.data);
@@ -517,9 +520,49 @@ fn main() {
         text[0].signal = false;
         text[1].signal = false;
         text[1].exec(&mut eng, " ");
-        text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
-        text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 1.5;
-        text[0].exec(&mut eng, "END");
+        text[0].size.x = 15.0;
+        text[0].size.y = 30.0;
+        if wkfc > 9.0{
+          text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+          text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 1.5;
+          text[0].exec(&mut eng, "END");
+        }else if wkfc > 8.0{
+          text[0].pos.y = eng.render.resolution_y as f32 / 2.0 - text[0].size.y;
+          text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 18.5;
+          text[0].exec(&mut eng, "The Great War ended on November 11th,\n   1918, with Germany capitulation");
+        }else if wkfc > 7.0{
+          text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+          text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 18.5;
+          text[0].exec(&mut eng, "It was called the war to end all wars");
+        }else if wkfc > 6.0{
+          text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+          text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 18.0;
+          text[0].exec(&mut eng, "It changed the world, but not enough");
+        }else if wkfc > 5.0{
+          text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+          text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 10.0;
+          text[0].exec(&mut eng, "Peace proved fragile");
+        }else if wkfc > 4.0{
+          text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+          text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 11.0;
+          text[0].exec(&mut eng, "Another war was coming");
+        }else if wkfc > 3.0{
+          text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+          text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 18.0;
+          text[0].exec(&mut eng, "And sooner than we dared to think");
+        }else if wkfc > 2.8{
+          text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+          text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 18.0;
+          text[0].exec(&mut eng, "And sooner than we dared to think.");
+        }else if wkfc > 2.6{
+          text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+          text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 18.0;
+          text[0].exec(&mut eng, "And sooner than we dared to think..");
+        }else if wkfc > 2.0{
+          text[0].pos.y = eng.render.resolution_y as f32 / 2.0;
+          text[0].pos.x = eng.render.resolution_x as f32 / 2.0 - text[0].size.x * 18.0;
+          text[0].exec(&mut eng, "And sooner than we dared to think...");
+        }
       }
 
       if qa == 0{
@@ -1049,6 +1092,11 @@ fn main() {
           text[i].signal = false;
           text[i].exec(&mut eng, " ");
         }
+      }
+
+      if oldr[0] != eng.render.resolution_x || oldr[1] != eng.render.resolution_y{
+        saveset(&mut eng, &mut file);
+        oldr = [eng.render.resolution_x, eng.render.resolution_y];
       }
     }
     eng.end();

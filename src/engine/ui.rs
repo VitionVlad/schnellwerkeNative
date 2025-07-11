@@ -174,7 +174,7 @@ impl UItext {
             }
             self.clickzone.pos1.x = self.pos.x;
             self.clickzone.pos1.y = self.pos.y;
-            self.clickzone.pos2.x = self.pos.x + self.size.x*(mx as f32);
+            self.clickzone.pos2.x = self.pos.x + self.size.x*(mx as f32 + 1.0);
             self.clickzone.pos2.y = self.pos.y + self.size.y*(my as f32);
             let mut btst = self.clickzone.check(Vec2::newdefined(eng.control.xpos as f32, eng.control.ypos as f32));
             let mut lbtst = btst;
