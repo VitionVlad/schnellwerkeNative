@@ -145,7 +145,8 @@ Rendering in Schnellwerke 3 Native is based on the Euclid component, which handl
 The Euclid component was named this way due to the original intention of creating a renderer capable of handling non-Euclidean space. While this feature has never been tested, in theory, it should work—mainly because the engine supports multiple cameras in the deferred pass (up to 10) and up to 100 light sources.  
 The main rendering approach is deferred rendering, although you're free to rewrite the shaders yourself and use traditional forward rendering instead.  
 Below is a diagram that represents the entire rendering process.  
-<p align="center"><img width="531" height="1791" alt="Diagramă fără titlu-Pagină-3 drawio" src="https://github.com/user-attachments/assets/6b755df8-e7dc-43e9-949f-8d3db038684d" /> </p>
+<p align="center"><img width="531" height="1791" alt="Diagramă fără titlu-Pagină-3 drawio" src="https://github.com/user-attachments/assets/6b755df8-e7dc-43e9-949f-8d3db038684d" /> </p>  
+Important note: Since version 3.1, no additional image is used to store texel positions; they are now computed using the matrix inverse. Also, the deferred render framebuffer now uses 16-bit depth color, which slightly improves performance in cases of bandwidth limitation  
 This demo also showcase the rendering of transparent objects, which is significantly more difficult in a deferred rendering approach.  
 
 # <p align="center"> Physics </p>
@@ -180,27 +181,4 @@ trains.exec(&mut eng);
 }
 ```
 
-# <p align="center"> <img width="1599" height="262" alt="image" src="https://github.com/user-attachments/assets/6ba28016-4bf8-437f-9bba-26fa2047faad" /> </p>
-
-ZUG is a demo game created using my new graphics engine. The engine was developed both for debugging and integrating new features, but also as an experiment to create a first-person puzzle experience.  
-  
-So, what is this game about?  
-ZUG is a first-person puzzle game set during the time of the Great War. It aims to recreate the atmosphere of that era and perhaps show or tell something about the war itself—such as the use of ciphers or historical events.  
-  
-The game is quite short, but instead of focusing on length, I put effort into making everything feel realistic. I also used it as a playground to experiment with the engine’s capabilities, shaders, and more.  
-  
-Taken from this repository, the game can be compiled without any code modifications for both Windows and Linux.  
-  
-Controls are standard:
-WASD for movement, mouse for looking around, and LMB for interacting with objects.  
-  
-I can’t give specific system requirements, but the main one is a Vulkan-capable GPU. In my case, the game ran at maximum graphics settings on a Ryzen 5 5600G with integrated Vega 7 graphics and 16 GB of RAM—which was more than enough.  
-
-<img width="1600" height="900" alt="Screenshot 2025-07-12 102033" src="https://github.com/user-attachments/assets/06a76a3d-a8c7-4d7d-afc7-3319dc1917c3" />  
-
-<img width="1600" height="900" alt="Screenshot 2025-07-12 102051" src="https://github.com/user-attachments/assets/ebad32b1-5b90-44eb-a7ee-e4532f7e07ed" />
-
-<img width="1600" height="900" alt="Screenshot 2025-07-12 102116" src="https://github.com/user-attachments/assets/ed48a51a-6710-4860-8dfe-2c7eb36c401b" />
-
-<img width="1600" height="900" alt="Screenshot 2025-07-12 102137" src="https://github.com/user-attachments/assets/e8a656ad-0ad5-4030-8793-f95b30062134" />
-
+# <p align="center"> <img width="1024" height="512" alt="postdev" src="https://github.com/user-attachments/assets/b7fb0768-696b-4328-977a-10dc5f5bbeda" /> </p>  
