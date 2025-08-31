@@ -1,7 +1,15 @@
 use std::process::Command;
 use std::env;
 
+//use winresource::WindowsResource;
+
 fn main(){
+    //if env::var_os("CARGO_CFG_WINDOWS").is_some() {
+    //    let _ = WindowsResource::new()
+    //        .set_icon("assets/icon.ico")
+    //        .compile();
+    //}
+
     let out_dir = env::var("OUT_DIR").unwrap();
     
     Command::new("gcc").args(&["src/engine/render/euclidc/euclid.c", "-c", "", "-o"])
