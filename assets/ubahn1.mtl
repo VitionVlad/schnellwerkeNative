@@ -1,0 +1,98 @@
+# Blender 4.5.3 LTS MTL File: 'ubahn1.blend'
+# www.blender.org
+
+newmtl Material.001
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd assets/concrete/color.tiff
+map_Ns assets/concrete/roughness.tiff
+map_refl assets/concrete/metalness.tiff
+map_Bump -bm 1.000000 assets/concrete/normal.tiff
+
+newmtl Material.003
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd assets/ground/color.tiff
+map_Ns assets/ground/roughness.tiff
+map_refl assets/ground/metalness.tiff
+map_Bump -bm 1.000000 assets/ground/normal.tiff
+
+newmtl Material.005
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd assets/plaster/color.tiff
+map_Ns assets/plaster/roughness.tiff
+map_refl assets/plaster/metalness.tiff
+map_Bump -bm 1.000000 assets/plaster/normal.tiff
+
+newmtl Material.007
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd assets/tileswall/color.tiff
+map_Ns assets/tileswall/roughness.tiff
+map_refl assets/tileswall/metalness.tiff
+map_Bump -bm 1.000000 assets/tileswall/normal.tiff
+
+newmtl Material.010
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd assets/wood2/color.tiff
+map_Ns assets/wood2/roughness.tiff
+map_refl assets/wood2/metalness.tiff
+map_Bump -bm 1.000000 assets/wood2/normal.tiff
+
+newmtl Material.026
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd assets/wood/color.tiff
+map_Ns assets/wood/roughness.tiff
+map_refl assets/wood/metalness.tiff
+map_Bump -bm 1.000000 assets/wood/normal.tiff
+
+newmtl Material.029
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd assets/metal/color.tiff
+map_Ns assets/metal/roughness.tiff
+map_refl assets/metal/metalness.tiff
+map_Bump -bm 1.000000 assets/metal/normal.tiff
+
+newmtl Material.031
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd assets/concrete2/color.tiff
+map_Ns assets/concrete2/roughness.tiff
+map_refl assets/concrete2/metalness.tiff
+map_Bump -bm 1.000000 assets/concrete2/normal.tiff
