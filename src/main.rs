@@ -2,7 +2,7 @@ use std::fs::{self};
 
 use engine::{engine::Engine, image::Image, light::LightType, material::Material, ui::UIplane};
 
-use crate::engine::{loader::modelasset::ModelAsset, math::vec3::Vec3, model::Model, object::Object, scene::Scene, ui::UItext};
+use crate::engine::{math::{vec2::Vec2, vec3::Vec3}, scene::Scene, ui::UItext};
 mod engine;
 
 fn main() {
@@ -17,30 +17,18 @@ fn main() {
     let frag = fs::read("shaders/frag").unwrap();
     let dvert = fs::read("shaders/vdeffered").unwrap();
     let dfrag = fs::read("shaders/fdeffered").unwrap();
-    let dfragu = fs::read("shaders/fdefferedu").unwrap();
     let shadow = fs::read("shaders/shadow").unwrap();
     let textf = fs::read("shaders/ftext").unwrap();
     let mat = Material::new(&eng, vert.clone(), frag, vec![], [engine::render::render::CullMode::CullModeNone, engine::render::render::CullMode::CullModeNone]);
     let matt = Material::new(&eng, vert.clone(), textf, vec![], [engine::render::render::CullMode::CullModeNone, engine::render::render::CullMode::CullModeNone]);
     let matgeneral = Material::new(&eng, dvert.clone(), dfrag, shadow.clone(), [engine::render::render::CullMode::CullModeBackBit, engine::render::render::CullMode::CullModeFrontBit]);
-    let matuniq = Material::new(&eng, dvert.clone(), dfragu, shadow.clone(), [engine::render::render::CullMode::CullModeNone, engine::render::render::CullMode::CullModeFrontBit]);
     let image = Image::new_color(&eng, [i8::MAX, i8::MAX, i8::MAX, i8::MAX]);
 
-    let mut friedrichstrasse = Scene::load_from_obj(&mut eng, "assets/friedrichstrasse.obj", matgeneral);
+    let mut ubahn = Scene::load_from_obj(&mut eng, "assets/ubahn1.obj", matgeneral);
 
-    let mut friedrichstrasseu = Scene::load_from_obj(&mut eng, "assets/friedrichstrasse_uniq.obj", matuniq);
-
-    for i in 0..friedrichstrasse.objects.len(){
-      friedrichstrasse.objects[i].draw_distance = 1000f32;
+    for i in 0..ubahn.objects.len(){
+      ubahn.objects[i].draw_distance = 100f32;
     }
-
-    for i in 0..friedrichstrasseu.objects.len(){
-      friedrichstrasseu.objects[i].draw_distance = 1000f32;
-    }
-
-    let ma1 = ModelAsset::load_obj("assets/pawn.obj");
-    let m1 = Model::new(&eng, ma1.vertices[0].clone());
-    let mut pawnpl = Object::new(&mut eng, m1, matgeneral, image, engine::render::render::MeshUsage::ShadowAndDefferedPass, false);
 
     let mut viewport = UIplane::new(&mut eng, mat, image);
     viewport.object.physic_object.pos.z = 1.0;
@@ -49,43 +37,73 @@ fn main() {
     let mut fpscnt = UItext::new(&mut eng, matt, ti, "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_");
     fpscnt.pos.z = 0.9;
 
-    eng.cameras[0].physic_object.gravity = false;
-    eng.cameras[0].physic_object.solid = false;
-    eng.cameras[0].physic_object.pos.y = 6.0f32;
+    eng.cameras[0].physic_object.pos.y = 5.0f32;
     eng.cameras[0].physic_object.v2.y = -4f32;
 
-    pawnpl.draw_distance = 1000f32;
+    eng.control.mouse_lock = true;
+
+    let mut relpos = Vec2::new();
+
+    let mut savpos = Vec2::new();
+
+    let mut relposx = 0.0;
+
+    let mut tm: i32 = 0;
 
     while eng.work(){
+      if tm > 0{
+        tm -= eng.times_to_calculate_physics as i32;
+      }
+
+      if !eng.control.mouse_lock {
+        relpos.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - savpos.x;
+        relpos.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - savpos.y;
+        relposx = 0.0;
+      }else{
+        eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
+        eng.cameras[0].physic_object.rot.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - relpos.y;
+        savpos.x = eng.cameras[0].physic_object.rot.x;
+        savpos.y = eng.cameras[0].physic_object.rot.y;
+
+        if eng.cameras[0].physic_object.rot.x < -1.5 {
+          relposx = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x + 1.5;
+          eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
+        }
+        if eng.cameras[0].physic_object.rot.x > 1.5 {
+          relposx = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - 1.5;
+          eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
+        }
+      }
+
       if eng.control.get_key_state(40){
-        pawnpl.physic_object.acceleration.x += SPEED * eng.times_to_calculate_physics as f32;
+        eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
+        eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
       }
-      else if eng.control.get_key_state(44){
-        pawnpl.physic_object.acceleration.x -= SPEED * eng.times_to_calculate_physics as f32;
+      if eng.control.get_key_state(44){
+        eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
+        eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
       }
-      else if eng.control.get_key_state(25){
-        pawnpl.physic_object.acceleration.z -= SPEED * eng.times_to_calculate_physics as f32;
+      if eng.control.get_key_state(25){
+        eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
+        eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
       }
-      else if eng.control.get_key_state(22){
-        pawnpl.physic_object.acceleration.z += SPEED * eng.times_to_calculate_physics as f32;
+      if eng.control.get_key_state(22){
+        eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
+        eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
       }
-      else if eng.control.mousebtn[2]{
+      
+      if eng.control.mousebtn[2]{
         eng.lights[0].pos = eng.cameras[0].physic_object.pos;
         eng.lights[0].rot = eng.cameras[0].physic_object.rot;
         eng.lights[0].color = Vec3::newdefined(10.0, 10.0, 9.0);
       }
 
-      eng.cameras[0].physic_object.rot.x = 0.2617;
-      eng.cameras[0].physic_object.rot.y = -1.8325;
+      if eng.control.get_key_state(49) && tm <= 0{
+        eng.control.mouse_lock = !eng.control.mouse_lock;
+        tm = 100;
+      }
 
-      eng.cameras[0].physic_object.pos.x = pawnpl.physic_object.pos.x + 10f32;
-      eng.cameras[0].physic_object.pos.y = pawnpl.physic_object.pos.y + 6f32;
-      eng.cameras[0].physic_object.pos.z = pawnpl.physic_object.pos.z - 3f32;
-
-      friedrichstrasse.exec(&mut eng);
-      friedrichstrasseu.exec(&mut eng);
-
-      pawnpl.exec(&mut eng);
+      ubahn.exec(&mut eng);
 
       viewport.object.physic_object.scale.x = eng.render.resolution_x as f32;
       viewport.object.physic_object.scale.y = eng.render.resolution_y as f32;
