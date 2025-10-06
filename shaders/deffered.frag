@@ -39,7 +39,7 @@ void main() {
     outMaterial.r = texture(sampler2DArray(tex, imageSampler), vec3(luv, 1)).r;
     outMaterial.g = texture(sampler2DArray(tex, imageSampler), vec3(luv, 2)).g;
     outMaterial.b = 1.0;
-    mat3 TBN = mat3(ftg, fctg, fnormal);
-    vec3 n = texture(sampler2DArray(tex, imageSampler), vec3(luv, 3)).rgb * 2.0 - 1.0;
-    outNormal = vec4(TBN * n, 1.0);
+    //mat3 TBN = mat3(ftg, fctg, fnormal);
+    //vec3 n = texture(sampler2DArray(tex, imageSampler), vec3(luv, 3)).rgb * 2.0 - 1.0;
+    outNormal = vec4(fnormal, 1.0);
 }

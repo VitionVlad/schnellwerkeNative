@@ -113,8 +113,10 @@ impl Object {
                 eng.obj_ph[self.eng_ph_id] = self.physic_object;
             }
 
+            let mut lubm;
             let mut ubm = Mat4::new();
             ubm.trans(self.physic_object.pos);
+            lubm = ubm.clone();
 
             ubm.transpose();
             for i in 0..16{
@@ -130,6 +132,8 @@ impl Object {
             t.zrot(self.physic_object.rot.z);
             ubm.mul(&t);
 
+            lubm.mul(&ubm);
+
             ubm.transpose();
             for i in 0..16{
                 self.mesh.ubo[i+16] = ubm.mat[i];
@@ -137,6 +141,8 @@ impl Object {
 
             ubm = Mat4::new();
             ubm.scale(self.physic_object.scale);
+
+            lubm.mul(&ubm);
             
             ubm.transpose();
             for i in 0..16{
@@ -148,14 +154,14 @@ impl Object {
                 mt.transpose();
 
                 let mut c1 = [
-                    ubm.vec4mul(Vec4::newdefined(self.physic_object.v1.x, self.physic_object.v1.y, self.physic_object.v1.z, 1.0)),
-                    ubm.vec4mul(Vec4::newdefined(self.physic_object.v1.x, self.physic_object.v2.y, self.physic_object.v1.z, 1.0)),
-                    ubm.vec4mul(Vec4::newdefined(self.physic_object.v2.x, self.physic_object.v2.y, self.physic_object.v1.z, 1.0)),
-                    ubm.vec4mul(Vec4::newdefined(self.physic_object.v2.x, self.physic_object.v1.y, self.physic_object.v1.z, 1.0)),
-                    ubm.vec4mul(Vec4::newdefined(self.physic_object.v2.x, self.physic_object.v2.y, self.physic_object.v2.z, 1.0)),
-                    ubm.vec4mul(Vec4::newdefined(self.physic_object.v1.x, self.physic_object.v2.y, self.physic_object.v2.z, 1.0)),
-                    ubm.vec4mul(Vec4::newdefined(self.physic_object.v1.x, self.physic_object.v1.y, self.physic_object.v2.z, 1.0)),
-                    ubm.vec4mul(Vec4::newdefined(self.physic_object.v2.x, self.physic_object.v1.y, self.physic_object.v2.z, 1.0)),
+                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v1.x, self.physic_object.v1.y, self.physic_object.v1.z, 1.0)),
+                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v1.x, self.physic_object.v2.y, self.physic_object.v1.z, 1.0)),
+                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v2.x, self.physic_object.v2.y, self.physic_object.v1.z, 1.0)),
+                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v2.x, self.physic_object.v1.y, self.physic_object.v1.z, 1.0)),
+                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v2.x, self.physic_object.v2.y, self.physic_object.v2.z, 1.0)),
+                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v1.x, self.physic_object.v2.y, self.physic_object.v2.z, 1.0)),
+                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v1.x, self.physic_object.v1.y, self.physic_object.v2.z, 1.0)),
+                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v2.x, self.physic_object.v1.y, self.physic_object.v2.z, 1.0)),
                 ];
 
                 let bg = Self::getbgp(c1.to_vec());

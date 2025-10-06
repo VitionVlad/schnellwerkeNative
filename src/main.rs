@@ -24,7 +24,7 @@ fn main() {
     let matgeneral = Material::new(&eng, dvert.clone(), dfrag, shadow.clone(), [engine::render::render::CullMode::CullModeBackBit, engine::render::render::CullMode::CullModeFrontBit]);
     let image = Image::new_color(&eng, [i8::MAX, i8::MAX, i8::MAX, i8::MAX]);
 
-    let mut ubahn = Scene::load_from_obj(&mut eng, "assets/ubahn1.obj", matgeneral);
+    let mut ubahn = Scene::load_from_obj(&mut eng, "assets/concept.obj", matgeneral);
 
     for i in 0..ubahn.objects.len(){
       ubahn.objects[i].draw_distance = 100f32;
@@ -38,7 +38,8 @@ fn main() {
     fpscnt.pos.z = 0.9;
 
     eng.cameras[0].physic_object.pos.y = 5.0f32;
-    eng.cameras[0].physic_object.v2.y = -4f32;
+    eng.cameras[0].physic_object.pos.z = 3.5f32;
+    eng.cameras[0].physic_object.v2.y = -3f32;
 
     eng.control.mouse_lock = true;
 
