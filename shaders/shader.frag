@@ -100,13 +100,14 @@ vec3 PBR(vec3 norm, vec3 albedo, float shadow, float metallic, float roughness, 
   F0 = mix(F0, albedo, metallic);
   vec3 Lo = vec3(0.0);
   for(int i = 0; i < mi.lightinfo.x; i++) {
-    vec3 L = smi.lightpos[i].xyz;
+    vec3 L = normalize(smi.lightpos[i].xyz);
     vec3 H = normalize(V + L);
-    if (smi.lightpos[i].w != 0.0) {
+    float distance    = 1.0;
+    if (smi.lightpos[i].w == 1.0) {
       L = normalize(smi.lightpos[i].xyz - WorldPos);
       H = normalize(V + L);
+      distance    = length(smi.lightpos[i].xyz - WorldPos);
     }
-    float distance    = length(smi.lightpos[i].xyz - WorldPos);
     float attenuation = 1.0 / (distance * distance); 
     vec3 radiance     = (smi.lightcol[i].xyz) * attenuation;    
     float NDF = DistributionGGX(N, H, roughness);        
@@ -201,6 +202,15 @@ void main() {
   vec3 wrldpos = WorldPosFromDepth(texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r, uv, dmi.defferedMVPInverse[0]);
 
   vec4 op = vec4(PBR(normal, albedo, shcalc(wrldpos, 0.0), rma.y, rma.x, 1.0, wrldpos), 1.0);
+
+  //float camd = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
+  //float camd2 = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 1)).r;
+
+  //if(camd2 < camd){
+  //  vec3 c2wp = WorldPosFromDepth(camd2, uv, dmi.defferedMVPInverse[1]);
+  //  vec4 gf = vec4(PBR(texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 5)).rgb, vec3(0.1), shcalc(c2wp, 0.0), 0.1, 0.1, 1.0, c2wp), 1.0);
+  //  op = mix(op, gf, gf.r);
+  //}
 
   outColor = op;
 

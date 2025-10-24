@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use crate::engine::light::LightType;
+
 use super::{camera::Camera, light::Light, math::vec3::Vec3, physics::PhysicsObject, render::render::{Control, Render}, audio::audio::AudioEngine};
 
 #[derive(Clone)]
@@ -84,10 +86,17 @@ impl Engine{
             for j in 0..16{
                 self.render.set_shadow_uniform_data(j+i*16, mt[j as usize]);
             }
-            self.render.set_shadow_uniform_data(i*4+1600, self.lights[i as usize].pos.x);
-            self.render.set_shadow_uniform_data(i*4+1601, self.lights[i as usize].pos.y);
-            self.render.set_shadow_uniform_data(i*4+1602, self.lights[i as usize].pos.z);
-            self.render.set_shadow_uniform_data(i*4+1603, self.lights[i as usize].light_type as u32 as f32);
+            if self.lights[i as usize].light_type == LightType::Spot{
+                self.render.set_shadow_uniform_data(i*4+1600, self.lights[i as usize].pos.x);
+                self.render.set_shadow_uniform_data(i*4+1601, self.lights[i as usize].pos.y);
+                self.render.set_shadow_uniform_data(i*4+1602, self.lights[i as usize].pos.z);
+                self.render.set_shadow_uniform_data(i*4+1603, 1.0f32);
+            }else{
+                self.render.set_shadow_uniform_data(i*4+1600, self.lights[i as usize].direction.x);
+                self.render.set_shadow_uniform_data(i*4+1601, self.lights[i as usize].direction.y);
+                self.render.set_shadow_uniform_data(i*4+1602, self.lights[i as usize].direction.z);
+                self.render.set_shadow_uniform_data(i*4+1603, 0.0f32);
+            }
             self.render.set_shadow_uniform_data(i*4+2000, self.lights[i as usize].color.x);
             self.render.set_shadow_uniform_data(i*4+2001, self.lights[i as usize].color.y);
             self.render.set_shadow_uniform_data(i*4+2002, self.lights[i as usize].color.z);

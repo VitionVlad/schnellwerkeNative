@@ -50,7 +50,6 @@ pub struct PhysicsObject{
     pub mat: Mat4,
     pub solid: bool,
     pub mass: f32,
-    pub retur: bool,
     pub enable_rotation: bool,
     pub step_height: f32,
     oldpos: Vec3,
@@ -79,7 +78,6 @@ impl PhysicsObject{
             mat: Mat4::new(),
             solid: true,
             mass: 0.01f32,
-            retur: false,
             enable_rotation: true,
             step_height: 2f32,
             oldpos: Vec3::new(),
@@ -151,12 +149,6 @@ impl PhysicsObject{
     #[allow(dead_code)]
     pub fn exec(&mut self){
         if !self.is_static{
-            if self.retur{
-                self.retur = !self.retur;
-                self.pos = self.oldpos;
-                self.rot = self.oldrot;
-                self.scale = self.oldscale;
-            }
             self.oldpos = self.pos;
             self.oldrot = self.rot;
             self.oldscale = self.scale;
@@ -241,6 +233,30 @@ impl PhysicsObject{
     pub fn reset_states(&mut self){
         self.is_interacting = false;
     }
+    fn xcalcifmv(&mut self, ph2: PhysicsObject) -> bool{
+        let xcenter = (self.savedp1.x-self.savedp2.x)/2.0+self.savedp2.x;
+        if xcenter >= ph2.savedp1.x{
+            self.pos.x += ph2.savedp1.x - self.savedp2.x;
+            return true;
+        }
+        if xcenter < ph2.savedp2.x{
+            self.pos.x -= self.savedp1.x - ph2.savedp2.x;
+            return true;
+        }
+        return false;
+    }
+    fn zcalcifmv(&mut self, ph2: PhysicsObject) -> bool{
+        let zcenter = (self.savedp1.z-self.savedp2.z)/2.0+self.savedp2.z;
+        if zcenter >= ph2.savedp1.z{
+            self.pos.z += ph2.savedp1.z - self.savedp2.z;
+            return true;
+        }
+        if zcenter < ph2.savedp2.z{
+            self.pos.z -= self.savedp1.z - ph2.savedp2.z;
+            return true;
+        }
+        return false;
+    }
     #[allow(dead_code)]
     pub fn interact_with_other_object(&mut self, ph2: PhysicsObject){
         if check_for_intersection(ph2.savedp2.y, ph2.savedp1.y, self.savedp2.y, self.savedp1.y) && 
@@ -251,11 +267,29 @@ impl PhysicsObject{
                 self.acceleration.y = 0f32;
                 self.speed.y = -self.speed.y * self.elasticity;
                 if self.savedp2.y + self.step_height <= ph2.savedp1.y{
-                    self.acceleration.x = 0f32;
-                    self.speed.x = -self.speed.x * self.elasticity;
-                    self.acceleration.z = 0f32;
+                    let mut xpr = true;
+                    if self.savedp2.x < ph2.savedp2.x && self.savedp1.x > ph2.savedp1.x{
+                        xpr = false;
+                    }
+                    if self.savedp2.z < ph2.savedp2.z && self.savedp1.z > ph2.savedp1.z{
+                        xpr = true;
+                    }
+
+                    match xpr {
+                        true => {
+                            if !self.xcalcifmv(ph2){
+                                self.zcalcifmv(ph2);
+                            }
+                        }
+                        false => {
+                            if !self.zcalcifmv(ph2){
+                                self.xcalcifmv(ph2);
+                            }
+                        }
+                    }
+
                     self.speed.z = -self.speed.z * self.elasticity;
-                    self.retur = true;
+                    self.speed.x = -self.speed.x * self.elasticity;
                 }else{
                     self.pos.y += ph2.savedp1.y - self.savedp2.y - 0.001f32;
                 }

@@ -19,7 +19,7 @@ impl Camera{
         if !self.is_orthographic{
             ubm.perspective(self.fov, self.zfar, self.znear, aspect);
         }else{
-            ubm.orthographic(self.fov, -self.fov, self.fov, -self.fov, self.znear, self.zfar);
+            ubm.orthographic(self.fov*aspect, -self.fov*aspect, self.fov, -self.fov, self.znear, self.zfar);
         }
         let mut t: Mat4 = Mat4::new();
         t.xrot(self.physic_object.rot.x);
