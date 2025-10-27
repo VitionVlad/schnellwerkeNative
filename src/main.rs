@@ -6,13 +6,21 @@ use crate::engine::{loader::modelasset::ModelAsset, math::vec3::Vec3, model::Mod
 mod engine;
 
 fn main() {
-    const SPEED: f32 = 0.005f32;
+    const SPEED: f32 = 0.0025f32;
+    const TICKSZ: f32 = 1.0/250.0;
     let mut eng = Engine::new();
     eng.render.set_title("Project Ost89");
-    eng.render.shadow_map_resolution = 4000;
+    eng.render.set_new_resolution(1280, 720);
+    eng.render.shadow_map_resolution = 1000;
     eng.used_light_count = 1;
     eng.lights[0].direction = Vec3::newdefined(1f32, 1f32, -1f32);
     eng.lights[0].light_type = LightType::Directional;
+
+    let loc = 0;
+
+    for _ in 0..2{
+      eng.work();
+    }
 
     let vert = fs::read("shaders/vert").unwrap();
     let frag = fs::read("shaders/frag").unwrap();
@@ -66,24 +74,65 @@ fn main() {
     golf.physic_object.step_height = 0.2f32;
     golf.physic_object.mass = 0.015f32;
 
+    let mut wkfc = 2.0f32;
+
+    let mut blockcontrol: bool;
+
     while eng.work(){
-      eng.cameras[0].physic_object.pos.z = golf.physic_object.pos.z + 27.5f32;
-      eng.cameras[0].physic_object.pos.x = golf.physic_object.pos.x - 27.5f32;
-      eng.cameras[0].physic_object.pos.y = 40f32;
+      eng.cameras[0].physic_object.pos.z = golf.physic_object.pos.z + 39.375f32;
+      eng.cameras[0].physic_object.pos.x = golf.physic_object.pos.x - 39.375f32;
+      eng.cameras[0].physic_object.pos.y = 56.5f32;
       eng.cameras[0].physic_object.rot.x = 0.7854f32;
       eng.cameras[0].physic_object.rot.y = 0.7854f32;
-      eng.cameras[0].is_orthographic = false;
-      eng.cameras[0].fov = 20f32;
-      eng.cameras[0].zfar = 200f32;
+      eng.cameras[0].is_orthographic = true;
+      eng.cameras[0].fov = 10f32;
+      eng.cameras[0].zfar = 100f32;
+      eng.cameras[0].znear = 1f32;
 
-      eng.lights[0].camera.zfar = 200f32;
-      eng.lights[0].camera.fov = 30f32;
-      eng.lights[0].pos.x = golf.physic_object.pos.x + 82.5f32;
-      eng.lights[0].pos.y = 120f32;
-      eng.lights[0].pos.z = golf.physic_object.pos.z + 82.5f32;
+      eng.lights[0].camera.fov = 40f32;
+      eng.lights[0].camera.zfar = 100f32;
+      eng.lights[0].pos.x = golf.physic_object.pos.x + 39.375f32;
+      eng.lights[0].pos.y = 60f32;
+      eng.lights[0].pos.z = golf.physic_object.pos.z + 39.375f32;
       eng.lights[0].rot.x = eng.cameras[0].physic_object.rot.x;
       eng.lights[0].rot.y = -eng.cameras[0].physic_object.rot.y;
-      eng.lights[0].color = Vec3::newdefined(0.005, 0.005, 0.01);
+      eng.lights[0].color = Vec3::newdefined(0.00025, 0.00025, 0.0005);
+
+      viewport.object.mesh.ubo[49] = golf.physic_object.pos.x;
+      viewport.object.mesh.ubo[50] = golf.physic_object.pos.z;
+
+      match loc {
+          0 => {
+            eng.used_light_count = 3;
+            eng.lights[1].light_type = LightType::Spot;
+            eng.lights[1].camera.physic_object.solid = false;
+            eng.lights[1].camera.fov = 40f32;
+            eng.lights[1].rot.y = -golf.physic_object.rot.y;
+            eng.lights[1].color = Vec3::newdefined(1.0, 1.0, 1.0);
+            eng.lights[1].pos.x = golf.physic_object.pos.x + golf.physic_object.speed.x + f32::sin(eng.lights[1].rot.y)*1.425f32 - f32::cos(eng.lights[1].rot.y)*0.75f32;
+            eng.lights[1].pos.y = 0.5f32;
+            eng.lights[1].pos.z = golf.physic_object.pos.z + golf.physic_object.speed.z - f32::cos(eng.lights[1].rot.y)*1.425f32 - f32::sin(eng.lights[1].rot.y)*0.75f32;
+
+            eng.lights[2].light_type = LightType::Spot;
+            eng.lights[2].camera.physic_object.solid = false;
+            eng.lights[2].camera.fov = 40f32;
+            eng.lights[2].rot.y = -golf.physic_object.rot.y;
+            eng.lights[2].color = Vec3::newdefined(1.0, 1.0, 1.0);
+            eng.lights[2].pos.x = golf.physic_object.pos.x + golf.physic_object.speed.x + f32::sin(eng.lights[1].rot.y)*1.425f32 - f32::cos(eng.lights[1].rot.y)*-0.75f32;
+            eng.lights[2].pos.y = 0.5f32;
+            eng.lights[2].pos.z = golf.physic_object.pos.z + golf.physic_object.speed.z - f32::cos(eng.lights[1].rot.y)*1.425f32 - f32::sin(eng.lights[1].rot.y)*-0.75f32;
+          },
+          _ => {}
+      }
+
+      if wkfc > 0.0{
+        wkfc -= (TICKSZ/2.5)*eng.times_to_calculate_physics as f32;
+        viewport.object.mesh.ubo[48] = wkfc;
+        blockcontrol = true;
+      }else{
+        viewport.object.mesh.ubo[48] = 0.0;
+        blockcontrol = false;
+      }
 
       if tm > 0{
         tm -= eng.times_to_calculate_physics as i32;
@@ -109,21 +158,21 @@ fn main() {
       //  }
       //}
 
-      if eng.control.get_key_state(40){
+      if eng.control.get_key_state(40) && !blockcontrol{
         golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-        golf.physic_object.air_friction = 0.925;
+        golf.physic_object.air_friction = 0.915;
       }
-      if eng.control.get_key_state(44){
+      if eng.control.get_key_state(44) && !blockcontrol{
         golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-        golf.physic_object.air_friction = 0.975;
+        golf.physic_object.air_friction = 0.98;
       }
-      if eng.control.get_key_state(25) && (f32::abs(golf.physic_object.speed.x) >= 0.01 || f32::abs(golf.physic_object.speed.z) >= 0.01){
-        golf.physic_object.rot.y -= 0.01 * eng.times_to_calculate_physics as f32;
+      if eng.control.get_key_state(25) && !blockcontrol{
+        golf.physic_object.rot.y -= 0.05 * golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()).min(0.1) * eng.times_to_calculate_physics as f32;
       }
-      if eng.control.get_key_state(22) && (f32::abs(golf.physic_object.speed.x) >= 0.01 || f32::abs(golf.physic_object.speed.z) >= 0.01){
-        golf.physic_object.rot.y += 0.01 * eng.times_to_calculate_physics as f32;
+      if eng.control.get_key_state(22) && !blockcontrol{
+        golf.physic_object.rot.y += 0.05 * golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()).min(0.1) * eng.times_to_calculate_physics as f32;
       }
 
       //if eng.control.get_key_state(49) && tm <= 0{
@@ -131,14 +180,14 @@ fn main() {
       //  tm = 100;
       //}
 
-      if eng.control.mousebtn[2] && tm <= 0{
-        //eng.control.mouse_lock = !eng.control.mouse_lock;
-        golf.physic_object.pos.y = 4f32;
-        golf.physic_object.pos.x = 0.0;
-        golf.physic_object.pos.z = 0.0;
-        golf.physic_object.rot.y = 0.0;
-        tm = 100;
-      }
+      //if eng.control.mousebtn[2] && tm <= 0{
+      //  //eng.control.mouse_lock = !eng.control.mouse_lock;
+      //  golf.physic_object.pos.y = 4f32;
+      //  golf.physic_object.pos.x = 0.0;
+      //  golf.physic_object.pos.z = 0.0;
+      //  golf.physic_object.rot.y = 0.0;
+      //  tm = 100;
+      //}
 
       brd.exec(&mut eng);
       golf.exec(&mut eng);

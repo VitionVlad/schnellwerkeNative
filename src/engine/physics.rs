@@ -153,13 +153,15 @@ impl PhysicsObject{
             self.oldrot = self.rot;
             self.oldscale = self.scale;
             self.speed.sum(self.acceleration);
-            self.speed.x *= self.air_friction;
-            self.speed.y *= self.air_friction;
-            self.speed.z *= self.air_friction;
             self.acceleration.x = 0.0;
             self.acceleration.y = 0.0;
             self.acceleration.z = 0.0;
+
+            self.speed.x *= self.air_friction;
+            self.speed.y *= self.air_friction;
+            self.speed.z *= self.air_friction;
             self.pos.sum(self.speed);
+
             if self.gravity{
                 self.acceleration.y = -self.mass;
             }
@@ -279,17 +281,18 @@ impl PhysicsObject{
                         true => {
                             if !self.xcalcifmv(ph2){
                                 self.zcalcifmv(ph2);
+                                self.speed.z = -self.speed.z * self.elasticity;
+                                self.speed.x *= self.air_friction;
                             }
                         }
                         false => {
                             if !self.zcalcifmv(ph2){
                                 self.xcalcifmv(ph2);
+                                self.speed.x = -self.speed.x * self.elasticity;
+                                self.speed.z *= self.air_friction;
                             }
                         }
                     }
-
-                    self.speed.z = -self.speed.z * self.elasticity;
-                    self.speed.x = -self.speed.x * self.elasticity;
                 }else{
                     self.pos.y += ph2.savedp1.y - self.savedp2.y - 0.001f32;
                 }

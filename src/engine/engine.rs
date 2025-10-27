@@ -57,7 +57,7 @@ impl Engine{
             self.cfps = 0;
             self.tmpassed = 0.0;
         }
-        self.times_to_calculate_physics = (self.cumulated_time/self.physics_tick as f32).floor() as u32;
+        self.times_to_calculate_physics = (self.cumulated_time/self.physics_tick as f32).round() as u32;
         if self.times_to_calculate_physics >= 1{
             self.cumulated_time -= (self.times_to_calculate_physics * self.physics_tick) as f32;
         }

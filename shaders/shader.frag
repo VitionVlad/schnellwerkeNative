@@ -93,7 +93,27 @@ float shcalc(vec3 WorldPos, float bias){
   return visibility / 9.0;
 }
 
-vec3 PBR(vec3 norm, vec3 albedo, float shadow, float metallic, float roughness, float ao, vec3 WorldPos){
+float shcalcpl(vec3 WorldPos, float bias, int i){
+  float visibility = 0.0;
+  vec4 smv = smi.shadowViews[i] * vec4(WorldPos, 1.0);
+  vec3 proj = vec3((smv.x / smv.w)*0.5+0.5, (smv.y / smv.w)*-0.5+0.5, smv.z / smv.w);
+  float oneOverShadowDepthTextureSize = 1.0 / mi.resolutions.z;
+  for (int y = -1; y <= 1; y++) {
+    for (int x = -1; x <= 1; x++) {
+      vec2 offset = vec2(vec2(x, y)) * oneOverShadowDepthTextureSize;
+      float lv = 0.0;
+      if (proj.z - bias < texture(sampler2DArray(shadowTexture, attachmentSampler), vec3(proj.x + offset.x, 1.0 - proj.y + offset.y, i)).r){
+        lv = 1.0;
+      }
+      if (!(proj.x > 0.99 || proj.x < 0.001 || proj.y > 0.99 || proj.y < 0.001 || proj.z > 1.0 || proj.z < -1.0)){
+        visibility += lv;
+      }
+    }
+  }
+  return visibility / 9.0;
+}
+
+vec3 PBR(vec3 norm, vec3 albedo, float metallic, float roughness, float ao, vec3 WorldPos){
   vec3 N = normalize(norm);
   vec3 V = normalize(dmi.deffpos[0].xyz - WorldPos);
   vec3 F0 = vec3(0.04); 
@@ -120,10 +140,10 @@ vec3 PBR(vec3 norm, vec3 albedo, float shadow, float metallic, float roughness, 
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
     vec3 specular     = numerator / denominator;  
     float NdotL = max(dot(N, L), 0.0);
-    Lo += (kD * albedo / PI + specular) * radiance * NdotL; 
+    Lo += (kD * albedo / PI + specular) * radiance * NdotL * shcalcpl(WorldPos, 0.0, i); 
   }
-  vec3 ambient = vec3(0.0001) * albedo * ao;
-  vec3 color = ambient + shadow * Lo;
+  vec3 ambient = vec3(0.00001) * albedo * ao;
+  vec3 color = ambient + Lo;
   color = color / (color + vec3(1.0));
   color = pow(color, vec3(1.0/2.2));  
   return color;
@@ -192,16 +212,37 @@ vec3 WorldPosFromDepth(float depth, vec2 uv, mat4 inversemat){
   return viewSpacePosition.xyz;
 }
 
+float near = 0.1; 
+float far  = 100.0; 
+
+float LinearizeDepth(float d) {         
+    return near * far / (far + d * (far - near));
+}
+
 void main() {
   vec2 uv = fuv;
+  float d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
+  //d = LinearizeDepth(d);
 
   vec3 albedo = pow(texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb, vec3(2.2));
 
   vec3 rma = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 1)).rgb;
   vec3 normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
-  vec3 wrldpos = WorldPosFromDepth(texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r, uv, dmi.defferedMVPInverse[0]);
+  vec3 wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]);
 
-  vec4 op = vec4(PBR(normal, albedo, shcalc(wrldpos, 0.0), rma.y, rma.x, 1.0, wrldpos), 1.0);
+  vec4 op = vec4(PBR(normal, albedo, rma.y, rma.x, 1.0, wrldpos), 1.0);
+
+  if(rma.y <= 0.1 && rma.x <= 0.1){
+    op = vec4(albedo, 1.0);
+  }
+
+  float mxpw = smoothstep(10.0, 30.0, distance(mi.addinfo.yz, wrldpos.xz));
+
+  op = mix(op, vec4(smi.lightcol[0].xyz, 1.0), mxpw);
+
+  op = mix(op, vec4(0.0, 0.0, 0.0, 1.0), mi.addinfo.x);
+
+  outColor = op;
 
   //float camd = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
   //float camd2 = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 1)).r;
@@ -212,7 +253,7 @@ void main() {
   //  op = mix(op, gf, gf.r);
   //}
 
-  outColor = op;
+  //outColor = vec4(vec3(texture(sampler2DArray(shadowTexture, attachmentSampler), vec3(uv, 0)).r), 1.0);
 
   //outColor = vec4(WorldPosFromDepth(texture(defferedDepthSampler, vec3(uv, 0)).r, uv, dmi.defferedMVPInverse[0]), 1.0);
 }
