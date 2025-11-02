@@ -9,7 +9,7 @@ pub struct Image{
 }
 
 impl Image{
-    pub fn new(eng: Engine, size: [u32; 3], data: Vec<i8>) -> Image{
+    pub fn new(eng: &Engine, size: [u32; 3], data: Vec<i8>) -> Image{
         Image{
             textures: Texture::new(eng.render, size[0], size[1], size[2], data),
         }

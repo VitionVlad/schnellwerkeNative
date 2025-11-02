@@ -1,0 +1,32 @@
+{
+    "EN": {
+        "ABC": 1,
+        "str": {
+            "pause": [
+                "Continue",
+                "New Game",
+                "Settings",
+                "Quit"
+            ],
+            "settings": [
+                "Audio",
+                "Graphics",
+                "Back"
+            ],
+            "audio": [
+                "Volume: ",
+                "Back"
+            ],
+            "graphics": [
+                "Render Scale: ",
+                "Shadows quality: ",
+                "Low",
+                "Medium",
+                "High",
+                "Extreme",
+                "Fullscreen: ",
+                "Back"
+            ]
+        }
+    }
+}
