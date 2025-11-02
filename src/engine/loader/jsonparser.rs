@@ -18,22 +18,9 @@ impl JsonF {
     lp.remove(0);
     return self.other_param[path[0]].get_node(lp);
   }
-  pub fn printme(&mut self){
-    println!("name: {}", self.name);
-    println!("  string_value: {}", self.strval);
-    println!("  Numeral_value: {}", self.numeral_val);
-    println!("  Numeral_value_arr_len: {}", self.numeral_valar.len());
-    println!("  String_value_arr_len: {}", self.strvalar.len());
-    print!("  Other_json_value_array: [");
-    for i in 0..self.other_param.len(){
-      println!("");
-      self.other_param[i].printme();
-    }
-    println!("]");
-  }
-  pub fn load_from_file(path: &str) -> JsonF{
+  pub fn from_text(json: &str) -> JsonF{
     let mut parsedjson = JsonF{ name: "".to_string(), strval: "".to_string(), numeral_val: 0.0, strvalar: vec![], numeral_valar: vec![], other_param: vec![] };
-    let langpack = fs::read(path).unwrap();
+    let jsontext = json.as_bytes().to_vec();
 
     let mut jsfr = 0usize;
     let mut brakeop = false;
@@ -48,22 +35,22 @@ impl JsonF {
     let mut backstep = false;
     let mut strrdst = false;
 
-    while jsfr < langpack.len(){
-      if langpack[jsfr] == b'{' && valgiv{
+    while jsfr < jsontext.len(){
+      if jsontext[jsfr] == b'{' && valgiv{
         valgiv = false;
       }
-      if langpack[jsfr] == b'}' && entrar.len() > 1{
+      if jsontext[jsfr] == b'}' && entrar.len() > 1{
         entrar.pop();
         let enln = entrar.len();
         entrar[enln-1]+=1;
         valgiv = false;
       }
-      if langpack[jsfr] == b'[' && valgiv{
+      if jsontext[jsfr] == b'[' && valgiv{
         arrwr = true;
         txtarg = false;
         numarg = false;
       }
-      if langpack[jsfr] == b']' && valgiv{
+      if jsontext[jsfr] == b']' && valgiv{
         if txtarg {
           //for i in 0..stringvlar.len(){
           //  println!("{}: {}", i, stringvlar[i]);
@@ -84,20 +71,20 @@ impl JsonF {
         arrwr = false;
         backstep = true;
       }
-      if langpack[jsfr] == b'"'{
+      if jsontext[jsfr] == b'"'{
         brakeop = !brakeop;
         txtarg = true;
         strrdst = true;
       }
-      if (langpack[jsfr] == b'0' || langpack[jsfr] == b'1' || langpack[jsfr] == b'2' || langpack[jsfr] == b'3' ||  langpack[jsfr] == b'4' || langpack[jsfr] == b'5' || langpack[jsfr] == b'6' || langpack[jsfr] == b'7' ||  langpack[jsfr] == b'8' || langpack[jsfr] == b'9' || langpack[jsfr] == b'.') && !txtarg{
-        stringvl += &(langpack[jsfr] as char).to_string();
+      if (jsontext[jsfr] == b'0' || jsontext[jsfr] == b'1' || jsontext[jsfr] == b'2' || jsontext[jsfr] == b'3' ||  jsontext[jsfr] == b'4' || jsontext[jsfr] == b'5' || jsontext[jsfr] == b'6' || jsontext[jsfr] == b'7' ||  jsontext[jsfr] == b'8' || jsontext[jsfr] == b'9' || jsontext[jsfr] == b'.') && !txtarg{
+        stringvl += &(jsontext[jsfr] as char).to_string();
         numarg = true;
         strrdst = true;
       }
-      if brakeop && langpack[jsfr] != b'"'{
-        stringvl += &(langpack[jsfr] as char).to_string();
+      if brakeop && jsontext[jsfr] != b'"'{
+        stringvl += &(jsontext[jsfr] as char).to_string();
       }
-      if valgiv && (langpack[jsfr] == b',' || langpack[jsfr] == b'\n'){
+      if valgiv && (jsontext[jsfr] == b',' || jsontext[jsfr] == b'\n'){
         if txtarg && !arrwr{
           parsedjson.get_node(entrar.clone()).strval = stringvl.clone();
           stringvl = "".to_string();
@@ -125,7 +112,7 @@ impl JsonF {
           strrdst = false;
         }
       }
-      if langpack[jsfr] == b':' && !arrwr && !valgiv{
+      if jsontext[jsfr] == b':' && !arrwr && !valgiv{
         let mut lentr = entrar.clone();
         if backstep{
           lentr.pop();
@@ -147,5 +134,22 @@ impl JsonF {
       jsfr += 1;
     }
     return parsedjson;
+  }
+  pub fn printme(&mut self){
+    println!("name: {}", self.name);
+    println!("  string_value: {}", self.strval);
+    println!("  Numeral_value: {}", self.numeral_val);
+    println!("  Numeral_value_arr_len: {}", self.numeral_valar.len());
+    println!("  String_value_arr_len: {}", self.strvalar.len());
+    print!("  Other_json_value_array: [");
+    for i in 0..self.other_param.len(){
+      println!("");
+      self.other_param[i].printme();
+    }
+    println!("]");
+  }
+  pub fn load_from_file(path: &str) -> JsonF{
+    let jsontext = fs::read(path).unwrap();
+    JsonF::from_text(&String::from_utf8(jsontext).unwrap())
   }
 }
