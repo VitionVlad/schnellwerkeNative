@@ -1,32 +1,42 @@
 {
     "EN": {
         "ABC": 1,
-        "str": {
-            "pause": [
-                "Continue",
-                "New Game",
-                "Settings",
-                "Quit"
-            ],
-            "settings": [
-                "Audio",
-                "Graphics",
-                "Back"
-            ],
-            "audio": [
-                "Volume: ",
-                "Back"
-            ],
-            "graphics": [
-                "Render Scale: ",
-                "Shadows quality: ",
-                "Low",
-                "Medium",
-                "High",
-                "Extreme",
-                "Fullscreen: ",
-                "Back"
-            ]
-        }
+        "str": [
+            "Continue",
+            "New Game",
+            "Settings",
+            "Quit",
+            "Audio",
+            "Graphics",
+            "Back",
+            "Volume: ",
+            "Render Scale: ",
+            "Shadows quality: ",
+            "Low",
+            "Medium",
+            "High",
+            "Extreme",
+            "Fullscreen: "
+        ]
+    },
+    "RO": {
+        "ABC": 1,
+        "str": [
+            "Continu[",
+            "Joc nou",
+            "Set[ri",
+            "Ie}ire",
+            "Sunet",
+            "Grafica",
+            "`napoi",
+            "Volum: ",
+            "Calitatea rand[rii: ",
+            "Calitatea umbrelor: ",
+            "Jos",
+            "Mediu",
+            "`nalt",
+            "Extrem",
+            "Pe tot ecranul: "
+        ]
     }
 }
