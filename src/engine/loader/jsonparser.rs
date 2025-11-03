@@ -36,21 +36,21 @@ impl JsonF {
     let mut strrdst = false;
 
     while jsfr < jsontext.len(){
-      if jsontext[jsfr] == b'{' && valgiv{
+      if jsontext[jsfr] == b'{' && valgiv && !brakeop{
         valgiv = false;
       }
-      if jsontext[jsfr] == b'}' && entrar.len() > 1{
+      if jsontext[jsfr] == b'}' && entrar.len() > 1 && !brakeop{
         entrar.pop();
-        let enln = entrar.len();
-        entrar[enln-1]+=1;
+        //let enln = entrar.len();
+        //entrar[enln-1]+=1;
         valgiv = false;
       }
-      if jsontext[jsfr] == b'[' && valgiv{
+      if jsontext[jsfr] == b'[' && valgiv && !brakeop{
         arrwr = true;
         txtarg = false;
         numarg = false;
       }
-      if jsontext[jsfr] == b']' && valgiv{
+      if jsontext[jsfr] == b']' && valgiv && !brakeop{
         if txtarg {
           //for i in 0..stringvlar.len(){
           //  println!("{}: {}", i, stringvlar[i]);

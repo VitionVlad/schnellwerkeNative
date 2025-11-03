@@ -227,7 +227,7 @@ void main() {
   vec3 albedo = pow(texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb, vec3(2.2));
 
   vec3 rma = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 1)).rgb;
-  vec3 normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
+  vec3 normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb; 
   vec3 wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]);
 
   vec4 op = vec4(PBR(normal, albedo, rma.y, rma.x, 1.0, wrldpos), 1.0);
