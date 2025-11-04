@@ -16,7 +16,8 @@
             "Medium",
             "High",
             "Extreme",
-            "Fullscreen: "
+            "Fullscreen: ",
+            "Language: English"
         ]
     },
     "RO": {
@@ -36,7 +37,8 @@
             "Mediu",
             "`nalt",
             "Extrem",
-            "Pe tot ecranul: "
+            "Pe tot ecranul: ",
+            "Limba: Rom{n["
         ]
     }
 }
