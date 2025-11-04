@@ -28,8 +28,8 @@ fn main() {
       eng.work();
     }
 
-    let mut langj = JsonF::load_from_file("assets/lang.json");
-    langj.printme();
+    let langj = JsonF::load_from_file("assets/lang.json");
+    //langj.printme();
 
     let vert = fs::read("shaders/vert").unwrap();
     let frag = fs::read("shaders/frag").unwrap();
@@ -113,6 +113,8 @@ fn main() {
     golf.physic_object.mass = 0.015f32;
 
     let mut pause = false;
+    let mut pausemn = 0;
+    let mut lang = 0usize;
 
     while eng.work(){
       eng.cameras[0].physic_object.pos.z = golf.physic_object.pos.z + 39.375f32;
@@ -145,18 +147,18 @@ fn main() {
             eng.lights[1].camera.fov = 40f32;
             eng.lights[1].rot.y = -golf.physic_object.rot.y;
             eng.lights[1].color = Vec3::newdefined(1.0, 1.0, 0.9);
-            eng.lights[1].pos.x = golf.physic_object.pos.x + golf.physic_object.speed.x + f32::sin(eng.lights[1].rot.y)*1.425f32 - f32::cos(eng.lights[1].rot.y)*0.75f32;
+            eng.lights[1].pos.x = golf.physic_object.pos.x + golf.physic_object.speed.x + f32::sin(eng.lights[1].rot.y)*1.4275f32 - f32::cos(eng.lights[1].rot.y)*0.75f32;
             eng.lights[1].pos.y = 0.5f32;
-            eng.lights[1].pos.z = golf.physic_object.pos.z + golf.physic_object.speed.z - f32::cos(eng.lights[1].rot.y)*1.425f32 - f32::sin(eng.lights[1].rot.y)*0.75f32;
+            eng.lights[1].pos.z = golf.physic_object.pos.z + golf.physic_object.speed.z - f32::cos(eng.lights[1].rot.y)*1.4275f32 - f32::sin(eng.lights[1].rot.y)*0.75f32;
 
             eng.lights[2].light_type = LightType::Spot;
             eng.lights[2].camera.physic_object.solid = false;
             eng.lights[2].camera.fov = 40f32;
             eng.lights[2].rot.y = -golf.physic_object.rot.y;
             eng.lights[2].color = Vec3::newdefined(1.0, 1.0, 0.9);
-            eng.lights[2].pos.x = golf.physic_object.pos.x + golf.physic_object.speed.x + f32::sin(eng.lights[1].rot.y)*1.425f32 - f32::cos(eng.lights[1].rot.y)*-0.75f32;
+            eng.lights[2].pos.x = golf.physic_object.pos.x + golf.physic_object.speed.x + f32::sin(eng.lights[1].rot.y)*1.4275f32 - f32::cos(eng.lights[1].rot.y)*-0.75f32;
             eng.lights[2].pos.y = 0.5f32;
-            eng.lights[2].pos.z = golf.physic_object.pos.z + golf.physic_object.speed.z - f32::cos(eng.lights[1].rot.y)*1.425f32 - f32::sin(eng.lights[1].rot.y)*-0.75f32;
+            eng.lights[2].pos.z = golf.physic_object.pos.z + golf.physic_object.speed.z - f32::cos(eng.lights[1].rot.y)*1.4275f32 - f32::sin(eng.lights[1].rot.y)*-0.75f32;
 
             if dst(golf.physic_object.pos, Vec3::newdefined(365.5f32, 3f32, -3.9746127)) < 30f32{
               eng.used_light_count = 4;
@@ -236,12 +238,13 @@ fn main() {
         //eng.control.mouse_lock = !eng.control.mouse_lock;
         pause = !pause;
         tm = 100;
+        pausemn = 0;
       }
 
-      if eng.control.mousebtn[2] && tm <= 0{
+      if eng.control.mousebtn[2]{
         //eng.control.mouse_lock = !eng.control.mouse_lock;
         println!("{}, {}, {}", golf.physic_object.pos.x, golf.physic_object.pos.y, golf.physic_object.pos.z);
-        tm = 100;
+        //tm = 100;
       }
 
       brd.exec(&mut eng);
@@ -253,6 +256,10 @@ fn main() {
 
       pausebg.object.draw = false;
       logops.object.draw = false;
+      for i in 0..5{
+        textlat[i].draw = false;
+        textlat[i].exec(&mut eng, " ");
+      }
       if pause{
         pausebg.object.physic_object.scale.y = eng.render.resolution_y as f32;
         pausebg.object.physic_object.scale.x = 400.0;
@@ -260,11 +267,249 @@ fn main() {
         pausebg.object.physic_object.pos.x = (eng.render.resolution_x as f32)/2.0 - 200.0;
         pausebg.object.draw = true;
 
-        logops.object.physic_object.scale.y = 400.0;
-        logops.object.physic_object.scale.x = 400.0;
-        logops.object.physic_object.pos.y = -75.0;
-        logops.object.physic_object.pos.x = (eng.render.resolution_x as f32)/2.0 - 200.0;
-        logops.object.draw = true;
+        match pausemn {
+            0 => {
+              logops.object.physic_object.scale.y = 400.0;
+              logops.object.physic_object.scale.x = 400.0;
+              logops.object.physic_object.pos.y = eng.render.resolution_y as f32 /2.0 - 300.0;
+              logops.object.physic_object.pos.x = (eng.render.resolution_x as f32)/2.0 - 200.0;
+              logops.object.draw = true;
+
+              textlat[0].draw = true;
+              textlat[0].size.x = 20.0;
+              textlat[0].size.y = 40.0;
+              textlat[0].signal = true;
+              textlat[0].per_symbol = false;
+              let mut lctxt = langj.other_param[lang].other_param[1].strvalar[0].clone();
+              textlat[0].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[0].size.x;
+              textlat[0].pos.y = eng.render.resolution_y as f32 /2.0 + 30.0;
+              if textlat[0].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                pause = false;
+              }
+
+              textlat[1].draw = true;
+              textlat[1].size.x = 20.0;
+              textlat[1].size.y = 40.0;
+              textlat[1].signal = true;
+              textlat[1].per_symbol = false;
+              lctxt = langj.other_param[lang].other_param[1].strvalar[1].clone();
+              textlat[1].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[0].size.x;
+              textlat[1].pos.y = eng.render.resolution_y as f32 /2.0 + 80.0;
+              if textlat[1].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                pause = false;
+              }
+
+              textlat[2].draw = true;
+              textlat[2].size.x = 20.0;
+              textlat[2].size.y = 40.0;
+              textlat[2].signal = true;
+              textlat[2].per_symbol = false;
+              lctxt = langj.other_param[lang].other_param[1].strvalar[2].clone();
+              textlat[2].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[0].size.x;
+              textlat[2].pos.y = eng.render.resolution_y as f32 /2.0 + 130.0;
+              if textlat[2].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                pausemn = 1;
+              }
+
+              textlat[3].draw = true;
+              textlat[3].size.x = 20.0;
+              textlat[3].size.y = 40.0;
+              textlat[3].signal = true;
+              textlat[3].per_symbol = false;
+              lctxt = langj.other_param[lang].other_param[1].strvalar[3].clone();
+              textlat[3].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[0].size.x;
+              textlat[3].pos.y = eng.render.resolution_y as f32 /2.0 + 180.0;
+              if textlat[3].exec(&mut eng, &lctxt) && eng.control.mousebtn[2]{
+                break;
+              }
+            }
+            1 => {
+              textlat[0].draw = true;
+              textlat[0].size.x = 40.0;
+              textlat[0].size.y = 80.0;
+              textlat[0].signal = false;
+              textlat[0].per_symbol = false;
+              let mut lctxt = langj.other_param[lang].other_param[1].strvalar[2].clone();
+              textlat[0].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[0].size.x;
+              textlat[0].pos.y = eng.render.resolution_y as f32 /2.0 - 120.0;
+              textlat[0].exec(&mut eng, &lctxt);
+
+              textlat[1].draw = true;
+              textlat[1].size.x = 20.0;
+              textlat[1].size.y = 40.0;
+              textlat[1].signal = true;
+              textlat[1].per_symbol = false;
+              lctxt = langj.other_param[lang].other_param[1].strvalar[4].clone();
+              textlat[1].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[1].size.x;
+              textlat[1].pos.y = eng.render.resolution_y as f32 /2.0 - 30.0;
+              if textlat[1].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                pausemn = 2;
+              }
+
+              textlat[2].draw = true;
+              textlat[2].size.x = 20.0;
+              textlat[2].size.y = 40.0;
+              textlat[2].signal = true;
+              textlat[2].per_symbol = false;
+              lctxt = langj.other_param[lang].other_param[1].strvalar[5].clone();
+              textlat[2].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[1].size.x;
+              textlat[2].pos.y = eng.render.resolution_y as f32 /2.0 + 20.0;
+              if textlat[2].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                pausemn = 3;
+              }
+
+              textlat[3].draw = true;
+              textlat[3].size.x = 20.0;
+              textlat[3].size.y = 40.0;
+              textlat[3].signal = true;
+              textlat[3].per_symbol = false;
+              lctxt = langj.other_param[lang].other_param[1].strvalar[15].clone();
+              textlat[3].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[1].size.x;
+              textlat[3].pos.y = eng.render.resolution_y as f32 /2.0 + 70.0;
+              if textlat[3].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                lang+=1;
+                if lang > 1{
+                  lang = 0;
+                }
+                //pausemn = 0;
+              }
+
+              textlat[4].draw = true;
+              textlat[4].size.x = 20.0;
+              textlat[4].size.y = 40.0;
+              textlat[4].signal = true;
+              textlat[4].per_symbol = false;
+              lctxt = langj.other_param[lang].other_param[1].strvalar[6].clone();
+              textlat[4].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[1].size.x;
+              textlat[4].pos.y = eng.render.resolution_y as f32 /2.0 + 120.0;
+              if textlat[4].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                pausemn = 0;
+              }
+            }
+            2 => {
+              textlat[0].draw = true;
+              textlat[0].size.x = 40.0;
+              textlat[0].size.y = 80.0;
+              textlat[0].signal = false;
+              textlat[0].per_symbol = false;
+              let mut lctxt = langj.other_param[lang].other_param[1].strvalar[4].clone();
+              textlat[0].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[0].size.x;
+              textlat[0].pos.y = eng.render.resolution_y as f32 /2.0 - 120.0;
+              textlat[0].exec(&mut eng, &lctxt);
+
+              textlat[1].draw = true;
+              textlat[1].size.x = 20.0;
+              textlat[1].size.y = 40.0;
+              textlat[1].signal = true;
+              textlat[1].per_symbol = false;
+              lctxt = format!("{}{}", langj.other_param[lang].other_param[1].strvalar[7].clone(), (eng.audio.vol*100.0) as u32);
+              textlat[1].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[1].size.x;
+              textlat[1].pos.y = eng.render.resolution_y as f32 /2.0 - 30.0;
+              if textlat[1].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                eng.audio.vol = ((eng.audio.vol*100.0) as i32 - 10) as f32 / 100.0;
+                if eng.audio.vol < 0.0 {
+                  eng.audio.vol = 1.0;
+                }
+              }
+
+              textlat[2].draw = true;
+              textlat[2].size.x = 20.0;
+              textlat[2].size.y = 40.0;
+              textlat[2].signal = true;
+              textlat[2].per_symbol = false;
+              lctxt = langj.other_param[lang].other_param[1].strvalar[6].clone();
+              textlat[2].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[1].size.x;
+              textlat[2].pos.y = eng.render.resolution_y as f32 /2.0 + 20.0;
+              if textlat[2].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                pausemn = 1;
+              }
+            }
+            3 => {
+              textlat[0].draw = true;
+              textlat[0].size.x = 40.0;
+              textlat[0].size.y = 80.0;
+              textlat[0].signal = false;
+              textlat[0].per_symbol = false;
+              let mut lctxt = langj.other_param[lang].other_param[1].strvalar[5].clone();
+              textlat[0].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[0].size.x;
+              textlat[0].pos.y = eng.render.resolution_y as f32 /2.0 - 120.0;
+              textlat[0].exec(&mut eng, &lctxt);
+
+              textlat[1].draw = true;
+              textlat[1].size.x = 20.0;
+              textlat[1].size.y = 40.0;
+              textlat[1].signal = true;
+              textlat[1].per_symbol = false;
+              lctxt = format!("{}{}", langj.other_param[lang].other_param[1].strvalar[8].clone(), (eng.render.resolution_scale*100.0) as u32);
+              textlat[1].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[1].size.x;
+              textlat[1].pos.y = eng.render.resolution_y as f32 /2.0 - 30.0;
+              if textlat[1].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                eng.render.resolution_scale = ((eng.render.resolution_scale*100.0) as i32 - 10) as f32 / 100.0;
+                if eng.render.resolution_scale < 0.1 {
+                  eng.render.resolution_scale = 1.0;
+                }
+              }
+
+              textlat[2].draw = true;
+              textlat[2].size.x = 20.0;
+              textlat[2].size.y = 40.0;
+              textlat[2].signal = true;
+              textlat[2].per_symbol = false;
+              lctxt = format!("{}{}", langj.other_param[lang].other_param[1].strvalar[9].clone(), match eng.render.shadow_map_resolution {
+                1000 => langj.other_param[lang].other_param[1].strvalar[10].clone(),
+                2000 => langj.other_param[lang].other_param[1].strvalar[11].clone(),
+                4000 => langj.other_param[lang].other_param[1].strvalar[12].clone(),
+                8000 => langj.other_param[lang].other_param[1].strvalar[13].clone(),
+                  _ => "".to_string()
+              });
+              textlat[2].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[1].size.x;
+              textlat[2].pos.y = eng.render.resolution_y as f32 /2.0 + 20.0;
+              if textlat[2].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                eng.render.shadow_map_resolution *= 2;
+                if eng.render.shadow_map_resolution > 8000{
+                  eng.render.shadow_map_resolution = 1000;
+                }
+                tm = 100;
+              }
+
+              textlat[3].draw = true;
+              textlat[3].size.x = 20.0;
+              textlat[3].size.y = 40.0;
+              textlat[3].signal = true;
+              textlat[3].per_symbol = false;
+              lctxt = format!("{}{}", langj.other_param[lang].other_param[1].strvalar[14].clone(), (eng.render.fullscreen) as u32);
+              textlat[3].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[1].size.x;
+              textlat[3].pos.y = eng.render.resolution_y as f32 /2.0 + 70.0;
+              if textlat[3].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                eng.render.fullscreen = !eng.render.fullscreen;
+              }
+
+              textlat[4].draw = true;
+              textlat[4].size.x = 20.0;
+              textlat[4].size.y = 40.0;
+              textlat[4].signal = true;
+              textlat[4].per_symbol = false;
+              lctxt = langj.other_param[lang].other_param[1].strvalar[6].clone();
+              textlat[4].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * textlat[1].size.x;
+              textlat[4].pos.y = eng.render.resolution_y as f32 /2.0 + 120.0;
+              if textlat[4].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                pausemn = 1;
+              }
+            }
+            _ => {}
+        }
       }
       pausebg.exec(&mut eng);
       logops.exec(&mut eng);

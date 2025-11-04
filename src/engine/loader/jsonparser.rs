@@ -1,12 +1,12 @@
 use std::fs;
 
 pub struct JsonF{
-  name: String,
-  strval: String,
-  numeral_val: f32,
-  strvalar: Vec<String>,
-  numeral_valar: Vec<f32>,
-  other_param: Vec<JsonF>,
+  pub name: String,
+  pub strval: String,
+  pub numeral_val: f32,
+  pub strvalar: Vec<String>,
+  pub numeral_valar: Vec<f32>,
+  pub other_param: Vec<JsonF>,
 }
 
 impl JsonF {
