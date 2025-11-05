@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use std::fs::{self};
+use std::{fs::{self, File}, io::{Seek, Write}, path::Path};
 
 use engine::{engine::Engine, image::Image, light::LightType, material::Material, ui::UIplane};
 
@@ -22,7 +22,64 @@ fn main() {
     eng.lights[0].direction = Vec3::newdefined(1f32, 1f32, -1f32);
     eng.lights[0].light_type = LightType::Directional;
 
-    let loc = 0;
+    let mut loc = 0;
+
+    let mut lang = 0usize;
+
+    let mut file: File = match Path::new("assets/config.json").exists() {
+        true => {
+          let cfg = fs::read("assets/config.json").unwrap();
+          let rdjson = JsonF::from_text(&String::from_utf8(cfg.to_vec()).unwrap());
+          let mut newrsx = 1280u32;
+          let mut newrsy = 720u32;
+          for i in 0..rdjson.other_param.len(){
+            if rdjson.other_param[i].name == "ResolutionX"{
+              newrsx = rdjson.other_param[i].numeral_val as u32;
+            }
+            if rdjson.other_param[i].name == "ResolutionY"{
+              newrsy = rdjson.other_param[i].numeral_val as u32;
+            }
+            if rdjson.other_param[i].name == "ResolutionScale"{
+              eng.render.resolution_scale = rdjson.other_param[i].numeral_val;
+            }
+            if rdjson.other_param[i].name == "ShadowMapsResolution"{
+              eng.render.shadow_map_resolution = rdjson.other_param[i].numeral_val as u32;
+            }
+            if rdjson.other_param[i].name == "Fullscreen"{
+              eng.render.fullscreen = rdjson.other_param[i].numeral_val as u32 == 1;
+            }
+            if rdjson.other_param[i].name == "Volume"{
+              eng.audio.vol = rdjson.other_param[i].numeral_val;
+            }
+            if rdjson.other_param[i].name == "Lang"{
+              lang = rdjson.other_param[i].numeral_val as usize;
+            }
+            if rdjson.other_param[i].name == "savpt"{
+              loc = rdjson.other_param[i].numeral_val as i32;
+            }
+          }
+          eng.render.set_new_resolution(newrsx, newrsy);
+          let _ = fs::remove_file("assets/config.json");
+          File::create_new("assets/config.json").unwrap()
+        },
+        false => File::create_new("assets/config.json").unwrap(),
+    };
+
+    pub fn saveset(eng: &mut Engine, file: &mut File, loc: i32, lang: usize){
+      let _ = file.set_len(0);
+      let _ = file.seek(std::io::SeekFrom::Start(0));
+      let mut towr = "{\n".to_string();
+      towr += &format!("  \"ResolutionX\": {}, \n ", eng.render.resolution_x);
+      towr += &format!("  \"ResolutionY\": {}, \n ", eng.render.resolution_y);
+      towr += &format!("  \"ResolutionScale\": {}, \n ", eng.render.resolution_scale);
+      towr += &format!("  \"ShadowMapsResolution\": {}, \n ", eng.render.shadow_map_resolution);
+      towr += &format!("  \"Fullscreen\": {}, \n ", eng.render.fullscreen as u32);
+      towr += &format!("  \"Volume\": {}, \n ", eng.audio.vol);
+      towr += &format!("  \"Lang\": {}, \n ", lang);
+      towr += &format!("  \"savpt\": {} \n ", loc);
+      towr += &"}";
+      let _ = file.write_all(&towr.as_bytes());
+    }
 
     for _ in 0..2{
       eng.work();
@@ -121,7 +178,6 @@ fn main() {
 
     let mut pause = false;
     let mut pausemn = 0;
-    let mut lang = 0usize;
     let textscale = 1.0;
 
     while eng.work(){
@@ -397,6 +453,7 @@ fn main() {
                 if lang >= langj.other_param.len(){
                   lang = 0;
                 }
+                saveset(&mut eng, &mut file, loc, lang);
                 //pausemn = 0;
               }
 
@@ -441,6 +498,7 @@ fn main() {
                 if eng.audio.vol < 0.0 {
                   eng.audio.vol = 1.0;
                 }
+                saveset(&mut eng, &mut file, loc, lang);
               }
 
               text[abci][2].draw = true;
@@ -484,6 +542,7 @@ fn main() {
                 if eng.render.resolution_scale < 0.1 {
                   eng.render.resolution_scale = 1.0;
                 }
+                saveset(&mut eng, &mut file, loc, lang);
               }
 
               text[abci][2].draw = true;
@@ -506,6 +565,7 @@ fn main() {
                 if eng.render.shadow_map_resolution > 8000{
                   eng.render.shadow_map_resolution = 1000;
                 }
+                saveset(&mut eng, &mut file, loc, lang);
                 tm = 100;
               }
 
@@ -521,6 +581,7 @@ fn main() {
               if text[abci][3].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
                 tm = 100;
                 eng.render.fullscreen = !eng.render.fullscreen;
+                saveset(&mut eng, &mut file, loc, lang);
               }
 
               text[abci][4].draw = true;
