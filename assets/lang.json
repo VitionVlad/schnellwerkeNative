@@ -1,6 +1,6 @@
 {
     "EN": {
-        "ABC": 1,
+        "ABC": 0,
         "str": [
             "Continue",
             "New Game",
@@ -21,7 +21,7 @@
         ]
     },
     "RO": {
-        "ABC": 1,
+        "ABC": 0,
         "str": [
             "Continu[",
             "Joc nou",
@@ -39,6 +39,27 @@
             "Extrem",
             "Pe tot ecranul: ",
             "Limba: Rom{n["
+        ]
+    },
+    "RU": {
+        "ABC": 1,
+        "str": [
+            "Prodoljit$",
+            "Nova' igra",
+            "Nastroyki",
+            "V@hod",
+            "Audio",
+            "Grafika",
+            "Nazad",
+            "Gromkost$: ",
+            "Mas}tab renderinga: ",
+            "Kacestvo teney: ",
+            "Nizkoe",
+            "Srednee",
+            "V@sokoe",
+            "%kstremal$noe",
+            "Polno^krann@y rejim: ",
+            ")z@k: Russkiy"
         ]
     }
 }
