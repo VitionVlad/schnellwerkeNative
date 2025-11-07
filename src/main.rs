@@ -3,7 +3,7 @@ use std::{fs::{self, File}, io::{Seek, Write}, path::Path};
 
 use engine::{engine::Engine, image::Image, light::LightType, material::Material, ui::UIplane};
 
-use crate::engine::{loader::{imageasset::ImageAsset, modelasset::ModelAsset, jsonparser::JsonF}, math::vec3::Vec3, model::Model, object::Object, scene::Scene, ui::UItext};
+use crate::engine::{loader::{imageasset::ImageAsset, jsonparser::JsonF, modelasset::ModelAsset}, math::vec3::Vec3, model::Model, object::Object, scene::Scene, ui::UItext};
 mod engine;
 
 fn dst(v1: Vec3, v2: Vec3) -> f32{
@@ -175,6 +175,8 @@ fn main() {
 
     golf.physic_object.step_height = 0.2f32;
     golf.physic_object.mass = 0.015f32;
+    golf.physic_object.v1.z += 0.15;
+    golf.physic_object.v2.z -= 0.15;
 
     let mut pause = false;
     let mut pausemn = 0;
@@ -187,12 +189,13 @@ fn main() {
       eng.cameras[0].physic_object.rot.x = 0.7854f32;
       eng.cameras[0].physic_object.rot.y = 0.7854f32;
       eng.cameras[0].is_orthographic = true;
-      eng.cameras[0].fov = 10f32;
+      eng.cameras[0].fov = 7.5f32;
       eng.cameras[0].zfar = 100f32;
       eng.cameras[0].znear = 1f32;
 
-      eng.lights[0].camera.fov = 40f32;
+      eng.lights[0].camera.fov = 25f32;
       eng.lights[0].camera.zfar = 100f32;
+      eng.lights[0].camera.znear = 1f32;
       eng.lights[0].pos.x = golf.physic_object.pos.x + 39.375f32;
       eng.lights[0].pos.y = 50f32;
       eng.lights[0].pos.z = golf.physic_object.pos.z + 39.375f32;
@@ -209,20 +212,22 @@ fn main() {
             eng.lights[1].light_type = LightType::Spot;
             eng.lights[1].camera.physic_object.solid = false;
             eng.lights[1].camera.fov = 40f32;
+            eng.lights[1].camera.znear = 0.135;
             eng.lights[1].rot.y = -golf.physic_object.rot.y;
             eng.lights[1].color = Vec3::newdefined(1.0, 1.0, 0.9);
-            eng.lights[1].pos.x = golf.physic_object.pos.x + golf.physic_object.speed.x + f32::sin(eng.lights[1].rot.y)*1.4275f32 - f32::cos(eng.lights[1].rot.y)*0.75f32;
-            eng.lights[1].pos.y = 0.5f32;
-            eng.lights[1].pos.z = golf.physic_object.pos.z + golf.physic_object.speed.z - f32::cos(eng.lights[1].rot.y)*1.4275f32 - f32::sin(eng.lights[1].rot.y)*0.75f32;
+            eng.lights[1].pos.x = golf.physic_object.pos.x + golf.physic_object.speed.x + f32::sin(eng.lights[1].rot.y)*1.5f32 - f32::cos(eng.lights[1].rot.y)*0.75f32;
+            eng.lights[1].pos.y = 0.45f32;
+            eng.lights[1].pos.z = golf.physic_object.pos.z + golf.physic_object.speed.z - f32::cos(eng.lights[1].rot.y)*1.5f32 - f32::sin(eng.lights[1].rot.y)*0.75f32;
 
             eng.lights[2].light_type = LightType::Spot;
             eng.lights[2].camera.physic_object.solid = false;
             eng.lights[2].camera.fov = 40f32;
+            eng.lights[2].camera.znear = 0.135;
             eng.lights[2].rot.y = -golf.physic_object.rot.y;
             eng.lights[2].color = Vec3::newdefined(1.0, 1.0, 0.9);
-            eng.lights[2].pos.x = golf.physic_object.pos.x + golf.physic_object.speed.x + f32::sin(eng.lights[1].rot.y)*1.4275f32 - f32::cos(eng.lights[1].rot.y)*-0.75f32;
-            eng.lights[2].pos.y = 0.5f32;
-            eng.lights[2].pos.z = golf.physic_object.pos.z + golf.physic_object.speed.z - f32::cos(eng.lights[1].rot.y)*1.4275f32 - f32::sin(eng.lights[1].rot.y)*-0.75f32;
+            eng.lights[2].pos.x = golf.physic_object.pos.x + golf.physic_object.speed.x + f32::sin(eng.lights[1].rot.y)*1.5f32 - f32::cos(eng.lights[1].rot.y)*-0.75f32;
+            eng.lights[2].pos.y = 0.45f32;
+            eng.lights[2].pos.z = golf.physic_object.pos.z + golf.physic_object.speed.z - f32::cos(eng.lights[1].rot.y)*1.5f32 - f32::sin(eng.lights[1].rot.y)*-0.75f32;
 
             if dst(golf.physic_object.pos, Vec3::newdefined(365.5f32, 3f32, -3.9746127)) < 30f32{
               eng.used_light_count = 4;
@@ -369,6 +374,12 @@ fn main() {
               if text[abci][1].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
                 tm = 100;
                 pause = false;
+                golf.physic_object.pos.y = 0.1f32;
+                golf.physic_object.pos.x = 0.0f32;
+                golf.physic_object.pos.z = 0.0f32;
+                golf.physic_object.rot.y = 0.0;
+                wkfc = 2.0f32;
+                loc = 0;
               }
 
               text[abci][2].draw = true;
@@ -562,7 +573,7 @@ fn main() {
               text[abci][2].pos.y = eng.render.resolution_y as f32 /2.0 + 20.0*textscale;
               if text[abci][2].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
                 eng.render.shadow_map_resolution *= 2;
-                if eng.render.shadow_map_resolution > 8000{
+                if eng.render.shadow_map_resolution > 4000{
                   eng.render.shadow_map_resolution = 1000;
                 }
                 saveset(&mut eng, &mut file, loc, lang);
@@ -612,5 +623,6 @@ fn main() {
       //let fps = eng.fps;
       //fpscnt.exec(&mut eng, &format!("fps: {}", fps));
     }
+    saveset(&mut eng, &mut file, loc, lang);
     eng.end();
 }

@@ -236,7 +236,7 @@ void main() {
     op = vec4(albedo, 1.0);
   }
 
-  float mxpw = smoothstep(10.0, 30.0, distance(mi.addinfo.yz, wrldpos.xz));
+  float mxpw = smoothstep(10.0, 20.0, distance(mi.addinfo.yz, wrldpos.xz));
 
   op = mix(op, vec4(smi.lightcol[0].xyz, 1.0), mxpw);
 

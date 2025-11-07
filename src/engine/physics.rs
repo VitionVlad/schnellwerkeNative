@@ -283,6 +283,9 @@ impl PhysicsObject{
                                 self.zcalcifmv(ph2);
                                 self.speed.z = -self.speed.z * self.elasticity;
                                 self.speed.x *= self.air_friction;
+                            }else{
+                                self.speed.x = -self.speed.x * self.elasticity;
+                                self.speed.z *= self.air_friction;
                             }
                         }
                         false => {
@@ -290,9 +293,15 @@ impl PhysicsObject{
                                 self.xcalcifmv(ph2);
                                 self.speed.x = -self.speed.x * self.elasticity;
                                 self.speed.z *= self.air_friction;
+                            }else{
+                                self.speed.z = -self.speed.z * self.elasticity;
+                                self.speed.x *= self.air_friction;
                             }
                         }
                     }
+
+                    self.acceleration.x = 0f32;
+                    self.acceleration.z = 0f32;
                 }else{
                     self.pos.y += ph2.savedp1.y - self.savedp2.y - 0.001f32;
                 }
