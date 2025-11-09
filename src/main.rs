@@ -189,7 +189,7 @@ fn main() {
       eng.cameras[0].physic_object.rot.x = 0.7854f32;
       eng.cameras[0].physic_object.rot.y = 0.7854f32;
       eng.cameras[0].is_orthographic = true;
-      eng.cameras[0].fov = 7.5f32;
+      eng.cameras[0].fov = 9f32;
       eng.cameras[0].zfar = 100f32;
       eng.cameras[0].znear = 1f32;
 
@@ -297,10 +297,10 @@ fn main() {
         golf.physic_object.air_friction = 0.98;
       }
       if eng.control.get_key_state(25) && !pause{
-        golf.physic_object.rot.y -= 0.05 * golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()).min(0.1) * eng.times_to_calculate_physics as f32;
+        golf.physic_object.rot.y -= 0.05 * golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()).min(0.05) * eng.times_to_calculate_physics as f32;
       }
       if eng.control.get_key_state(22) && !pause{
-        golf.physic_object.rot.y += 0.05 * golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()).min(0.1) * eng.times_to_calculate_physics as f32;
+        golf.physic_object.rot.y += 0.05 * golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()).min(0.05) * eng.times_to_calculate_physics as f32;
       }
 
       if eng.control.get_key_state(49) && tm <= 0{

@@ -1,3 +1,5 @@
+use crate::engine::math::vec2::Vec2;
+
 use super::math::{mat4::Mat4, vec3::Vec3};
 
 #[allow(dead_code)]
@@ -57,6 +59,9 @@ pub struct PhysicsObject{
     oldscale: Vec3,
     pub savedp1: Vec3,
     pub savedp2: Vec3,
+    pub c1: [Vec3; 8],
+    intersectionp: Vec2,
+    intersecting: bool,
 }
 
 impl PhysicsObject{
@@ -85,6 +90,9 @@ impl PhysicsObject{
             oldscale: Vec3::new(),
             savedp1: v[0],
             savedp2: v[1],
+            c1: [Vec3::new(); 8],
+            intersectionp: Vec2::new(),
+            intersecting: false,
         }
     }
     #[allow(dead_code)]
@@ -149,6 +157,7 @@ impl PhysicsObject{
     #[allow(dead_code)]
     pub fn exec(&mut self){
         if !self.is_static{
+            self.intersecting = false;
             self.oldpos = self.pos;
             self.oldrot = self.rot;
             self.oldscale = self.scale;
@@ -182,7 +191,7 @@ impl PhysicsObject{
             t.scale(self.scale);
             mmat = Self::mat4mat4mulop(mmat, t);
             self.mat = mmat;
-            let c1 = [
+            self.c1 = [
                 Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v1.y, self.v1.z)),
                 Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v2.y, self.v1.z)),
                 Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v2.x, self.v2.y, self.v1.z)),
@@ -192,8 +201,8 @@ impl PhysicsObject{
                 Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v1.y, self.v2.z)),
                 Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v2.x, self.v1.y, self.v2.z)),
             ];
-            self.savedp1 = Self::getbgp(c1.to_vec());
-            self.savedp2 = Self::getbsp(c1.to_vec());
+            self.savedp1 = Self::getbgp(self.c1.to_vec());
+            self.savedp2 = Self::getbsp(self.c1.to_vec());
         }else{
             if self.pos.x != self.oldpos.x || self.pos.y != self.oldpos.y || self.pos.z != self.oldpos.z || self.rot.x != self.oldrot.x || self.rot.y != self.oldrot.y || self.rot.z != self.oldrot.z || self.scale.x != self.oldscale.x || self.scale.y != self.oldscale.y || self.scale.z != self.oldscale.z{
                 let mut mmat = Mat4::new();
@@ -216,7 +225,7 @@ impl PhysicsObject{
                 self.oldpos = self.pos;
                 self.oldrot = self.rot;
                 self.oldscale = self.scale;
-                let c1 = [
+                self.c1 = [
                     Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v1.y, self.v1.z)),
                     Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v2.y, self.v1.z)),
                     Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v2.x, self.v2.y, self.v1.z)),
@@ -226,10 +235,13 @@ impl PhysicsObject{
                     Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v1.y, self.v2.z)),
                     Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v2.x, self.v1.y, self.v2.z)),
                 ];
-                self.savedp1 = Self::getbgp(c1.to_vec());
-                self.savedp2 = Self::getbsp(c1.to_vec());
+                self.savedp1 = Self::getbgp(self.c1.to_vec());
+                self.savedp2 = Self::getbsp(self.c1.to_vec());
             }
         }
+    }
+    fn cross(v1: Vec2, v2: Vec2) -> f32 {
+        v1.x * v2.y - v1.y * v2.x
     }
     #[allow(dead_code)]
     pub fn reset_states(&mut self){
@@ -238,11 +250,11 @@ impl PhysicsObject{
     fn xcalcifmv(&mut self, ph2: PhysicsObject) -> bool{
         let xcenter = (self.savedp1.x-self.savedp2.x)/2.0+self.savedp2.x;
         if xcenter >= ph2.savedp1.x{
-            self.pos.x += ph2.savedp1.x - self.savedp2.x;
+            self.pos.x += self.intersectionp.x - self.savedp2.x;
             return true;
         }
         if xcenter < ph2.savedp2.x{
-            self.pos.x -= self.savedp1.x - ph2.savedp2.x;
+            self.pos.x -= self.savedp1.x - self.intersectionp.x;
             return true;
         }
         return false;
@@ -250,14 +262,39 @@ impl PhysicsObject{
     fn zcalcifmv(&mut self, ph2: PhysicsObject) -> bool{
         let zcenter = (self.savedp1.z-self.savedp2.z)/2.0+self.savedp2.z;
         if zcenter >= ph2.savedp1.z{
-            self.pos.z += ph2.savedp1.z - self.savedp2.z;
+            self.pos.z += self.intersectionp.y - self.savedp2.z;
             return true;
         }
         if zcenter < ph2.savedp2.z{
-            self.pos.z -= self.savedp1.z - ph2.savedp2.z;
+            self.pos.z -= self.savedp1.z - self.intersectionp.y;
             return true;
         }
         return false;
+    }
+    fn calclninter(&mut self, l1p1: Vec2, l1p2: Vec2, l2p1: Vec2, l2p2: Vec2){
+        self.intersecting = false;
+
+        let d1 = Vec2::newdefined(l1p2.x - l1p1.x, l1p2.y - l1p1.y); 
+        let d2 = Vec2::newdefined(l2p2.x - l2p1.x, l2p2.y - l2p1.y); 
+        let d3 = Vec2::newdefined(l2p1.x - l1p1.x, l2p1.y - l1p1.y); 
+
+        let denom = Self::cross(d1, d2);
+
+        const EPS: f32 = 1e-9;
+        if denom.abs() < EPS {
+            return;
+        }
+
+        let t = Self::cross(d3, d2) / denom;
+        let s = Self::cross(d3, d1) / denom;
+
+        if t >= 0.0 && t <= 1.0 && s >= 0.0 && s <= 1.0 {
+            self.intersectionp = Vec2 {
+                x: l1p1.x + t * d1.x,
+                y: l1p1.y + t * d1.y,
+            };
+            self.intersecting = true;
+        }
     }
     #[allow(dead_code)]
     pub fn interact_with_other_object(&mut self, ph2: PhysicsObject){
@@ -269,39 +306,40 @@ impl PhysicsObject{
                 self.acceleration.y = 0f32;
                 self.speed.y = -self.speed.y * self.elasticity;
                 if self.savedp2.y + self.step_height <= ph2.savedp1.y{
-                    let mut xpr = true;
-                    if self.savedp2.x < ph2.savedp2.x && self.savedp1.x > ph2.savedp1.x{
-                        xpr = false;
-                    }
-                    if self.savedp2.z < ph2.savedp2.z && self.savedp1.z > ph2.savedp1.z{
-                        xpr = true;
-                    }
+                    let m = [
+                        [Vec2::newdefined(self.c1[3].x, self.c1[3].z), Vec2::newdefined(self.c1[0].x, self.c1[0].z)],
+                        [Vec2::newdefined(self.c1[0].x, self.c1[0].z), Vec2::newdefined(self.c1[6].x, self.c1[6].z)],
+                        [Vec2::newdefined(self.c1[6].x, self.c1[6].z), Vec2::newdefined(self.c1[7].x, self.c1[7].z)],
+                        [Vec2::newdefined(self.c1[7].x, self.c1[7].z), Vec2::newdefined(self.c1[3].x, self.c1[3].z)],
+                    ];
 
-                    match xpr {
-                        true => {
-                            if !self.xcalcifmv(ph2){
-                                self.zcalcifmv(ph2);
-                                self.speed.z = -self.speed.z * self.elasticity;
-                                self.speed.x *= self.air_friction;
-                            }else{
-                                self.speed.x = -self.speed.x * self.elasticity;
-                                self.speed.z *= self.air_friction;
+                    let o = [
+                        [Vec2::newdefined(ph2.c1[3].x, ph2.c1[3].z), Vec2::newdefined(ph2.c1[0].x, ph2.c1[0].z)],
+                        [Vec2::newdefined(ph2.c1[0].x, ph2.c1[0].z), Vec2::newdefined(ph2.c1[6].x, ph2.c1[6].z)],
+                        [Vec2::newdefined(ph2.c1[6].x, ph2.c1[6].z), Vec2::newdefined(ph2.c1[7].x, ph2.c1[7].z)],
+                        [Vec2::newdefined(ph2.c1[7].x, ph2.c1[7].z), Vec2::newdefined(ph2.c1[3].x, ph2.c1[3].z)],
+                    ];
+
+                    for i in 0..4{
+                        for j in 0..4{
+                            self.calclninter(m[i][0], m[i][1], o[j][0], o[j][1]);
+                            if self.intersecting{
+                                break;
                             }
                         }
-                        false => {
-                            if !self.zcalcifmv(ph2){
-                                self.xcalcifmv(ph2);
+                        if self.intersecting{
+                            if self.xcalcifmv(ph2){
                                 self.speed.x = -self.speed.x * self.elasticity;
                                 self.speed.z *= self.air_friction;
-                            }else{
+                            }else if self.zcalcifmv(ph2){
                                 self.speed.z = -self.speed.z * self.elasticity;
                                 self.speed.x *= self.air_friction;
                             }
+                            self.acceleration.x = 0f32;
+                            self.acceleration.z = 0f32;
+                            break;
                         }
                     }
-
-                    self.acceleration.x = 0f32;
-                    self.acceleration.z = 0f32;
                 }else{
                     self.pos.y += ph2.savedp1.y - self.savedp2.y - 0.001f32;
                 }
