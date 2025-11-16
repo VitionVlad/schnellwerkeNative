@@ -61,7 +61,7 @@ pub struct PhysicsObject{
     pub savedp2: Vec3,
     pub c1: [Vec3; 8],
     intersectionp: Vec2,
-    intersecting: bool,
+    pub hit: bool,
 }
 
 impl PhysicsObject{
@@ -92,7 +92,7 @@ impl PhysicsObject{
             savedp2: v[1],
             c1: [Vec3::new(); 8],
             intersectionp: Vec2::new(),
-            intersecting: false,
+            hit: false,
         }
     }
     #[allow(dead_code)]
@@ -157,7 +157,8 @@ impl PhysicsObject{
     #[allow(dead_code)]
     pub fn exec(&mut self){
         if !self.is_static{
-            self.intersecting = false;
+            self.hit = false;
+            self.hit = false;
             self.oldpos = self.pos;
             self.oldrot = self.rot;
             self.oldscale = self.scale;
@@ -272,7 +273,7 @@ impl PhysicsObject{
         return false;
     }
     fn calclninter(&mut self, l1p1: Vec2, l1p2: Vec2, l2p1: Vec2, l2p2: Vec2){
-        self.intersecting = false;
+        self.hit = false;
 
         let d1 = Vec2::newdefined(l1p2.x - l1p1.x, l1p2.y - l1p1.y); 
         let d2 = Vec2::newdefined(l2p2.x - l2p1.x, l2p2.y - l2p1.y); 
@@ -293,7 +294,7 @@ impl PhysicsObject{
                 x: l1p1.x + t * d1.x,
                 y: l1p1.y + t * d1.y,
             };
-            self.intersecting = true;
+            self.hit = true;
         }
     }
     #[allow(dead_code)]
@@ -323,11 +324,11 @@ impl PhysicsObject{
                     for i in 0..4{
                         for j in 0..4{
                             self.calclninter(m[i][0], m[i][1], o[j][0], o[j][1]);
-                            if self.intersecting{
+                            if self.hit{
                                 break;
                             }
                         }
-                        if self.intersecting{
+                        if self.hit{
                             if self.xcalcifmv(ph2){
                                 self.speed.x = -self.speed.x * self.elasticity;
                                 self.speed.z *= self.air_friction;

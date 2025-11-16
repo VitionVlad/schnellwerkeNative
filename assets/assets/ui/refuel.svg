@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="48"
+   height="48"
+   viewBox="0 0 48 48"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3 (0e150ed6c4, 2023-07-21)"
+   sodipodi:docname="refuel.svg"
+   inkscape:export-filename="refuel.tiff"
+   inkscape:export-xdpi="288"
+   inkscape:export-ydpi="288"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     inkscape:zoom="10.032077"
+     inkscape:cx="19.836371"
+     inkscape:cy="26.166067"
+     inkscape:window-width="1600"
+     inkscape:window-height="877"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Strat 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#1a1a1a;stroke:none;stroke-linejoin:round"
+       id="rect1"
+       width="48"
+       height="48"
+       x="0"
+       y="0" />
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-linejoin:round"
+       id="rect2"
+       width="17.344364"
+       height="31.000559"
+       x="15.327818"
+       y="8.4997206" />
+    <rect
+       style="fill:#1a1a1a;stroke:none;stroke-width:0.847085;stroke-linejoin:round"
+       id="rect3"
+       width="14.041102"
+       height="7.7750597"
+       x="16.979448"
+       y="10.343804" />
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-linejoin:round"
+       id="rect4"
+       width="20.651983"
+       height="2.5663588"
+       x="13.674008"
+       y="39.450848" />
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:0.714224;stroke-linejoin:round"
+       id="rect5"
+       width="7.0362315"
+       height="1.6937687"
+       x="32.822842"
+       y="-6.770967"
+       transform="matrix(0.88448477,0.46656907,-0.3918,0.92005041,0,0)" />
+    <path
+       style="fill:#ffffff;stroke:none;stroke-linejoin:round"
+       d="m 37.24399,13.925733 -0.01342,7.655041 -0.523322,0.872203 -0.922042,0.548241 -0.996802,0.07476 -1.146323,-0.423641 -0.969903,-0.647922 v 1.196163 L 33.691925,24 l 0.772154,0.147541 h 1.221451 l 1.420443,-0.697762 1.096483,-1.270923 -0.294848,-9.811476 z"
+       id="path5" />
+  </g>
+</svg>

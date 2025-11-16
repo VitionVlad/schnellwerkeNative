@@ -3,7 +3,7 @@ use std::{fs::{self, File}, io::{Seek, Write}, path::Path};
 
 use engine::{engine::Engine, image::Image, light::LightType, material::Material, ui::UIplane};
 
-use crate::engine::{loader::{imageasset::ImageAsset, jsonparser::JsonF, modelasset::ModelAsset}, math::vec3::Vec3, model::Model, object::Object, scene::Scene, ui::UItext};
+use crate::engine::{loader::{imageasset::ImageAsset, jsonparser::JsonF, modelasset::ModelAsset}, math::vec3::Vec3, model::Model, object::Object, scene::Scene, speaker::Speaker, ui::UItext};
 mod engine;
 
 fn dst(v1: Vec3, v2: Vec3) -> f32{
@@ -84,6 +84,10 @@ fn main() {
     for _ in 0..2{
       eng.work();
     }
+
+    let mut engidl = Speaker::new(&mut eng, "assets/audio/idle.wav");
+    let mut engacc = Speaker::new(&mut eng, "assets/audio/engine.wav");
+    let mut carhit = Speaker::new(&mut eng, "assets/audio/hit.flac");
 
     let langj = JsonF::load_from_file("assets/lang.json");
 
@@ -177,12 +181,30 @@ fn main() {
     golf.physic_object.mass = 0.015f32;
     golf.physic_object.v1.z += 0.15;
     golf.physic_object.v2.z -= 0.15;
+    golf.physic_object.elasticity = 0.1f32;
 
     let mut pause = false;
     let mut pausemn = 0;
     let textscale = 1.0;
 
+    let mut accelerating;
+
+    let mut hittm = 0i32;
+
     while eng.work(){
+      engidl.exec(&mut eng);
+      engidl.pos_dependency = false;
+      engidl.use_pan = false;
+
+      engacc.exec(&mut eng);
+      engacc.pos_dependency = false;
+      engacc.use_pan = false;
+
+      carhit.exec(&mut eng);
+      carhit.pos_dependency = false;
+      carhit.use_pan = false;
+      
+      accelerating = false;
       eng.cameras[0].physic_object.pos.z = golf.physic_object.pos.z + 39.375f32;
       eng.cameras[0].physic_object.pos.x = golf.physic_object.pos.x - 39.375f32;
       eng.cameras[0].physic_object.pos.y = 56.5f32;
@@ -295,7 +317,39 @@ fn main() {
         golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.air_friction = 0.98;
+        accelerating = true;
       }
+
+      if accelerating{
+        engacc.volume += SPEED * eng.times_to_calculate_physics as f32;
+        if engacc.volume > 1.0{
+          engacc.volume = 1.0;
+        }
+        engidl.volume -= SPEED * eng.times_to_calculate_physics as f32;
+        if engidl.volume < 0.0{
+          engidl.volume = 0.0;
+        }
+      }else {
+          engacc.volume -= SPEED * eng.times_to_calculate_physics as f32;
+        if engacc.volume < 0.0{
+          engacc.volume = 0.0;
+        }
+        engidl.volume += SPEED * eng.times_to_calculate_physics as f32;
+        if engidl.volume > 2.0{
+          engidl.volume = 2.0;
+        }
+      }
+
+      if golf.physic_object.hit {
+        hittm=50;
+      }
+      if hittm > 10 && golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()) > 0.0001{
+        hittm -= eng.times_to_calculate_physics as i32;
+        carhit.volume = 2.0;
+      }else{
+        carhit.volume = 0.0;
+      }
+
       if eng.control.get_key_state(25) && !pause{
         golf.physic_object.rot.y -= 0.05 * golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()).min(0.05) * eng.times_to_calculate_physics as f32;
       }
