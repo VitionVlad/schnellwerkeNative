@@ -151,7 +151,6 @@ This demo also showcase the rendering of transparent objects, which is significa
 
 # <p align="center"> Physics </p>
 All physics calculations are not directly exposed to the programmer. They are mostly executed at the start of each new frame, as I chose to use a tick-based approach for physics simulation. This means the physics engine runs at a different tick rate than the game itself—it can be higher or lower. This approach ensures frame rate–independent physics.  
-Currently, physics is calculated only between the player and objects. However, in the future, I may consider enabling physics objects to interact with each other—allowing them to fall, collide, and behave more dynamically. This will largely depend on performance and how efficiently it can be implemented.  
 
 # <p align="center"> Audio </p>
 The native version of the engine uses Miniaudio for audio handling.  
