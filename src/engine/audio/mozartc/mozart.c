@@ -12,6 +12,8 @@ typedef struct MozartHandle{
 typedef struct MozartSound{
     ma_sound sound;
     uint32_t sec;
+    uint8_t playing;
+    //uint32_t samplerate;
 } MozartSound;
 
 struct Mozart{
@@ -43,10 +45,12 @@ uint32_t newsound(uint32_t mhi, const char* path){
     mz.msn++;
 
     mz.ms[msn].sec = mhi;
+    mz.ms[msn].playing = 0;
     ma_result result = ma_sound_init_from_file(&mz.mh[mhi].engine, path, 0, NULL, NULL, &mz.ms[msn].sound);
     if (result == MA_SUCCESS) {
         printf("\e[1;36mMozartSound\e[0;37m: Sound created from file with success, new sound id = %d \n", msn);
     }
+    //ma_sound_get_data_format(&mz.ms[msn].sound, NULL, NULL, &mz.ms[msn].samplerate, NULL, 1);
 
     return msn;
 }
@@ -54,11 +58,24 @@ uint32_t newsound(uint32_t mhi, const char* path){
 void soundplay(uint32_t msn, float pan, float volume){
     ma_sound_set_pan(&mz.ms[msn].sound, pan);
     ma_sound_set_volume(&mz.ms[msn].sound, volume);
-    ma_sound_start(&mz.ms[msn].sound);
+    if(mz.ms[msn].playing == 0){
+        ma_sound_start(&mz.ms[msn].sound);
+        mz.ms[msn].playing = 1;
+    }
 }
 
-void soudstop(uint32_t msn){
+void soundstop(uint32_t msn){
     ma_sound_stop(&mz.ms[msn].sound);
+    mz.ms[msn].playing = 0;
+}
+
+void soundsetloop(uint32_t msn, uint8_t val){
+    ma_sound_set_looping(&mz.ms[msn].sound, val);
+}
+
+void soundsetpos(uint32_t msn, float val){
+    ma_sound_seek_to_second(&mz.ms[msn].sound, val);
+    ma_sound_start(&mz.ms[msn].sound);
 }
 
 void destroymozart(uint32_t mhi){

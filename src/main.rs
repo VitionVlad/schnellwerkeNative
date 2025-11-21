@@ -88,6 +88,12 @@ fn main() {
     let mut engidl = Speaker::new(&mut eng, "assets/audio/idle.wav");
     let mut engacc = Speaker::new(&mut eng, "assets/audio/engine.wav");
     let mut carhit = Speaker::new(&mut eng, "assets/audio/hit.flac");
+    let mut caracc = Speaker::new(&mut eng, "assets/audio/acc.mp3");
+    caracc.loopsound = false;
+    engidl.play = false;
+    engacc.play = false;
+    carhit.play = false;
+    caracc.play = false;
 
     let langj = JsonF::load_from_file("assets/lang.json");
 
@@ -189,20 +195,28 @@ fn main() {
 
     let mut accelerating;
 
-    let mut hittm = 0i32;
+    let mut carhttm = 0u32;
 
     while eng.work(){
       engidl.exec(&mut eng);
       engidl.pos_dependency = false;
       engidl.use_pan = false;
+      engidl.play = true;
 
       engacc.exec(&mut eng);
       engacc.pos_dependency = false;
       engacc.use_pan = false;
+      engacc.play = true;
 
       carhit.exec(&mut eng);
       carhit.pos_dependency = false;
       carhit.use_pan = false;
+      carhit.play = true;
+
+      caracc.exec(&mut eng);
+      caracc.pos_dependency = false;
+      caracc.use_pan = false;
+      caracc.loopsound = false;
       
       accelerating = false;
       eng.cameras[0].physic_object.pos.z = golf.physic_object.pos.z + 39.375f32;
@@ -340,14 +354,16 @@ fn main() {
         }
       }
 
-      if golf.physic_object.hit {
-        hittm=50;
-      }
-      if hittm > 10 && golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()) > 0.0001{
-        hittm -= eng.times_to_calculate_physics as i32;
-        carhit.volume = 2.0;
+      if golf.physic_object.hit && golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()) > 0.01{
+        carhit.volume = (carhit.volume + SPEED * eng.times_to_calculate_physics as f32).min(2.0);
+        carhttm+=1;
       }else{
+        if carhttm > 0 && carhttm < 5{
+          caracc.volume = golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs());
+          caracc.move_sound_cursor(0.0);
+        }
         carhit.volume = 0.0;
+        carhttm = 0;
       }
 
       if eng.control.get_key_state(25) && !pause{

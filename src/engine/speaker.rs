@@ -11,6 +11,7 @@ pub struct Speaker{
     pub use_pan: bool,
     pub pos_dependency: bool,
     pub volume: f32,
+    pub loopsound: bool,
 }
 
 impl Speaker{
@@ -23,6 +24,7 @@ impl Speaker{
             use_pan: true,
             pos_dependency: true,
             volume: 1.0f32,
+            loopsound: true,
         }
     }
     fn calcpan(src: Vec2, listp: Vec2, listr: Vec2) -> f32{
@@ -36,6 +38,10 @@ impl Speaker{
             dot / magnitude_d
         }
     }
+    pub fn move_sound_cursor(&mut self, cursor: f32){
+        self.sound.set_new_pos(cursor);
+        self.play = true;
+    }
     pub fn exec(&mut self, eng: &mut Engine){
         if self.pos_dependency{
             self.sound.vol = f32::max((self.power - f32::sqrt(f32::powi(eng.cameras[eng.primary_camera].physic_object.pos.x - self.pos.x, 2) + f32::powi(eng.cameras[eng.primary_camera].physic_object.pos.y - self.pos.y, 2) + f32::powi(eng.cameras[eng.primary_camera].physic_object.pos.z - self.pos.z, 2)))/self.power * self.volume, 0.0f32);
@@ -48,6 +54,7 @@ impl Speaker{
             self.sound.pan = 0f32;
         }
         if self.play{
+            self.sound.loopsound = self.loopsound;
             self.sound.play();
         }else{
             self.sound.stop();
