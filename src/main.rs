@@ -163,6 +163,16 @@ fn main() {
       UItext::new(&mut eng, matt, tlc, "AaBbVvGgDdEe[]JjZzIiYyKkLlMmNnOoPpRrSsTtUuFfHhXxCc{}/*`~!@#$%^&()'0123456789,.;:'+-<>_"),
     ]];
 
+    let mut uielems: [UIplane; 7] = [
+      UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/refuel.tiff".to_string()]),
+      UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/check.tiff".to_string()]),
+      UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/pause.tiff".to_string()]),
+      UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/diary.tiff".to_string()]),
+      UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/radio.tiff".to_string()]),
+      UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/cassete.tiff".to_string()]),
+      UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/noms.tiff".to_string()]),
+    ];
+
     for i in 0..5{
       text[0][i].pos.z = 0.5;
       text[1][i].pos.z = 0.5;
@@ -196,6 +206,24 @@ fn main() {
     let mut accelerating;
 
     let mut carhttm = 0u32;
+
+    let mut ausrc = 0u8;
+
+    let mut check = 45f32; //mx 90f32
+
+    let mut fuel = 45f32; //mx 90f32
+
+    let mut flst = false;
+
+    let mut chst = false;
+
+    let mut fueltm = 250;
+
+    let mut chtm = 250;
+
+    let mut ignorewkfc = false;
+
+    let mut wkfcreturplc = 0;
 
     while eng.work(){
       engidl.exec(&mut eng);
@@ -238,6 +266,7 @@ fn main() {
       eng.lights[0].rot.x = eng.cameras[0].physic_object.rot.x;
       eng.lights[0].rot.y = -eng.cameras[0].physic_object.rot.y;
 
+      viewport.ubo_index = 51;
       viewport.object.mesh.ubo[49] = golf.physic_object.pos.x;
       viewport.object.mesh.ubo[50] = golf.physic_object.pos.z;
 
@@ -287,15 +316,39 @@ fn main() {
               eng.lights[3].pos.z = 3.199431;
             }
             eng.lights[0].color = Vec3::newdefined(0.00025, 0.00025, 0.0005);
+
+            if fuel <= 0.0 || check <= 0.0{
+              ignorewkfc = true;
+              wkfcreturplc = loc+1;
+            }
           },
           _ => {}
       }
 
-      if wkfc > 0.0{
-        wkfc -= (TICKSZ/2.5)*eng.times_to_calculate_physics as f32;
-        viewport.object.mesh.ubo[48] = wkfc;
+      if !ignorewkfc{
+        if wkfc > 0.0{
+          wkfc -= (TICKSZ/2.5)*eng.times_to_calculate_physics as f32;
+          viewport.object.mesh.ubo[48] = wkfc;
+        }else{
+          viewport.object.mesh.ubo[48] = 0.0;
+        }
       }else{
-        viewport.object.mesh.ubo[48] = 0.0;
+        wkfc += (TICKSZ/2.5)*eng.times_to_calculate_physics as f32;
+        if wkfc >= 2.5{
+          ignorewkfc = false;
+          match wkfcreturplc {
+              1 => {
+                golf.physic_object.pos.x = 0.0;
+                golf.physic_object.pos.y = 0.1;
+                golf.physic_object.pos.z = 0.0;
+                golf.physic_object.rot.y = 0.0;
+                fuel = 45.0;
+                check = 45.0;
+              },
+              _ => {}
+          }
+        }
+        viewport.object.mesh.ubo[48] = wkfc;
       }
 
       if tm > 0{
@@ -322,12 +375,12 @@ fn main() {
       //  }
       //}
 
-      if eng.control.get_key_state(40) && !pause{
+      if eng.control.get_key_state(40) && !pause && !(fuel <= 0.0) && !(check <= 0.0){
         golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.air_friction = 0.915;
       }
-      if eng.control.get_key_state(44) && !pause{
+      if eng.control.get_key_state(44) && !pause && !(fuel <= 0.0) && !(check <= 0.0){
         golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.air_friction = 0.98;
@@ -361,6 +414,7 @@ fn main() {
         if carhttm > 0 && carhttm < 5{
           caracc.volume = golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs());
           caracc.move_sound_cursor(0.0);
+          check -= caracc.volume*10.0;
         }
         carhit.volume = 0.0;
         carhttm = 0;
@@ -405,7 +459,7 @@ fn main() {
         pausebg.object.physic_object.scale.y = eng.render.resolution_y as f32;
         pausebg.object.physic_object.scale.x = 400.0;
         pausebg.object.physic_object.pos.y = 0.0;
-        pausebg.object.physic_object.pos.x = (eng.render.resolution_x as f32)/2.0 - 200.0;
+        pausebg.object.physic_object.pos.x = (eng.render.resolution_x as f32)/2.0;
         pausebg.object.draw = true;
 
         let abci = langj.other_param[lang].other_param[0].numeral_val as usize;
@@ -416,6 +470,8 @@ fn main() {
               logops.object.physic_object.scale.x = 400.0;
               logops.object.physic_object.pos.y = eng.render.resolution_y as f32 /2.0 - 300.0;
               logops.object.physic_object.pos.x = (eng.render.resolution_x as f32)/2.0 - 200.0;
+              logops.object.mesh.ubo[48] = 0.0;
+              logops.object.mesh.ubo[50] = 0.0;
               logops.object.draw = true;
 
               text[abci][0].draw = true;
@@ -448,6 +504,8 @@ fn main() {
                 golf.physic_object.pos.x = 0.0f32;
                 golf.physic_object.pos.z = 0.0f32;
                 golf.physic_object.rot.y = 0.0;
+                fuel = 45.0;
+                check = 45.0;
                 wkfc = 2.0f32;
                 loc = 0;
               }
@@ -682,7 +740,124 @@ fn main() {
             _ => {}
         }
         pausebg.object.physic_object.pos.x = (eng.render.resolution_x as f32)/2.0 - pausebg.object.physic_object.scale.x/2.0;
+        for i in 0..7{
+          uielems[i].object.draw = false;
+          uielems[i].exec(&mut eng);
+        }
+      }else{
+        for i in 0..7{
+          uielems[i].object.mesh.ubo[48] = wkfc;
+          uielems[i].object.physic_object.scale.x = 75f32*textscale;
+          uielems[i].object.physic_object.scale.y = 75f32*textscale;
+          uielems[i].object.physic_object.pos.y = eng.render.resolution_y as f32 - 75.0*textscale;
+          uielems[i].object.physic_object.pos.z = 0.7;
+          uielems[i].signal = true;
+          uielems[i].object.draw = true;
+        }
+
+        if flst {
+          uielems[0].object.mesh.ubo[50] = 1.0;
+        }else{
+          uielems[0].object.mesh.ubo[50] = 0.0;
+        }
+        uielems[0].object.physic_object.pos.x = eng.render.resolution_x as f32 / 2.0 - 2.5*75.0*textscale;//2.5
+        uielems[0].signal = false;
+
+        if chst {
+          uielems[1].object.mesh.ubo[50] = 1.0;
+        }else{
+          uielems[1].object.mesh.ubo[50] = 0.0;
+        }
+        uielems[1].object.physic_object.pos.x = eng.render.resolution_x as f32 / 2.0 - 1.5*75.0*textscale;//1.5
+        uielems[1].signal = false;
+
+        for i in 0..2{
+          uielems[i].exec(&mut eng);
+        }
+
+        uielems[2].object.physic_object.pos.x = eng.render.resolution_x as f32 / 2.0 - 0.5*75.0*textscale;//0.5
+        if uielems[2].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
+          pause = !pause;
+          tm = 100;
+        }
+
+        uielems[3].object.physic_object.pos.x = eng.render.resolution_x as f32 / 2.0 + 0.5*75.0*textscale;//0.5
+        if uielems[3].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
+          pause = !pause;
+          tm = 100;
+        }
+
+        match ausrc {
+            0 => {
+              uielems[4].object.physic_object.pos.x = eng.render.resolution_x as f32 / 2.0 + 1.5*75.0*textscale;//1.5
+              uielems[4].object.draw = true;
+              uielems[5].object.draw = false;
+              uielems[6].object.draw = false;
+              if uielems[4].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
+                ausrc = 1;
+                tm = 100;
+              }
+              uielems[5].exec(&mut eng);
+              uielems[6].exec(&mut eng);
+            }
+            1 => {
+              uielems[5].object.physic_object.pos.x = eng.render.resolution_x as f32 / 2.0 + 1.5*75.0*textscale;//1.5
+              uielems[4].object.draw = false;
+              uielems[5].object.draw = true;
+              uielems[6].object.draw = false;
+              if uielems[5].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
+                ausrc = 2;
+                tm = 100;
+              }
+              uielems[4].exec(&mut eng);
+              uielems[6].exec(&mut eng);
+            }
+            2 => {
+              uielems[6].object.physic_object.pos.x = eng.render.resolution_x as f32 / 2.0 + 1.5*75.0*textscale;//1.5
+              uielems[4].object.draw = false;
+              uielems[5].object.draw = false;
+              uielems[6].object.draw = true;
+              if uielems[6].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
+                ausrc = 0;
+                tm = 100;
+              }
+              uielems[4].exec(&mut eng);
+              uielems[5].exec(&mut eng);
+            }
+            _ => {}
+        }
+
+        fueltm -= eng.times_to_calculate_physics as i32;
+        if fueltm <= 0 {
+          fuel -= 0.25;
+
+          if accelerating{
+            fuel -= 0.25;
+          }
+
+          if fuel > 60.0 {
+            flst = false;
+          }else if fuel > 30.0 && fuel < 60.0 {
+            flst = !flst;
+          }else if fuel < 30.0 {
+            flst = true;
+          }
+          fueltm = 250;
+        }
+
+        chtm -= eng.times_to_calculate_physics as i32;
+        if chtm <= 0 {
+          if check > 60.0 {
+            chst = false;
+          }else if check > 30.0 && check < 60.0 {
+            chst = !chst;
+          }else if check < 30.0 {
+            chst = true;
+          }
+          chtm = 250;
+        }
       }
+
       pausebg.exec(&mut eng);
       logops.exec(&mut eng);
 

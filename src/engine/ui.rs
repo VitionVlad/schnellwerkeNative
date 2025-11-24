@@ -36,7 +36,7 @@ impl UIplane {
             clickzone: Clickzone { pos1: Vec2::newdefined(0.0, 0.0), pos2: Vec2::newdefined(0.0, 0.0) },
             signal: false,
             allow_when_mouse_locked: false,
-            ubo_index: 48,
+            ubo_index: 50,
         }
     }
     pub fn new_blank() -> UIplane{
@@ -45,7 +45,7 @@ impl UIplane {
             clickzone: Clickzone { pos1: Vec2::newdefined(0.0, 0.0), pos2: Vec2::newdefined(0.0, 0.0) },
             signal: false,
             allow_when_mouse_locked: false,
-            ubo_index: 48,
+            ubo_index: 50,
         }
     }
     pub fn new_from_file(eng: &mut Engine, mat: Material, paths: Vec<String>) -> UIplane{
@@ -56,7 +56,7 @@ impl UIplane {
             clickzone: Clickzone { pos1: Vec2::newdefined(0.0, 0.0), pos2: Vec2::newdefined(0.0, 0.0) },
             signal: false,
             allow_when_mouse_locked: false,
-            ubo_index: 48,
+            ubo_index: 50,
         }
     }
     pub fn exec(&mut self, eng: &mut Engine) -> bool{
@@ -65,10 +65,12 @@ impl UIplane {
         self.clickzone.pos2.x = self.object.physic_object.pos.x + self.object.physic_object.scale.x;
         self.clickzone.pos2.y = self.object.physic_object.pos.y + self.object.physic_object.scale.y;
         let btst = self.clickzone.check(Vec2::newdefined(eng.control.xpos as f32, eng.control.ypos as f32));
-        if self.signal && btst && (self.allow_when_mouse_locked || (!self.allow_when_mouse_locked && !eng.control.mouse_lock)){
-            self.object.mesh.ubo[18] = 1.0;
-        }else{
-            self.object.mesh.ubo[18] = 0.0;
+        if self.signal{
+            if btst && (self.allow_when_mouse_locked || (!self.allow_when_mouse_locked && !eng.control.mouse_lock)) && self.object.draw{
+                self.object.mesh.ubo[self.ubo_index] = 1.0;
+            }else{
+                self.object.mesh.ubo[self.ubo_index] = 0.0;
+            }
         }
         self.object.exec(eng);
         return btst;
@@ -157,7 +159,7 @@ impl UItext {
             blank: false,
             symbol_pressed: b' ',
             symbol_index: 0,
-            ubo_index: 50,
+            ubo_index: 48,
             draw: true,
         }
     }
@@ -223,10 +225,12 @@ impl UItext {
                                     btst = true;
                                 }
                             }
-                            if self.signal && lbtst && (self.allow_when_mouse_locked || (!self.allow_when_mouse_locked && !eng.control.mouse_lock)){
-                                self.planes[i].mesh.ubo[self.ubo_index+2] = 1.0;
-                            }else{
-                                self.planes[i].mesh.ubo[self.ubo_index+2] = 0.0;
+                            if self.signal{
+                                if lbtst && (self.allow_when_mouse_locked || (!self.allow_when_mouse_locked && !eng.control.mouse_lock)){
+                                    self.planes[i].mesh.ubo[self.ubo_index+2] = 1.0;
+                                }else{
+                                    self.planes[i].mesh.ubo[self.ubo_index+2] = 0.0;
+                                }
                             }
 
                             self.planes[i].exec(eng);
