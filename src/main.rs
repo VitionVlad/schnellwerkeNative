@@ -163,7 +163,12 @@ fn main() {
       UItext::new(&mut eng, matt, tlc, "AaBbVvGgDdEe[]JjZzIiYyKkLlMmNnOoPpRrSsTtUuFfHhXxCc{}/*`~!@#$%^&()'0123456789,.;:'+-<>_"),
     ]];
 
-    let mut uielems: [UIplane; 7] = [
+    for i in 0..5{
+      text[0][i].new_line_symbol = b'|';
+      text[1][i].new_line_symbol = b'|';
+    }
+
+    let mut uielems: [UIplane; 8] = [
       UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/refuel.tiff".to_string()]),
       UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/check.tiff".to_string()]),
       UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/pause.tiff".to_string()]),
@@ -171,6 +176,7 @@ fn main() {
       UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/radio.tiff".to_string()]),
       UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/cassete.tiff".to_string()]),
       UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/noms.tiff".to_string()]),
+      UIplane::new_from_file(&mut eng, imgmat, vec!["assets/assets/ui/diary_open.tiff".to_string()]),
     ];
 
     for i in 0..5{
@@ -450,8 +456,12 @@ fn main() {
       pausebg.object.draw = false;
       logops.object.draw = false;
       for i in 0..5{
+        text[0][i].signal_on_value = 1.0;
+        text[0][i].signal_off_value = 0.0;
         text[0][i].draw = false;
         text[0][i].exec(&mut eng, " ");
+        text[1][i].signal_on_value = 1.0;
+        text[1][i].signal_off_value = 0.0;
         text[1][i].draw = false;
         text[1][i].exec(&mut eng, " ");
       }
@@ -737,12 +747,57 @@ fn main() {
                 pausemn = 1;
               }
             }
+            4 => {
+              pausebg.object.draw = false;
+              uielems[7].object.physic_object.scale.y = 600.0*textscale;
+              uielems[7].object.physic_object.scale.x = 424.2*textscale;
+
+              uielems[7].object.physic_object.pos.y = eng.render.resolution_y as f32 / 2.0 - uielems[7].object.physic_object.scale.y/2.0;
+              uielems[7].object.physic_object.pos.x = eng.render.resolution_x as f32 / 2.0 - uielems[7].object.physic_object.scale.x/2.0;
+              uielems[7].object.physic_object.pos.z = 0.9;
+              uielems[7].object.mesh.ubo[48] = 0.0;
+              uielems[7].object.mesh.ubo[50] = 0.0;
+              uielems[7].signal = false;
+              uielems[7].object.draw = true;
+
+              uielems[7].exec(&mut eng);
+
+              text[abci][0].draw = true;
+              text[abci][0].size.x = 20.0*textscale;
+              text[abci][0].size.y = 40.0*textscale;
+              text[abci][0].signal = true;
+              text[abci][0].per_symbol = false;
+              text[abci][0].signal_on_value = 0.0;
+              text[abci][0].signal_off_value = 1.0;
+              let mut lctxt = langj.other_param[lang].other_param[1].strvalar[16].clone();
+              text[abci][0].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][0].size.x;
+              text[abci][0].pos.y = eng.render.resolution_y as f32 /2.0 + uielems[7].object.physic_object.scale.y/2.0 - 65.0*textscale;
+              if text[abci][0].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
+                tm = 100;
+                pause = false;
+                pausemn = 0;
+              }
+
+              text[abci][1].draw = true;
+              text[abci][1].size.x = 10.0*textscale;
+              text[abci][1].size.y = 20.0*textscale;
+              text[abci][1].signal = false;
+              text[abci][1].per_symbol = false;
+              text[abci][1].signal_on_value = 0.0;
+              text[abci][1].signal_off_value = 1.0;
+              lctxt = langj.other_param[lang].other_param[1].strvalar[17].clone();
+              text[abci][1].pos.x = (eng.render.resolution_x as f32 / 2.0) - uielems[7].object.physic_object.scale.x/2.0 + 30.0*textscale;
+              text[abci][1].pos.y = eng.render.resolution_y as f32 /2.0 - uielems[7].object.physic_object.scale.y/2.0 + 40.0*textscale;
+              text[abci][1].exec(&mut eng, &lctxt);
+            }
             _ => {}
         }
         pausebg.object.physic_object.pos.x = (eng.render.resolution_x as f32)/2.0 - pausebg.object.physic_object.scale.x/2.0;
-        for i in 0..7{
-          uielems[i].object.draw = false;
-          uielems[i].exec(&mut eng);
+        for i in 0..uielems.len(){
+          if !(pausemn == 4 && i == 7){
+            uielems[i].object.draw = false;
+            uielems[i].exec(&mut eng);
+          }
         }
       }else{
         for i in 0..7{
@@ -784,6 +839,7 @@ fn main() {
         uielems[3].object.physic_object.pos.x = eng.render.resolution_x as f32 / 2.0 + 0.5*75.0*textscale;//0.5
         if uielems[3].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
           pause = !pause;
+          pausemn = 4;
           tm = 100;
         }
 

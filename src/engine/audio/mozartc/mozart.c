@@ -29,8 +29,8 @@ uint32_t newmozart(){
 
     ma_result result;
     result = ma_engine_init(NULL, &mz.mh[mhi].engine);
-    if (result == MA_SUCCESS) {
-        printf("\e[1;36mMozart\e[0;37m: Miniaudio engine inited with success \n");
+    if (result != MA_SUCCESS) {
+        printf("\e[1;36mMozart\e[0;37m: Miniaudio engine init failm result = %d \n", result);
     }
 
     return mhi;
@@ -47,8 +47,8 @@ uint32_t newsound(uint32_t mhi, const char* path){
     mz.ms[msn].sec = mhi;
     mz.ms[msn].playing = 0;
     ma_result result = ma_sound_init_from_file(&mz.mh[mhi].engine, path, 0, NULL, NULL, &mz.ms[msn].sound);
-    if (result == MA_SUCCESS) {
-        printf("\e[1;36mMozartSound\e[0;37m: Sound created from file with success, new sound id = %d \n", msn);
+    if (result != MA_SUCCESS) {
+        printf("\e[1;36mMozartSound\e[0;37m: Sound creation failure, result = %d \n", result);
     }
     //ma_sound_get_data_format(&mz.ms[msn].sound, NULL, NULL, &mz.ms[msn].samplerate, NULL, 1);
 

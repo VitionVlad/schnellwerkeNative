@@ -17,7 +17,9 @@
             "High",
             "Extreme",
             "Fullscreen: ",
-            "Language: English"
+            "Language: English",
+            "Close",
+            "September 1989.|Nuremberg's autobahns hum with |Mercedes and VWs-plenty of fuel,|shiny shops stocked high. |West Germany's a powerhouse,|but whispers from the East|intrigue me:|GDR refugees flooding Hungary,|Polish strikes crippling factories.|As a journalist, I'm no spy,|just chasing stories on|socialism's cracks.|My trusty Golf is topped off,|papers in order for the Czech border.|EC lane should be quick|but my press visa might draw eyes.|Roads are smooth here,|but tales of potholes|and checkpoints beyond.|Time to punch the|gas-history's shifting,|and I'm driving right into it."
         ]
     },
     "RO": {
@@ -38,7 +40,9 @@
             "`nalt",
             "Extrem",
             "Pe tot ecranul: ",
-            "Limba: Rom{n["
+            "Limba: Rom{n[",
+            "`nchide",
+            "Septembrie 1989.|Autostr[zile din Nurnberg|sunt pline de Mercedesuri }i VW-uri,|combustibilul este la maxim,|magazinele str[lucitoare sunt pline.|Germania de Vest este o|putere economic[, dar zvonurile|din Est m[ intrig[:|refugia/ii din RDG inund[ Ungaria,|grevele din Polonia|paralizeaz[ fabricile.|Ca jurnalist, nu sunt spion,|ci doar urm[resc pove}tile despre|fisurile socialismului.|Ma}ina mea de ]ncredere,|Golf, este plin[,|documentele sunt ]n ordine|pentru grani/a cu Cehia.|Banda CE ar trebui s[ fie rapid[,|dar viza mea de|pres[ ar putea atrage aten/ia.|E timpul s[ merg, istoria se schimb[,|iar eu m[ ]ndrept direct spre ea."
         ]
     },
     "RU": {
@@ -59,7 +63,9 @@
             "V@sokoe",
             "%kstremal$noe",
             "Polno^krann@y rejim: ",
-            ")z@k: Russkiy"
+            ")z@k: Russkiy",
+            "Zakr@t$",
+            "Sent'br$ 1989 goda.|Avtoban@ N(rnberga|gud't ot ma}in, topliva v izb@tke,|magazin@ poln@ tovarov.|Zapadna' germani' - ^konomiceska'|derjava, no sluhi s vostoka intrigu(t|men': bejenx@ iz|GDR navodn'(t vengri(,|zabastovki v pol$}e|paralizu(t fabriki.|kak jurnalist, ' ne }pion,|prosto i*u istorii|o tre*inah v soxializme.|moy vern@y gol$f zapravlen,|dokument@ dl' pereseceni'|ce}skoy granix@ v por'dke.|Mo' jurnalistska' viza mojet|privlec$ vnimanie.|Zdes$ vse gladko, no sl@}alis$|rasskaz@ o v@boinah i|kontrol$no-propuskn@h punktah dal$}e.|pora davit$ na gaz|istori' men'ets',i ' edu pr'mo v nee."
         ]
     }
 }

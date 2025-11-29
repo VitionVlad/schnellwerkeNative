@@ -26,6 +26,8 @@ pub struct UIplane{
     pub signal: bool,
     pub allow_when_mouse_locked: bool,
     pub ubo_index: usize,
+    pub signal_on_value: f32,
+    pub signal_off_value: f32,
 }
 
 impl UIplane {
@@ -37,6 +39,8 @@ impl UIplane {
             signal: false,
             allow_when_mouse_locked: false,
             ubo_index: 50,
+            signal_on_value: 1.0f32,
+            signal_off_value: 0.0f32,
         }
     }
     pub fn new_blank() -> UIplane{
@@ -46,6 +50,8 @@ impl UIplane {
             signal: false,
             allow_when_mouse_locked: false,
             ubo_index: 50,
+            signal_on_value: 1.0f32,
+            signal_off_value: 0.0f32,
         }
     }
     pub fn new_from_file(eng: &mut Engine, mat: Material, paths: Vec<String>) -> UIplane{
@@ -57,6 +63,8 @@ impl UIplane {
             signal: false,
             allow_when_mouse_locked: false,
             ubo_index: 50,
+            signal_on_value: 1.0f32,
+            signal_off_value: 0.0f32,
         }
     }
     pub fn exec(&mut self, eng: &mut Engine) -> bool{
@@ -67,9 +75,9 @@ impl UIplane {
         let btst = self.clickzone.check(Vec2::newdefined(eng.control.xpos as f32, eng.control.ypos as f32));
         if self.signal{
             if btst && (self.allow_when_mouse_locked || (!self.allow_when_mouse_locked && !eng.control.mouse_lock)) && self.object.draw{
-                self.object.mesh.ubo[self.ubo_index] = 1.0;
+                self.object.mesh.ubo[self.ubo_index] = self.signal_on_value;
             }else{
-                self.object.mesh.ubo[self.ubo_index] = 0.0;
+                self.object.mesh.ubo[self.ubo_index] = self.signal_off_value;
             }
         }
         self.object.exec(eng);
@@ -95,6 +103,9 @@ pub struct UItext{
     pub symbol_pressed: u8,
     pub symbol_index: usize,
     pub ubo_index: usize,
+    pub signal_on_value: f32,
+    pub signal_off_value: f32,
+    pub new_line_symbol: u8,
     blank: bool,
 }
 
@@ -117,6 +128,9 @@ impl UItext {
             symbol_pressed: b' ',
             symbol_index: 0,
             ubo_index: 48,
+            signal_on_value: 1.0f32,
+            signal_off_value: 0.0f32,
+            new_line_symbol: b'\n',
             draw: true,
         }
     }
@@ -138,6 +152,9 @@ impl UItext {
             symbol_pressed: b' ',
             symbol_index: 0,
             ubo_index: 48,
+            signal_on_value: 1.0f32,
+            signal_off_value: 0.0f32,
+            new_line_symbol: b'\n',
             draw: false,
         }
     }
@@ -160,6 +177,9 @@ impl UItext {
             symbol_pressed: b' ',
             symbol_index: 0,
             ubo_index: 48,
+            signal_on_value: 1.0f32,
+            signal_off_value: 0.0f32,
+            new_line_symbol: b'\n',
             draw: true,
         }
     }
@@ -171,7 +191,7 @@ impl UItext {
             let mut cx: u32 = 0;
             for i in 0..bt.len(){
                 cx+=1;
-                if bt[i] == b'\n'{
+                if bt[i] == self.new_line_symbol{
                     my+=1;
                     if cx-1 >= mx {
                         mx = cx-1;
@@ -225,18 +245,16 @@ impl UItext {
                                     btst = true;
                                 }
                             }
-                            if self.signal{
-                                if lbtst && (self.allow_when_mouse_locked || (!self.allow_when_mouse_locked && !eng.control.mouse_lock)){
-                                    self.planes[i].mesh.ubo[self.ubo_index+2] = 1.0;
-                                }else{
-                                    self.planes[i].mesh.ubo[self.ubo_index+2] = 0.0;
-                                }
+                            if self.signal && lbtst && (self.allow_when_mouse_locked || (!self.allow_when_mouse_locked && !eng.control.mouse_lock)){
+                                self.planes[i].mesh.ubo[self.ubo_index+2] = self.signal_on_value;
+                            }else{
+                                self.planes[i].mesh.ubo[self.ubo_index+2] = self.signal_off_value;
                             }
 
                             self.planes[i].exec(eng);
                             break;
                         }
-                        if bt[i] == b'\n' {
+                        if bt[i] == self.new_line_symbol {
                             posy+=self.size.y;
                             bp = i+1;
                             break;

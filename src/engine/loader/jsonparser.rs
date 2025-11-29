@@ -84,7 +84,7 @@ impl JsonF {
       if brakeop && jsontext[jsfr] != b'"'{
         stringvl += &(jsontext[jsfr] as char).to_string();
       }
-      if valgiv && (jsontext[jsfr] == b',' || jsontext[jsfr] == b'\n'){
+      if valgiv && (jsontext[jsfr] == b',' || jsontext[jsfr] == b'\n') && !brakeop{
         if txtarg && !arrwr{
           parsedjson.get_node(entrar.clone()).strval = stringvl.clone();
           stringvl = "".to_string();
