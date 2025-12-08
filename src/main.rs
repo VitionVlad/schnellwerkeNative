@@ -26,6 +26,10 @@ fn main() {
 
     let mut lang = 0usize;
 
+    let keycontrols = [40, 44, 25, 22, 49];
+
+    let gamepadcontrols = [0, 5, 4];
+
     let mut file: File = match Path::new("assets/config.json").exists() {
         true => {
           let cfg = fs::read("assets/config.json").unwrap();
@@ -211,6 +215,8 @@ fn main() {
 
     let mut accelerating;
 
+    let mut accblock = false;
+
     let mut carhttm = 0u32;
 
     let mut ausrc = 0u8;
@@ -230,6 +236,20 @@ fn main() {
     let mut ignorewkfc = false;
 
     let mut wkfcreturplc = 0;
+
+    let mut gmus = false;
+
+    let mut lastax = [0.0, 0.0, 0.0];
+
+    let mut lastms = [0.0, 0.0];
+    
+    let mut gamepadsel = 0;
+
+    let mut mnmaxsl = 4;
+
+    let mut gamepadacc = false;
+
+    let mut gamepadb = false;
 
     while eng.work(){
       engidl.exec(&mut eng);
@@ -327,6 +347,15 @@ fn main() {
               ignorewkfc = true;
               wkfcreturplc = loc+1;
             }
+
+            //364.13965, 0.021602998, -4.065225
+
+            if dst(Vec3::newdefined(364.13965, 0.021602998, -4.065225), golf.physic_object.pos) <= 3.0{
+              fuel = 90.0;
+              check = 90.0;
+            }
+
+            //775.01337, 0.021602998, 3.780517
           },
           _ => {}
       }
@@ -381,16 +410,103 @@ fn main() {
       //  }
       //}
 
-      if eng.control.get_key_state(40) && !pause && !(fuel <= 0.0) && !(check <= 0.0){
+      if eng.control.ypos != lastms[0] || eng.control.xpos != lastms[1]{
+        lastms[0] = eng.control.ypos;
+        lastms[1] = eng.control.xpos;
+        gmus = false;
+      }
+
+      if eng.control.get_key_state(keycontrols[0]) && !pause && !(fuel <= 0.0) && !(check <= 0.0){
         golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.air_friction = 0.915;
+        gmus = false;
       }
-      if eng.control.get_key_state(44) && !pause && !(fuel <= 0.0) && !(check <= 0.0){
+      if eng.control.get_key_state(keycontrols[1]) && !pause && !(fuel <= 0.0) && !(check <= 0.0) && !accblock{
         golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.air_friction = 0.98;
+        if !accelerating{
+          accblock = false;
+        }
         accelerating = true;
+        gmus = false;
+      }
+
+      if eng.control.gamepad_connected{
+        let curax = [eng.control.get_gamepad_axis_state(gamepadcontrols[0]), eng.control.get_gamepad_axis_state(gamepadcontrols[1]), eng.control.get_gamepad_axis_state(gamepadcontrols[2])];
+        golf.physic_object.rot.y -= curax[0] * 0.05 * golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()).min(0.05) * eng.times_to_calculate_physics as f32;
+        let trigg1_clamp = curax[1] + 1.0f32/2.0;
+        let trigg2_clamp = curax[2] + 1.0f32/2.0;
+        if curax[0] != lastax[0] || curax[1] != lastax[1] || curax[2] != lastax[2]{
+          gmus = true;
+        }
+        lastax[0] = curax[0];
+        lastax[1] = curax[1];
+        lastax[2] = curax[2];
+        if trigg1_clamp > 0.1 && !pause && !(fuel <= 0.0) && !(check <= 0.0){
+          golf.physic_object.acceleration.z -= f32::cos(-golf.physic_object.rot.y) * trigg1_clamp * SPEED * eng.times_to_calculate_physics as f32;
+          golf.physic_object.acceleration.x -= f32::sin(-golf.physic_object.rot.y) * trigg1_clamp * -SPEED * eng.times_to_calculate_physics as f32;
+          golf.physic_object.air_friction = 0.98;
+          accelerating = true;
+          gmus = true;
+        }
+        if trigg2_clamp > 0.1 && !pause && !(fuel <= 0.0) && !(check <= 0.0){
+          golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * trigg2_clamp * SPEED * eng.times_to_calculate_physics as f32;
+          golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * trigg2_clamp * -SPEED * eng.times_to_calculate_physics as f32;
+          golf.physic_object.air_friction = 0.915;
+          gmus = true;
+        }
+
+        if eng.control.get_gamepad_button_state(7) && tm <= 0{
+          //eng.control.mouse_lock = !eng.control.mouse_lock;
+          pause = !pause;
+          tm = 50;
+          pausemn = 0;
+          gmus = true;
+        }
+
+        if eng.control.get_gamepad_button_state(6) && tm <= 0 && !pause{
+          //eng.control.mouse_lock = !eng.control.mouse_lock;
+          pause = !pause;
+          tm = 50;
+          pausemn = 4;
+          gmus = true;
+        }
+
+        if eng.control.get_gamepad_button_state(5) && tm <= 0 && !pause{
+          //eng.control.mouse_lock = !eng.control.mouse_lock;
+          ausrc+=1;
+          if ausrc > 2{
+            ausrc = 0;
+          }
+          tm = 50;
+          gmus = true;
+        }
+
+        if eng.control.get_gamepad_button_state(10) && tm <= 0 && pause{
+          //eng.control.mouse_lock = !eng.control.mouse_lock;
+          gamepadsel = (gamepadsel-1).max(0);
+          gmus = true;
+          tm = 50;
+        }
+
+        if eng.control.get_gamepad_button_state(12) && tm <= 0 && pause{
+          //eng.control.mouse_lock = !eng.control.mouse_lock;
+          gamepadsel = (gamepadsel+1).min(mnmaxsl-1);
+          gmus = true;
+          tm = 50;
+        }
+
+        if eng.control.get_gamepad_button_state(0){
+          //eng.control.mouse_lock = !eng.control.mouse_lock;
+          gamepadacc = true;
+        }
+
+        if eng.control.get_gamepad_button_state(1){
+          //eng.control.mouse_lock = !eng.control.mouse_lock;
+          gamepadb = true;
+        }
       }
 
       if accelerating{
@@ -417,33 +533,37 @@ fn main() {
         carhit.volume = (carhit.volume + SPEED * eng.times_to_calculate_physics as f32).min(2.0);
         carhttm+=1;
       }else{
-        if carhttm > 0 && carhttm < 5{
+        if carhttm > 0 && carhttm < 15{
           caracc.volume = golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs());
           caracc.move_sound_cursor(0.0);
           check -= caracc.volume*10.0;
+          accblock = true;
         }
         carhit.volume = 0.0;
         carhttm = 0;
       }
 
-      if eng.control.get_key_state(25) && !pause{
+      if eng.control.get_key_state(keycontrols[2]) && !pause{
         golf.physic_object.rot.y -= 0.05 * golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()).min(0.05) * eng.times_to_calculate_physics as f32;
+        gmus = false;
       }
-      if eng.control.get_key_state(22) && !pause{
+      if eng.control.get_key_state(keycontrols[3]) && !pause{
         golf.physic_object.rot.y += 0.05 * golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()).min(0.05) * eng.times_to_calculate_physics as f32;
+        gmus = false;
       }
 
-      if eng.control.get_key_state(49) && tm <= 0{
+      if eng.control.get_key_state(keycontrols[4]) && tm <= 0{
         //eng.control.mouse_lock = !eng.control.mouse_lock;
         pause = !pause;
-        tm = 100;
+        tm = 50;
         pausemn = 0;
+        gmus = false;
       }
 
       if eng.control.mousebtn[2]{
         //eng.control.mouse_lock = !eng.control.mouse_lock;
         println!("{}, {}, {}", golf.physic_object.pos.x, golf.physic_object.pos.y, golf.physic_object.pos.z);
-        //tm = 100;
+        //tm = 50;
       }
 
       brd.exec(&mut eng);
@@ -455,6 +575,10 @@ fn main() {
 
       pausebg.object.draw = false;
       logops.object.draw = false;
+      for i in 0..uielems.len(){
+        uielems[i].object.draw = false;
+        uielems[i].exec(&mut eng);
+      }
       for i in 0..5{
         text[0][i].signal_on_value = 1.0;
         text[0][i].signal_off_value = 0.0;
@@ -489,26 +613,57 @@ fn main() {
               text[abci][0].size.y = 40.0*textscale;
               text[abci][0].signal = true;
               text[abci][0].per_symbol = false;
-              let mut lctxt = langj.other_param[lang].other_param[1].strvalar[0].clone();
+              let lctxt = langj.other_param[lang].other_param[1].strvalar[0].clone();
               pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][0].size.x + text[abci][0].size.y);
               text[abci][0].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][0].size.x;
               text[abci][0].pos.y = eng.render.resolution_y as f32 /2.0 + 30.0*textscale;
-              if text[abci][0].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
-                pause = false;
-              }
 
               text[abci][1].draw = true;
               text[abci][1].size.x = 20.0*textscale;
               text[abci][1].size.y = 40.0*textscale;
               text[abci][1].signal = true;
               text[abci][1].per_symbol = false;
-              lctxt = langj.other_param[lang].other_param[1].strvalar[1].clone();
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][1].size.x + text[abci][1].size.y);
-              text[abci][1].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][0].size.x;
+              let lctxt1 = langj.other_param[lang].other_param[1].strvalar[1].clone();
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt1.len() as f32 * text[abci][1].size.x + text[abci][1].size.y);
+              text[abci][1].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt1.len() as f32 / 2.0) * text[abci][0].size.x;
               text[abci][1].pos.y = eng.render.resolution_y as f32 /2.0 + 80.0*textscale;
-              if text[abci][1].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
+
+              text[abci][2].draw = true;
+              text[abci][2].size.x = 20.0*textscale;
+              text[abci][2].size.y = 40.0*textscale;
+              text[abci][2].signal = true;
+              text[abci][2].per_symbol = false;
+              let lctxt2 = langj.other_param[lang].other_param[1].strvalar[2].clone();
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt2.len() as f32 * text[abci][2].size.x + text[abci][2].size.y);
+              text[abci][2].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt2.len() as f32 / 2.0) * text[abci][0].size.x;
+              text[abci][2].pos.y = eng.render.resolution_y as f32 /2.0 + 130.0*textscale;
+
+              text[abci][3].draw = true;
+              text[abci][3].size.x = 20.0*textscale;
+              text[abci][3].size.y = 40.0*textscale;
+              text[abci][3].signal = true;
+              text[abci][3].per_symbol = false;
+              let lctxt3 = langj.other_param[lang].other_param[1].strvalar[3].clone();
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt3.len() as f32 * text[abci][3].size.x + text[abci][3].size.y);
+              text[abci][3].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt3.len() as f32 / 2.0) * text[abci][0].size.x;
+              text[abci][3].pos.y = eng.render.resolution_y as f32 /2.0 + 180.0*textscale;
+
+              if gmus{
+                text[abci][0].signal = false;
+                text[abci][1].signal = false;
+                text[abci][2].signal = false;
+                text[abci][3].signal = false;
+
+                text[abci][gamepadsel as usize].signal_off_value = 1.0;
+              }
+
+              if ((text[abci][0].exec(&mut eng, &lctxt) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 0) || gamepadb) && tm <= 0{
+                tm = 50;
+                pause = false;
+                gamepadsel = 0;
+              }
+              if ((text[abci][1].exec(&mut eng, &lctxt1) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 1)) && tm <= 0{
+                tm = 50;
                 pause = false;
                 golf.physic_object.pos.y = 0.1f32;
                 golf.physic_object.pos.x = 0.0f32;
@@ -518,34 +673,17 @@ fn main() {
                 check = 45.0;
                 wkfc = 2.0f32;
                 loc = 0;
+                gamepadsel = 0;
               }
-
-              text[abci][2].draw = true;
-              text[abci][2].size.x = 20.0*textscale;
-              text[abci][2].size.y = 40.0*textscale;
-              text[abci][2].signal = true;
-              text[abci][2].per_symbol = false;
-              lctxt = langj.other_param[lang].other_param[1].strvalar[2].clone();
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][2].size.x + text[abci][2].size.y);
-              text[abci][2].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][0].size.x;
-              text[abci][2].pos.y = eng.render.resolution_y as f32 /2.0 + 130.0*textscale;
-              if text[abci][2].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
+              if ((text[abci][2].exec(&mut eng, &lctxt2) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 2)) && tm <= 0{
+                tm = 50;
                 pausemn = 1;
+                gamepadsel = 0;
               }
-
-              text[abci][3].draw = true;
-              text[abci][3].size.x = 20.0*textscale;
-              text[abci][3].size.y = 40.0*textscale;
-              text[abci][3].signal = true;
-              text[abci][3].per_symbol = false;
-              lctxt = langj.other_param[lang].other_param[1].strvalar[3].clone();
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][3].size.x + text[abci][3].size.y);
-              text[abci][3].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][0].size.x;
-              text[abci][3].pos.y = eng.render.resolution_y as f32 /2.0 + 180.0*textscale;
-              if text[abci][3].exec(&mut eng, &lctxt) && eng.control.mousebtn[2]{
+              if ((text[abci][3].exec(&mut eng, &lctxt3) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 3)) && tm <= 0{
                 break;
               }
+              mnmaxsl = 4;
             }
             1 => {
               text[abci][0].draw = true;
@@ -553,7 +691,7 @@ fn main() {
               text[abci][0].size.y = 80.0*textscale;
               text[abci][0].signal = false;
               text[abci][0].per_symbol = false;
-              let mut lctxt = langj.other_param[lang].other_param[1].strvalar[2].clone();
+              let lctxt = langj.other_param[lang].other_param[1].strvalar[2].clone();
               pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][0].size.x + text[abci][0].size.y);
               text[abci][0].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][0].size.x;
               text[abci][0].pos.y = eng.render.resolution_y as f32 /2.0 - 120.0*textscale;
@@ -564,40 +702,62 @@ fn main() {
               text[abci][1].size.y = 40.0*textscale;
               text[abci][1].signal = true;
               text[abci][1].per_symbol = false;
-              lctxt = langj.other_param[lang].other_param[1].strvalar[4].clone();
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][1].size.x + text[abci][1].size.y);
-              text[abci][1].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][1].size.x;
+              let lctxt1 = langj.other_param[lang].other_param[1].strvalar[4].clone();
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt1.len() as f32 * text[abci][1].size.x + text[abci][1].size.y);
+              text[abci][1].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt1.len() as f32 / 2.0) * text[abci][1].size.x;
               text[abci][1].pos.y = eng.render.resolution_y as f32 /2.0 - 30.0*textscale;
-              if text[abci][1].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
-                pausemn = 2;
-              }
 
               text[abci][2].draw = true;
               text[abci][2].size.x = 20.0*textscale;
               text[abci][2].size.y = 40.0*textscale;
               text[abci][2].signal = true;
               text[abci][2].per_symbol = false;
-              lctxt = langj.other_param[lang].other_param[1].strvalar[5].clone();
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][2].size.x + text[abci][2].size.y);
-              text[abci][2].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][1].size.x;
+              let lctxt2 = langj.other_param[lang].other_param[1].strvalar[5].clone();
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt2.len() as f32 * text[abci][2].size.x + text[abci][2].size.y);
+              text[abci][2].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt2.len() as f32 / 2.0) * text[abci][1].size.x;
               text[abci][2].pos.y = eng.render.resolution_y as f32 /2.0 + 20.0*textscale;
-              if text[abci][2].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
-                pausemn = 3;
-              }
 
               text[abci][3].draw = true;
               text[abci][3].size.x = 20.0*textscale;
               text[abci][3].size.y = 40.0*textscale;
               text[abci][3].signal = true;
               text[abci][3].per_symbol = false;
-              lctxt = langj.other_param[lang].other_param[1].strvalar[15].clone();
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][3].size.x + text[abci][3].size.y);
-              text[abci][3].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][1].size.x;
+              let lctxt3 = langj.other_param[lang].other_param[1].strvalar[15].clone();
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt3.len() as f32 * text[abci][3].size.x + text[abci][3].size.y);
+              text[abci][3].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt3.len() as f32 / 2.0) * text[abci][1].size.x;
               text[abci][3].pos.y = eng.render.resolution_y as f32 /2.0 + 70.0*textscale;
-              if text[abci][3].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
+
+              text[abci][4].draw = true;
+              text[abci][4].size.x = 20.0*textscale;
+              text[abci][4].size.y = 40.0*textscale;
+              text[abci][4].signal = true;
+              text[abci][4].per_symbol = false;
+              let lctxt4 = langj.other_param[lang].other_param[1].strvalar[6].clone();
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt4.len() as f32 * text[abci][4].size.x + text[abci][4].size.y);
+              text[abci][4].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt4.len() as f32 / 2.0) * text[abci][1].size.x;
+              text[abci][4].pos.y = eng.render.resolution_y as f32 /2.0 + 120.0*textscale;
+
+              if gmus{
+                text[abci][1].signal = false;
+                text[abci][2].signal = false;
+                text[abci][3].signal = false;
+                text[abci][4].signal = false;
+
+                text[abci][(gamepadsel + 1) as usize].signal_off_value = 1.0;
+              }
+
+              if ((text[abci][1].exec(&mut eng, &lctxt1) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 0 && eng.control.gamepad_connected)) && tm <= 0{
+                tm = 50;
+                pausemn = 2;
+                gamepadsel = 0;
+              }
+              if ((text[abci][2].exec(&mut eng, &lctxt2) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 1 && eng.control.gamepad_connected)) && tm <= 0{
+                tm = 50;
+                pausemn = 3;
+                gamepadsel = 0;
+              }
+              if ((text[abci][3].exec(&mut eng, &lctxt3) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 2 && eng.control.gamepad_connected)) && tm <= 0{
+                tm = 50;
                 lang+=1;
                 if lang >= langj.other_param.len(){
                   lang = 0;
@@ -605,20 +765,12 @@ fn main() {
                 saveset(&mut eng, &mut file, loc, lang);
                 //pausemn = 0;
               }
-
-              text[abci][4].draw = true;
-              text[abci][4].size.x = 20.0*textscale;
-              text[abci][4].size.y = 40.0*textscale;
-              text[abci][4].signal = true;
-              text[abci][4].per_symbol = false;
-              lctxt = langj.other_param[lang].other_param[1].strvalar[6].clone();
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][4].size.x + text[abci][4].size.y);
-              text[abci][4].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][1].size.x;
-              text[abci][4].pos.y = eng.render.resolution_y as f32 /2.0 + 120.0*textscale;
-              if text[abci][4].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
+              if ((text[abci][4].exec(&mut eng, &lctxt4) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 3 && eng.control.gamepad_connected) || gamepadb) && tm <= 0{
+                tm = 50;
                 pausemn = 0;
+                gamepadsel = 0;
               }
+              mnmaxsl = 4;
             }
             2 => {
               text[abci][0].draw = true;
@@ -626,7 +778,7 @@ fn main() {
               text[abci][0].size.y = 80.0*textscale;
               text[abci][0].signal = false;
               text[abci][0].per_symbol = false;
-              let mut lctxt = langj.other_param[lang].other_param[1].strvalar[4].clone();
+              let lctxt = langj.other_param[lang].other_param[1].strvalar[4].clone();
               pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][0].size.x + text[abci][0].size.y);
               text[abci][0].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][0].size.x;
               text[abci][0].pos.y = eng.render.resolution_y as f32 /2.0 - 120.0*textscale;
@@ -637,32 +789,42 @@ fn main() {
               text[abci][1].size.y = 40.0*textscale;
               text[abci][1].signal = true;
               text[abci][1].per_symbol = false;
-              lctxt = format!("{}{}", langj.other_param[lang].other_param[1].strvalar[7].clone(), (eng.audio.vol*100.0) as u32);
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][1].size.x + text[abci][1].size.y);
-              text[abci][1].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][1].size.x;
+              let lctxt1 = format!("{}{}", langj.other_param[lang].other_param[1].strvalar[7].clone(), (eng.audio.vol*100.0) as u32);
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt1.len() as f32 * text[abci][1].size.x + text[abci][1].size.y);
+              text[abci][1].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt1.len() as f32 / 2.0) * text[abci][1].size.x;
               text[abci][1].pos.y = eng.render.resolution_y as f32 /2.0 - 30.0*textscale;
-              if text[abci][1].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
-                eng.audio.vol = ((eng.audio.vol*100.0) as i32 - 10) as f32 / 100.0;
-                if eng.audio.vol < 0.0 {
-                  eng.audio.vol = 1.0;
-                }
-                saveset(&mut eng, &mut file, loc, lang);
-              }
 
               text[abci][2].draw = true;
               text[abci][2].size.x = 20.0*textscale;
               text[abci][2].size.y = 40.0*textscale;
               text[abci][2].signal = true;
               text[abci][2].per_symbol = false;
-              lctxt = langj.other_param[lang].other_param[1].strvalar[6].clone();
-              text[abci][2].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][1].size.x;
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][2].size.x + text[abci][2].size.y);
+              let lctxt2 = langj.other_param[lang].other_param[1].strvalar[6].clone();
+              text[abci][2].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt2.len() as f32 / 2.0) * text[abci][1].size.x;
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt2.len() as f32 * text[abci][2].size.x + text[abci][2].size.y);
               text[abci][2].pos.y = eng.render.resolution_y as f32 /2.0 + 20.0*textscale;
-              if text[abci][2].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
-                pausemn = 1;
+
+              if gmus{
+                text[abci][1].signal = false;
+                text[abci][2].signal = false;
+
+                text[abci][(gamepadsel + 1) as usize].signal_off_value = 1.0;
               }
+
+              if ((text[abci][1].exec(&mut eng, &lctxt1) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 0 && eng.control.gamepad_connected)) && tm <= 0{
+                tm = 50;
+                eng.audio.vol = ((eng.audio.vol*100.0) as i32 - 10) as f32 / 100.0;
+                if eng.audio.vol < 0.0 {
+                  eng.audio.vol = 1.0;
+                }
+                saveset(&mut eng, &mut file, loc, lang);
+              }
+              if ((text[abci][2].exec(&mut eng, &lctxt2) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 1 && eng.control.gamepad_connected) || gamepadb) && tm <= 0{
+                tm = 50;
+                pausemn = 1;
+                gamepadsel = 0;
+              }
+              mnmaxsl = 2;
             }
             3 => {
               text[abci][0].draw = true;
@@ -670,7 +832,7 @@ fn main() {
               text[abci][0].size.y = 80.0*textscale;
               text[abci][0].signal = false;
               text[abci][0].per_symbol = false;
-              let mut lctxt = langj.other_param[lang].other_param[1].strvalar[5].clone();
+              let lctxt = langj.other_param[lang].other_param[1].strvalar[5].clone();
               pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][0].size.x + text[abci][0].size.y);
               text[abci][0].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][0].size.x;
               text[abci][0].pos.y = eng.render.resolution_y as f32 /2.0 - 120.0*textscale;
@@ -681,71 +843,83 @@ fn main() {
               text[abci][1].size.y = 40.0*textscale;
               text[abci][1].signal = true;
               text[abci][1].per_symbol = false;
-              lctxt = format!("{}{}", langj.other_param[lang].other_param[1].strvalar[8].clone(), (eng.render.resolution_scale*100.0) as u32);
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][1].size.x + text[abci][1].size.y);
-              text[abci][1].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][1].size.x;
+              let lctxt1 = format!("{}{}", langj.other_param[lang].other_param[1].strvalar[8].clone(), (eng.render.resolution_scale*100.0) as u32);
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt1.len() as f32 * text[abci][1].size.x + text[abci][1].size.y);
+              text[abci][1].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt1.len() as f32 / 2.0) * text[abci][1].size.x;
               text[abci][1].pos.y = eng.render.resolution_y as f32 /2.0 - 30.0*textscale;
-              if text[abci][1].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
-                eng.render.resolution_scale = ((eng.render.resolution_scale*100.0) as i32 - 10) as f32 / 100.0;
-                if eng.render.resolution_scale < 0.1 {
-                  eng.render.resolution_scale = 1.0;
-                }
-                saveset(&mut eng, &mut file, loc, lang);
-              }
 
               text[abci][2].draw = true;
               text[abci][2].size.x = 20.0*textscale;
               text[abci][2].size.y = 40.0*textscale;
               text[abci][2].signal = true;
               text[abci][2].per_symbol = false;
-              lctxt = format!("{}{}", langj.other_param[lang].other_param[1].strvalar[9].clone(), match eng.render.shadow_map_resolution {
+              let lctxt2 = format!("{}{}", langj.other_param[lang].other_param[1].strvalar[9].clone(), match eng.render.shadow_map_resolution {
                 1000 => langj.other_param[lang].other_param[1].strvalar[10].clone(),
                 2000 => langj.other_param[lang].other_param[1].strvalar[11].clone(),
                 4000 => langj.other_param[lang].other_param[1].strvalar[12].clone(),
                 8000 => langj.other_param[lang].other_param[1].strvalar[13].clone(),
                   _ => "".to_string()
               });
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][2].size.x + text[abci][2].size.y);
-              text[abci][2].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][1].size.x;
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt2.len() as f32 * text[abci][2].size.x + text[abci][2].size.y);
+              text[abci][2].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt2.len() as f32 / 2.0) * text[abci][1].size.x;
               text[abci][2].pos.y = eng.render.resolution_y as f32 /2.0 + 20.0*textscale;
-              if text[abci][2].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                eng.render.shadow_map_resolution *= 2;
-                if eng.render.shadow_map_resolution > 4000{
-                  eng.render.shadow_map_resolution = 1000;
-                }
-                saveset(&mut eng, &mut file, loc, lang);
-                tm = 100;
-              }
 
               text[abci][3].draw = true;
               text[abci][3].size.x = 20.0*textscale;
               text[abci][3].size.y = 40.0*textscale;
               text[abci][3].signal = true;
               text[abci][3].per_symbol = false;
-              lctxt = format!("{}{}", langj.other_param[lang].other_param[1].strvalar[14].clone(), (eng.render.fullscreen) as u32);
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][3].size.x + text[abci][3].size.y);
-              text[abci][3].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][1].size.x;
+              let lctxt3 = format!("{}{}", langj.other_param[lang].other_param[1].strvalar[14].clone(), (eng.render.fullscreen) as u32);
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt3.len() as f32 * text[abci][3].size.x + text[abci][3].size.y);
+              text[abci][3].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt3.len() as f32 / 2.0) * text[abci][1].size.x;
               text[abci][3].pos.y = eng.render.resolution_y as f32 /2.0 + 70.0*textscale;
-              if text[abci][3].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
-                eng.render.fullscreen = !eng.render.fullscreen;
-                saveset(&mut eng, &mut file, loc, lang);
-              }
 
               text[abci][4].draw = true;
               text[abci][4].size.x = 20.0*textscale;
               text[abci][4].size.y = 40.0*textscale;
               text[abci][4].signal = true;
               text[abci][4].per_symbol = false;
-              lctxt = langj.other_param[lang].other_param[1].strvalar[6].clone();
-              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt.len() as f32 * text[abci][4].size.x + text[abci][4].size.y);
-              text[abci][4].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][1].size.x;
+              let lctxt4 = langj.other_param[lang].other_param[1].strvalar[6].clone();
+              pausebg.object.physic_object.scale.x = pausebg.object.physic_object.scale.x.max(lctxt4.len() as f32 * text[abci][4].size.x + text[abci][4].size.y);
+              text[abci][4].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt4.len() as f32 / 2.0) * text[abci][1].size.x;
               text[abci][4].pos.y = eng.render.resolution_y as f32 /2.0 + 120.0*textscale;
-              if text[abci][4].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
-                pausemn = 1;
+
+              if gmus{
+                text[abci][1].signal = false;
+                text[abci][2].signal = false;
+                text[abci][3].signal = false;
+                text[abci][4].signal = false;
+
+                text[abci][(gamepadsel + 1) as usize].signal_off_value = 1.0;
               }
+
+              if ((text[abci][1].exec(&mut eng, &lctxt1) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 0 && eng.control.gamepad_connected)) && tm <= 0{
+                tm = 50;
+                eng.render.resolution_scale = ((eng.render.resolution_scale*100.0) as i32 - 10) as f32 / 100.0;
+                if eng.render.resolution_scale < 0.1 {
+                  eng.render.resolution_scale = 1.0;
+                }
+                saveset(&mut eng, &mut file, loc, lang);
+              }
+              if ((text[abci][2].exec(&mut eng, &lctxt2) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 1 && eng.control.gamepad_connected)) && tm <= 0{
+                eng.render.shadow_map_resolution *= 2;
+                if eng.render.shadow_map_resolution > 4000{
+                  eng.render.shadow_map_resolution = 1000;
+                }
+                saveset(&mut eng, &mut file, loc, lang);
+                tm = 50;
+              }
+              if ((text[abci][3].exec(&mut eng, &lctxt3) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 2 && eng.control.gamepad_connected)) && tm <= 0{
+                tm = 50;
+                eng.render.fullscreen = !eng.render.fullscreen;
+                saveset(&mut eng, &mut file, loc, lang);
+              }
+              if ((text[abci][4].exec(&mut eng, &lctxt4) && eng.control.mousebtn[2]) || (gamepadacc && gamepadsel == 3 && eng.control.gamepad_connected) || gamepadb) && tm <= 0{
+                tm = 50;
+                pausemn = 1;
+                gamepadsel = 0;
+              }
+              mnmaxsl = 4;
             }
             4 => {
               pausebg.object.draw = false;
@@ -772,8 +946,8 @@ fn main() {
               let mut lctxt = langj.other_param[lang].other_param[1].strvalar[16].clone();
               text[abci][0].pos.x = (eng.render.resolution_x as f32 / 2.0) - (lctxt.len() as f32 / 2.0) * text[abci][0].size.x;
               text[abci][0].pos.y = eng.render.resolution_y as f32 /2.0 + uielems[7].object.physic_object.scale.y/2.0 - 65.0*textscale;
-              if text[abci][0].exec(&mut eng, &lctxt) && eng.control.mousebtn[2] && tm <= 0{
-                tm = 100;
+              if ((text[abci][0].exec(&mut eng, &lctxt) && eng.control.mousebtn[2]) || gamepadacc || gamepadb) && tm <= 0{
+                tm = 50;
                 pause = false;
                 pausemn = 0;
               }
@@ -789,18 +963,13 @@ fn main() {
               text[abci][1].pos.x = (eng.render.resolution_x as f32 / 2.0) - uielems[7].object.physic_object.scale.x/2.0 + 30.0*textscale;
               text[abci][1].pos.y = eng.render.resolution_y as f32 /2.0 - uielems[7].object.physic_object.scale.y/2.0 + 40.0*textscale;
               text[abci][1].exec(&mut eng, &lctxt);
+              mnmaxsl = 1;
             }
             _ => {}
         }
         pausebg.object.physic_object.pos.x = (eng.render.resolution_x as f32)/2.0 - pausebg.object.physic_object.scale.x/2.0;
-        for i in 0..uielems.len(){
-          if !(pausemn == 4 && i == 7){
-            uielems[i].object.draw = false;
-            uielems[i].exec(&mut eng);
-          }
-        }
       }else{
-        for i in 0..7{
+        for i in 0..uielems.len(){
           uielems[i].object.mesh.ubo[48] = wkfc;
           uielems[i].object.physic_object.scale.x = 75f32*textscale;
           uielems[i].object.physic_object.scale.y = 75f32*textscale;
@@ -833,14 +1002,14 @@ fn main() {
         uielems[2].object.physic_object.pos.x = eng.render.resolution_x as f32 / 2.0 - 0.5*75.0*textscale;//0.5
         if uielems[2].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
           pause = !pause;
-          tm = 100;
+          tm = 50;
         }
 
         uielems[3].object.physic_object.pos.x = eng.render.resolution_x as f32 / 2.0 + 0.5*75.0*textscale;//0.5
         if uielems[3].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
           pause = !pause;
           pausemn = 4;
-          tm = 100;
+          tm = 50;
         }
 
         match ausrc {
@@ -851,7 +1020,7 @@ fn main() {
               uielems[6].object.draw = false;
               if uielems[4].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
                 ausrc = 1;
-                tm = 100;
+                tm = 50;
               }
               uielems[5].exec(&mut eng);
               uielems[6].exec(&mut eng);
@@ -863,7 +1032,7 @@ fn main() {
               uielems[6].object.draw = false;
               if uielems[5].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
                 ausrc = 2;
-                tm = 100;
+                tm = 50;
               }
               uielems[4].exec(&mut eng);
               uielems[6].exec(&mut eng);
@@ -875,7 +1044,7 @@ fn main() {
               uielems[6].object.draw = true;
               if uielems[6].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
                 ausrc = 0;
-                tm = 100;
+                tm = 50;
               }
               uielems[4].exec(&mut eng);
               uielems[5].exec(&mut eng);
@@ -916,6 +1085,9 @@ fn main() {
 
       pausebg.exec(&mut eng);
       logops.exec(&mut eng);
+
+      gamepadacc = false;
+      gamepadb = false;
 
       //fpscnt.pos.x = 0.0;
       //fpscnt.pos.y = eng.render.resolution_y as f32 - 32f32;

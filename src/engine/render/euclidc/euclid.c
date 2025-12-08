@@ -90,6 +90,11 @@ typedef struct euclidh{
     uint8_t right;
     uint8_t left;
     uint8_t middle;
+    int acnt;
+    float *axes;
+    int bcnt;
+    unsigned char *btnstats;
+    uint8_t gamepaden;
     uint8_t debug;
 } euclidh;
 
@@ -413,6 +418,48 @@ void keywork(uint32_t eh){
             break;
     }
     glfwGetCursorPos(euclid.handle[eh].window, &euclid.handle[eh].xpos, &euclid.handle[eh].ypos);
+    euclid.handle[eh].gamepaden = 0;
+    if(glfwJoystickPresent(GLFW_JOYSTICK_1)){
+        euclid.handle[eh].gamepaden = 1;
+        euclid.handle[eh].axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &euclid.handle[eh].acnt);
+        euclid.handle[eh].btnstats = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &euclid.handle[eh].bcnt);
+        //if(euclid.handle[eh].acnt > 0){
+        //    for(uint8_t i = 0; i != euclid.handle[eh].acnt; i++){
+        //        printf("%f, ", euclid.handle[eh].axes[i]);
+        //    }
+        //    printf(" | ");
+        //    for(uint8_t i = 0; i != euclid.handle[eh].bcnt; i++){
+        //        printf("%d, ", euclid.handle[eh].btnstats[i]);
+        //    }
+        //    printf("\n");
+        //}
+    }
+}
+
+float get_axis(uint32_t eh, uint8_t n){
+    if(euclid.handle[eh].acnt < n){
+        return 0;
+    }
+    return euclid.handle[eh].axes[n];
+}
+
+unsigned char get_button(uint32_t eh, uint8_t n){
+    if(euclid.handle[eh].bcnt < n){
+        return 0;
+    }
+    return euclid.handle[eh].btnstats[n];
+}
+
+uint8_t gamepad_con(uint32_t eh){
+    return euclid.handle[eh].gamepaden;
+}
+
+uint8_t gamepad_axisnm(uint32_t eh){
+    return euclid.handle[eh].acnt;
+}
+
+uint8_t gamepad_buttonnm(uint32_t eh){
+    return euclid.handle[eh].bcnt;
 }
 
 uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, uint32_t eh) {

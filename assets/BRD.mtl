@@ -1,29 +1,7 @@
-# Blender 4.5.4 LTS MTL File: 'BRD.blend'
+# Blender 5.0.0 MTL File: 'BRD.blend'
 # www.blender.org
 
-newmtl Material.001
-Ka 1.000000 1.000000 1.000000
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.500000
-d 1.000000
-illum 2
-map_Kd assets/general/color.tiff
-map_Ns assets/general/roughness.tiff
-map_refl assets/general/metalness.tiff
-
 newmtl Material.002
-Ka 1.000000 1.000000 1.000000
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.500000
-d 1.000000
-illum 2
-map_Kd assets/general/color.tiff
-map_Ns assets/general/roughness.tiff
-map_refl assets/general/metalness.tiff
-
-newmtl Material.003
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000

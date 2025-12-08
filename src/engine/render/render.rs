@@ -3,7 +3,7 @@
 
 use std::ffi::CString;
 
-use cty::uint32_t;
+use cty::{uint8_t, uint32_t};
 
 unsafe extern "C"{
     fn get_frametime(eh: cty::uint32_t) -> cty::c_float;
@@ -22,6 +22,11 @@ unsafe extern "C"{
     fn get_mouse_posy(eh: cty::uint32_t)  -> cty::c_double;
     fn req_mouse_lock(eh: cty::uint32_t);
     fn req_mouse_unlock(eh: cty::uint32_t);
+    fn get_axis(eh: cty::uint32_t, n: cty::uint8_t) -> cty::c_float;
+    fn get_button(eh: cty::uint32_t, n: cty::uint8_t) -> cty::c_uchar;
+    fn gamepad_con(eh: cty::uint32_t) -> cty::uint8_t;
+    fn gamepad_axisnm(eh: cty::uint32_t) -> cty::uint8_t;
+    fn gamepad_buttonnm(eh: cty::uint32_t) -> cty::uint8_t;
     fn modifyshadowdata(eh: cty::uint32_t, ncnt: cty::uint32_t, nres: cty::uint32_t);
     fn modifydeffereddata(eh: cty::uint32_t, ncnt: cty::uint32_t, nres: cty::c_float);
     fn modifyshadowuniform(eh: cty::uint32_t, pos: cty::uint32_t, value: cty::c_float);
@@ -116,6 +121,9 @@ pub struct Control{
     pub mouse_lock: bool,
     old_mouse_lock: bool,
     pub mousebtn: [bool; 3],
+    pub gamepad_connected: bool,
+    pub gamepad_axis_count: u8,
+    pub gamepad_button_count: u8,
 }
 
 impl Control{
@@ -127,12 +135,24 @@ impl Control{
             mouse_lock: false,
             old_mouse_lock: false,
             mousebtn: [false, false, false],
+            gamepad_connected: false,
+            gamepad_axis_count: 0,
+            gamepad_button_count: 0,
         }
     }
     pub fn get_key_state(&self, keyindex: uint32_t) -> bool{
         return unsafe { getKeyPressed(self.euclid, keyindex) != 0 };
     }
+    pub fn get_gamepad_button_state(&self, button_index: uint8_t) -> bool{
+        return unsafe { get_button(self.euclid, button_index) != 0 };
+    }
+    pub fn get_gamepad_axis_state(&self, axis_index: uint8_t) -> f32{
+        return unsafe { get_axis(self.euclid, axis_index) };
+    }
     pub fn get_mouse_pos(&mut self){
+        self.gamepad_connected = unsafe{gamepad_con(self.euclid)} == 1;
+        self.gamepad_axis_count = unsafe{gamepad_axisnm(self.euclid)};
+        self.gamepad_button_count = unsafe{gamepad_buttonnm(self.euclid)};
         if self.mouse_lock != self.old_mouse_lock{
             match self.mouse_lock {
                 true => unsafe { req_mouse_lock(self.euclid) },
