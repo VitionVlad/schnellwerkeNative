@@ -420,6 +420,7 @@ fn main() {
         golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.air_friction = 0.915;
+        accblock = false;
         gmus = false;
       }
       if eng.control.get_key_state(keycontrols[1]) && !pause && !(fuel <= 0.0) && !(check <= 0.0) && !accblock{
@@ -444,7 +445,7 @@ fn main() {
         lastax[0] = curax[0];
         lastax[1] = curax[1];
         lastax[2] = curax[2];
-        if trigg1_clamp > 0.1 && !pause && !(fuel <= 0.0) && !(check <= 0.0){
+        if trigg1_clamp > 0.1 && !pause && !(fuel <= 0.0) && !(check <= 0.0) && !accblock{
           golf.physic_object.acceleration.z -= f32::cos(-golf.physic_object.rot.y) * trigg1_clamp * SPEED * eng.times_to_calculate_physics as f32;
           golf.physic_object.acceleration.x -= f32::sin(-golf.physic_object.rot.y) * trigg1_clamp * -SPEED * eng.times_to_calculate_physics as f32;
           golf.physic_object.air_friction = 0.98;
@@ -456,6 +457,7 @@ fn main() {
           golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * trigg2_clamp * -SPEED * eng.times_to_calculate_physics as f32;
           golf.physic_object.air_friction = 0.915;
           gmus = true;
+          accblock = false;
         }
 
         if eng.control.get_gamepad_button_state(7) && tm <= 0{
