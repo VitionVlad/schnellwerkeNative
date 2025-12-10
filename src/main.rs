@@ -419,16 +419,14 @@ fn main() {
         golf.physic_object.air_friction = 0.98;
         accelerating += 1;
         gmus = false;
-      }else if !gmus{
-        accelerating = 0u32;
-      }
-
-      if eng.control.get_key_state(keycontrols[0]) && !pause && !(fuel <= 0.0) && !(check <= 0.0){
+      }else if eng.control.get_key_state(keycontrols[0]) && !pause && !(fuel <= 0.0) && !(check <= 0.0){
         golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.air_friction = 0.915;
         accblock = false;
         gmus = false;
+        accelerating = 0u32;
+      }else if !gmus{
         accelerating = 0u32;
       }
 
@@ -532,15 +530,11 @@ fn main() {
       }
 
       if golf.physic_object.hit && accelerating > 10{
-        //carhit.volume = (carhit.volume + SPEED * eng.times_to_calculate_physics as f32).min(2.0);
-        //carhttm+=1;
-        //if golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()) >= 0.15{
-          caracc.volume = 1.0;
-          caracc.move_sound_cursor(0.0);
-          check -= 5.0;
-          accblock = true;
-        //}
-      }else if golf.physic_object.hit && accelerating == 0{
+        caracc.volume = 1.0;
+        caracc.move_sound_cursor(0.0);
+        check -= 5.0;
+        accblock = true;
+      }else if golf.physic_object.hit && accelerating == 0 && golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()) > 0.0{
         carhit.volume = (carhit.volume + SPEED * eng.times_to_calculate_physics as f32).min(2.0);
       }else{
         carhit.volume = 0.0;
