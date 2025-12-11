@@ -418,6 +418,15 @@ fn main() {
         golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.air_friction = 0.98;
         accelerating += 1;
+
+        engacc.volume += 2.0 * SPEED * eng.times_to_calculate_physics as f32;
+        if engacc.volume > 1.0{
+          engacc.volume = 1.0;
+        }
+        engidl.volume -= 2.0 * SPEED * eng.times_to_calculate_physics as f32;
+        if engidl.volume < 0.0{
+          engidl.volume = 0.0;
+        }
         gmus = false;
       }else if eng.control.get_key_state(keycontrols[0]) && !pause && !(fuel <= 0.0) && !(check <= 0.0){
         golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
@@ -426,35 +435,39 @@ fn main() {
         accblock = false;
         gmus = false;
         accelerating = 0u32;
-      }else if !gmus{
-        accelerating = 0u32;
       }
 
       if eng.control.gamepad_connected{
         let curax = [eng.control.get_gamepad_axis_state(gamepadcontrols[0]), eng.control.get_gamepad_axis_state(gamepadcontrols[1]), eng.control.get_gamepad_axis_state(gamepadcontrols[2])];
         golf.physic_object.rot.y -= curax[0] * 0.05 * golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()).min(0.05) * eng.times_to_calculate_physics as f32;
-        let trigg1_clamp = curax[1] + 1.0f32/2.0;
-        let trigg2_clamp = curax[2] + 1.0f32/2.0;
+        let trigg1_clamp = (curax[1] + 1.0f32)/2.0;
+        let trigg2_clamp = (curax[2] + 1.0f32)/2.0;
         if curax[0] != lastax[0] || curax[1] != lastax[1] || curax[2] != lastax[2]{
           gmus = true;
         }
         lastax[0] = curax[0];
         lastax[1] = curax[1];
         lastax[2] = curax[2];
-        if trigg1_clamp > 0.1 && !pause && !(fuel <= 0.0) && !(check <= 0.0) && !accblock{
+        if trigg1_clamp > 0.5 && !pause && !(fuel <= 0.0) && !(check <= 0.0) && !accblock{
           golf.physic_object.acceleration.z -= f32::cos(-golf.physic_object.rot.y) * trigg1_clamp * SPEED * eng.times_to_calculate_physics as f32;
           golf.physic_object.acceleration.x -= f32::sin(-golf.physic_object.rot.y) * trigg1_clamp * -SPEED * eng.times_to_calculate_physics as f32;
           golf.physic_object.air_friction = 0.98;
           accelerating += 1;
+          engacc.volume += 2.0 * SPEED * eng.times_to_calculate_physics as f32;
+          if engacc.volume > 1.0{
+            engacc.volume = 1.0;
+          }
+          engidl.volume -= 2.0 * SPEED * eng.times_to_calculate_physics as f32;
+          if engidl.volume < 0.0{
+            engidl.volume = 0.0;
+          }
           gmus = true;
-        }else if trigg2_clamp > 0.1 && !pause && !(fuel <= 0.0) && !(check <= 0.0){
+        }else if trigg2_clamp > 0.5 && !pause && !(fuel <= 0.0) && !(check <= 0.0){
           golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * trigg2_clamp * SPEED * eng.times_to_calculate_physics as f32;
           golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * trigg2_clamp * -SPEED * eng.times_to_calculate_physics as f32;
           golf.physic_object.air_friction = 0.915;
           gmus = true;
           accblock = false;
-          accelerating = 0u32;
-        }else if gmus{
           accelerating = 0u32;
         }
 
@@ -509,24 +522,13 @@ fn main() {
         }
       }
 
-      if accelerating > 0{
-        engacc.volume += SPEED * eng.times_to_calculate_physics as f32;
-        if engacc.volume > 1.0{
-          engacc.volume = 1.0;
-        }
-        engidl.volume -= SPEED * eng.times_to_calculate_physics as f32;
-        if engidl.volume < 0.0{
-          engidl.volume = 0.0;
-        }
-      }else {
-          engacc.volume -= SPEED * eng.times_to_calculate_physics as f32;
-        if engacc.volume < 0.0{
-          engacc.volume = 0.0;
-        }
-        engidl.volume += SPEED * eng.times_to_calculate_physics as f32;
-        if engidl.volume > 2.0{
-          engidl.volume = 2.0;
-        }
+      engacc.volume -= SPEED * eng.times_to_calculate_physics as f32;
+      if engacc.volume < 0.0{
+        engacc.volume = 0.0;
+      }
+      engidl.volume += SPEED * eng.times_to_calculate_physics as f32;
+      if engidl.volume > 2.0{
+        engidl.volume = 2.0;
       }
 
       if golf.physic_object.hit && accelerating > 10{
@@ -534,6 +536,7 @@ fn main() {
         caracc.move_sound_cursor(0.0);
         check -= 5.0;
         accblock = true;
+        accelerating = 0u32;
       }else if golf.physic_object.hit && accelerating == 0 && golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()) > 0.0{
         carhit.volume = (carhit.volume + SPEED * eng.times_to_calculate_physics as f32).min(2.0);
       }else{
