@@ -11,6 +11,7 @@ unsafe extern "C"{
     fn soundstop(msn: cty::uint32_t);
     fn soundsetloop(msn: cty::uint32_t, val: cty::uint8_t);
     fn soundsetpos(msn: cty::uint32_t, val: cty::c_float);
+    fn cend(msn: cty::uint32_t) -> cty::uint8_t;
     fn destroymozart(mhi: cty::uint32_t);
 }
 
@@ -59,6 +60,11 @@ impl Sound{
         unsafe {
             soundsetloop(self.index, self.loopsound as u8);
             soundplay(self.index, self.pan, self.vol);
+        }
+    }
+    pub fn check_end(&mut self) -> bool{
+        unsafe {
+            cend(self.index) == 1
         }
     }
     pub fn set_new_pos(&mut self, newpos: f32){

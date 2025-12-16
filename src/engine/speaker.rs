@@ -55,6 +55,9 @@ impl Speaker{
         }
         if self.play{
             self.sound.loopsound = self.loopsound;
+            if !self.loopsound && self.sound.check_end(){
+                self.play = false;
+            }
             self.sound.play();
         }else{
             self.sound.stop();

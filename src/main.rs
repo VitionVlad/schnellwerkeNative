@@ -93,11 +93,37 @@ fn main() {
     let mut engacc = Speaker::new(&mut eng, "assets/audio/engine.wav");
     let mut carhit = Speaker::new(&mut eng, "assets/audio/hit.flac");
     let mut caracc = Speaker::new(&mut eng, "assets/audio/acc.mp3");
+    let mut radio_noise = Speaker::new(&mut eng, "assets/audio/white_noise.wav");
     caracc.loopsound = false;
     engidl.play = false;
     engacc.play = false;
     carhit.play = false;
     caracc.play = false;
+    radio_noise.play = false;
+
+    //let mut ms = Speaker::new(&mut eng, "cassete/Vladivostok2000.mp3");
+    //ms.play = true;
+    //ms.loopsound = false;
+
+    let mut customms: Vec<Speaker> = vec![];
+
+    if Path::new("cassete/custom_playlist.json").exists() {
+      let pl = fs::read("cassete/custom_playlist.json").unwrap();
+      let pljson = JsonF::from_text(&String::from_utf8(pl.to_vec()).unwrap());
+      for i in 0..pljson.other_param.len(){
+        if pljson.other_param[i].name == "src"{
+          for j in 0..pljson.other_param[i].strvalar.len(){
+            let laste = customms.len();
+            println!("Loading audio by path: {}", pljson.other_param[i].strvalar[j]);
+            customms.push(Speaker::new(&mut eng, &pljson.other_param[i].strvalar[j]));
+            customms[laste].pos_dependency = false;
+            customms[laste].use_pan = false;
+            customms[laste].loopsound = false;
+          }
+          break;
+        }
+      };
+    }
 
     let langj = JsonF::load_from_file("assets/lang.json");
 
@@ -215,9 +241,9 @@ fn main() {
 
     let mut accelerating = 0u32;
 
-    let mut accblock = false;
+    let mut accblock = false; 
 
-    let mut ausrc = 0u8;
+    let mut ausrc = 2u8;
 
     let mut check = 45f32; //mx 90f32
 
@@ -249,7 +275,24 @@ fn main() {
 
     let mut gamepadb = false;
 
+    let mut current_track = 0usize;
+
     while eng.work(){
+      if customms.len() > 0{
+        customms[current_track].exec(&mut eng);
+        if ausrc == 1{
+          if customms[current_track].play == false{
+            current_track += 1;
+            if current_track >= customms.len(){
+              current_track = 0;
+            }
+            customms[current_track].move_sound_cursor(0.0);
+          }
+        }else{
+          customms[current_track].play = false;
+        }
+      }
+
       engidl.exec(&mut eng);
       engidl.pos_dependency = false;
       engidl.use_pan = false;
@@ -269,6 +312,11 @@ fn main() {
       caracc.pos_dependency = false;
       caracc.use_pan = false;
       caracc.loopsound = false;
+
+      radio_noise.exec(&mut eng);
+      radio_noise.pos_dependency = false;
+      radio_noise.use_pan = false;
+      radio_noise.play = false;
       
       eng.cameras[0].physic_object.pos.z = golf.physic_object.pos.z + 39.375f32;
       eng.cameras[0].physic_object.pos.x = golf.physic_object.pos.x - 39.375f32;
@@ -418,6 +466,15 @@ fn main() {
         golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
         golf.physic_object.air_friction = 0.98;
         accelerating += 1;
+
+        engacc.volume += 2.0 * SPEED * eng.times_to_calculate_physics as f32;
+        if engacc.volume > 1.0{
+          engacc.volume = 1.0;
+        }
+        engidl.volume -= 2.0 * SPEED * eng.times_to_calculate_physics as f32;
+        if engidl.volume < 0.0{
+          engidl.volume = 0.0;
+        }
         gmus = false;
       }else if eng.control.get_key_state(keycontrols[0]) && !pause && !(fuel <= 0.0) && !(check <= 0.0){
         golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
@@ -426,35 +483,39 @@ fn main() {
         accblock = false;
         gmus = false;
         accelerating = 0u32;
-      }else if !gmus{
-        accelerating = 0u32;
       }
 
       if eng.control.gamepad_connected{
         let curax = [eng.control.get_gamepad_axis_state(gamepadcontrols[0]), eng.control.get_gamepad_axis_state(gamepadcontrols[1]), eng.control.get_gamepad_axis_state(gamepadcontrols[2])];
         golf.physic_object.rot.y -= curax[0] * 0.05 * golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()).min(0.05) * eng.times_to_calculate_physics as f32;
-        let trigg1_clamp = curax[1] + 1.0f32/2.0;
-        let trigg2_clamp = curax[2] + 1.0f32/2.0;
+        let trigg1_clamp = (curax[1] + 1.0f32)/2.0;
+        let trigg2_clamp = (curax[2] + 1.0f32)/2.0;
         if curax[0] != lastax[0] || curax[1] != lastax[1] || curax[2] != lastax[2]{
           gmus = true;
         }
         lastax[0] = curax[0];
         lastax[1] = curax[1];
         lastax[2] = curax[2];
-        if trigg1_clamp > 0.1 && !pause && !(fuel <= 0.0) && !(check <= 0.0) && !accblock{
+        if trigg1_clamp > 0.5 && !pause && !(fuel <= 0.0) && !(check <= 0.0) && !accblock{
           golf.physic_object.acceleration.z -= f32::cos(-golf.physic_object.rot.y) * trigg1_clamp * SPEED * eng.times_to_calculate_physics as f32;
           golf.physic_object.acceleration.x -= f32::sin(-golf.physic_object.rot.y) * trigg1_clamp * -SPEED * eng.times_to_calculate_physics as f32;
           golf.physic_object.air_friction = 0.98;
           accelerating += 1;
+          engacc.volume += 2.0 * SPEED * eng.times_to_calculate_physics as f32;
+          if engacc.volume > 1.0{
+            engacc.volume = 1.0;
+          }
+          engidl.volume -= 2.0 * SPEED * eng.times_to_calculate_physics as f32;
+          if engidl.volume < 0.0{
+            engidl.volume = 0.0;
+          }
           gmus = true;
-        }else if trigg2_clamp > 0.1 && !pause && !(fuel <= 0.0) && !(check <= 0.0){
+        }else if trigg2_clamp > 0.5 && !pause && !(fuel <= 0.0) && !(check <= 0.0){
           golf.physic_object.acceleration.z += f32::cos(-golf.physic_object.rot.y) * trigg2_clamp * SPEED * eng.times_to_calculate_physics as f32;
           golf.physic_object.acceleration.x += f32::sin(-golf.physic_object.rot.y) * trigg2_clamp * -SPEED * eng.times_to_calculate_physics as f32;
           golf.physic_object.air_friction = 0.915;
           gmus = true;
           accblock = false;
-          accelerating = 0u32;
-        }else if gmus{
           accelerating = 0u32;
         }
 
@@ -477,6 +538,14 @@ fn main() {
         if eng.control.get_gamepad_button_state(5) && tm <= 0 && !pause{
           //eng.control.mouse_lock = !eng.control.mouse_lock;
           ausrc+=1;
+          if customms.len() < 1 && ausrc == 1{
+            ausrc+=1;
+          }else if customms.len() > 0{
+            customms[current_track].play = false;
+            if ausrc == 1{
+              customms[current_track].play = true;
+            }
+          }
           if ausrc > 2{
             ausrc = 0;
           }
@@ -509,24 +578,13 @@ fn main() {
         }
       }
 
-      if accelerating > 0{
-        engacc.volume += SPEED * eng.times_to_calculate_physics as f32;
-        if engacc.volume > 1.0{
-          engacc.volume = 1.0;
-        }
-        engidl.volume -= SPEED * eng.times_to_calculate_physics as f32;
-        if engidl.volume < 0.0{
-          engidl.volume = 0.0;
-        }
-      }else {
-          engacc.volume -= SPEED * eng.times_to_calculate_physics as f32;
-        if engacc.volume < 0.0{
-          engacc.volume = 0.0;
-        }
-        engidl.volume += SPEED * eng.times_to_calculate_physics as f32;
-        if engidl.volume > 2.0{
-          engidl.volume = 2.0;
-        }
+      engacc.volume -= SPEED * eng.times_to_calculate_physics as f32;
+      if engacc.volume < 0.0{
+        engacc.volume = 0.0;
+      }
+      engidl.volume += SPEED * eng.times_to_calculate_physics as f32;
+      if engidl.volume > 2.0{
+        engidl.volume = 2.0;
       }
 
       if golf.physic_object.hit && accelerating > 10{
@@ -534,6 +592,7 @@ fn main() {
         caracc.move_sound_cursor(0.0);
         check -= 5.0;
         accblock = true;
+        accelerating = 0u32;
       }else if golf.physic_object.hit && accelerating == 0 && golf.physic_object.speed.x.abs().max(golf.physic_object.speed.z.abs()) > 0.0{
         carhit.volume = (carhit.volume + SPEED * eng.times_to_calculate_physics as f32).min(2.0);
       }else{
@@ -1015,8 +1074,19 @@ fn main() {
               uielems[4].object.draw = true;
               uielems[5].object.draw = false;
               uielems[6].object.draw = false;
+              match loc {
+                  0 => {
+                    radio_noise.volume = 0.1;
+                    radio_noise.play = true;
+                  }
+                  _ => {}
+              }
               if uielems[4].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
-                ausrc = 1;
+                ausrc = 2;
+                if customms.len() > 0{
+                  ausrc = 1;
+                  customms[current_track].play = true;
+                }
                 tm = 50;
               }
               uielems[5].exec(&mut eng);
@@ -1030,6 +1100,9 @@ fn main() {
               if uielems[5].exec(&mut eng) && eng.control.mousebtn[2] && tm <= 0{
                 ausrc = 2;
                 tm = 50;
+                if customms.len() > 0{
+                  customms[current_track].play = false;
+                }
               }
               uielems[4].exec(&mut eng);
               uielems[6].exec(&mut eng);
