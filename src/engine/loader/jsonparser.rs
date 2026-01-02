@@ -125,8 +125,10 @@ impl JsonF {
           nt = NodeType::Number;
           valgiv = true;
         }else if nt == NodeType::Number{
-          rdn = rdp.parse().unwrap();
-          rdp = "".to_string();
+          if rdp != "".to_string(){
+            rdn = rdp.parse().unwrap();
+            rdp = "".to_string();
+          }
         }
 
         if json[i] == b't' && json[i+1] == b'r' && json[i+2] == b'u' && json[i+3] == b'e'{

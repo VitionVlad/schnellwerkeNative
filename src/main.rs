@@ -30,7 +30,7 @@ fn main() {
 
     let mut fpscnt = UItext::new_from_file(&mut eng, matt, "assets/textlat.tiff", "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_[]{}/*`~$%");
 
-    let mut gltf = JsonF::load_from_file("assets/test.json");
+    let mut gltf = JsonF::load_from_file("assets/minimal.json");
     gltf.printme();
 
     while eng.work(){
