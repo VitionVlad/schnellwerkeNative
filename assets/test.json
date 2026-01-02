@@ -1,0 +1,17 @@
+{
+    "aha": 12.5,
+    "some": true,
+    "fff": "hhh",
+    "a": {
+        "hh": "gg",
+        "hrhr": true,
+        "arr": [ 
+            0, 
+            true,
+            { 
+                "ll": true,
+                "jj": "ll"
+            }  
+        ]
+    }
+}

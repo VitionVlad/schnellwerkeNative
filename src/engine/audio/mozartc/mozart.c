@@ -78,6 +78,13 @@ void soundsetpos(uint32_t msn, float val){
     ma_sound_start(&mz.ms[msn].sound);
 }
 
+uint8_t cend(uint32_t msn){
+    if(ma_sound_at_end(&mz.ms[msn].sound) == MA_TRUE){
+        return 1;
+    }
+    return 0;
+}
+
 void destroymozart(uint32_t mhi){
     for(uint32_t i = 0; i != mz.msn; i++){
         if(mz.ms[i].sec == mhi){
