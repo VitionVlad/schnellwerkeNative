@@ -51,7 +51,6 @@ impl JsonF {
           valgiv = true;
         }else if nt == NodeType::Number{
           rdn = rdp.parse().unwrap();
-          rdp = "".to_string();
         }
 
         if json[i] == b't' && json[i+1] == b'r' && json[i+2] == b'u' && json[i+3] == b'e'{
@@ -72,6 +71,7 @@ impl JsonF {
           let newval = Self::readbracket(json.clone(), i, "".to_string(), index, true);
           lnode.other_nodes.push(newval.0);
           i = newval.1;
+          index += 1;
         }
 
         if json[i] == b'[' && brackloc != i{
@@ -79,9 +79,10 @@ impl JsonF {
           let newval = Self::readarr(json.clone(), i, "".to_string(), index, true);
           lnode.other_nodes.push(newval.0);
           i = newval.1;
+          index += 1;
         }
 
-        if (json[i] == b'\n' || json[i] == b',' || json[i] == b' ') && valgiv{
+        if (json[i] == b'\n' || json[i] == b',') && valgiv{
           lnode.other_nodes.push(JsonF{ name: "".to_string(), strval: rdp.clone(), numeral_val: rdn, bolean: rdb, index: index.clone(), indexed: true, other_nodes: vec![], node_type: nt });
           index += 1;
           rdp = "".to_string();
@@ -101,6 +102,9 @@ impl JsonF {
         }
       }
       i += 1;
+    }
+    if valgiv {
+      lnode.other_nodes.push(JsonF{ name: "".to_string(), strval: rdp.clone(), numeral_val: rdn, bolean: rdb, index: index.clone(), indexed: true, other_nodes: vec![], node_type: nt });
     }
     return (lnode, i);
   }
@@ -125,10 +129,7 @@ impl JsonF {
           nt = NodeType::Number;
           valgiv = true;
         }else if nt == NodeType::Number{
-          if rdp != "".to_string(){
-            rdn = rdp.parse().unwrap();
-            rdp = "".to_string();
-          }
+          rdn = rdp.parse().unwrap();
         }
 
         if json[i] == b't' && json[i+1] == b'r' && json[i+2] == b'u' && json[i+3] == b'e'{
@@ -151,20 +152,20 @@ impl JsonF {
         }
 
         if json[i] == b'{' && brackloc != i{
-          valgiv = false;
           let newval = Self::readbracket(json.clone(), i, name.clone(), 0, false);
           lnode.other_nodes.push(newval.0);
           i = newval.1;
+          valgiv = false;
         }
 
         if json[i] == b'[' && brackloc != i{
-          valgiv = false;
           let newval = Self::readarr(json.clone(), i, name.clone(), 0, false);
           lnode.other_nodes.push(newval.0);
           i = newval.1;
+          valgiv = false;
         }
 
-        if (json[i] == b'\n' || json[i] == b',' || json[i] == b' ') && valgiv{
+        if (json[i] == b'\n' || json[i] == b',') && valgiv{
           lnode.other_nodes.push(JsonF{ name: name.clone(), strval: rdp.clone(), numeral_val: rdn, bolean: rdb, index: 0, indexed: false, other_nodes: vec![], node_type: nt });
           name = "".to_string();
           rdp = "".to_string();
@@ -184,6 +185,9 @@ impl JsonF {
         }
       }
       i += 1;
+    }
+    if valgiv{
+      lnode.other_nodes.push(JsonF{ name: name.clone(), strval: rdp.clone(), numeral_val: rdn, bolean: rdb, index: 0, indexed: false, other_nodes: vec![], node_type: nt });
     }
     return (lnode, i);
   }
