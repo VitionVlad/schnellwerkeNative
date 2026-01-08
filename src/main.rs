@@ -28,10 +28,9 @@ fn main() {
     let mut viewport = UIplane::new(&mut eng, mat, black);
     viewport.object.physic_object.pos.z = 1.0;
 
-    let mut fpscnt = UItext::new_from_file(&mut eng, matt, "assets/textlat.tiff", "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_[]{}/*`~$%");
+    let mut fpscnt = UItext::new_from_file(&mut eng, matt, "assets/textlat.png", "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_[]{}/*`~$%");
 
-    let mut gltf = JsonF::load_from_file("assets/minimal.json");
-    gltf.printme();
+    let mut gltf = JsonF::load_from_file("assets/BRD2.gltf");
 
     while eng.work(){
       viewport.exec(&mut eng);

@@ -30,6 +30,12 @@ impl Image{
                 size[1] = ia.size[1];
                 data.append(&mut ia.data);
             }
+            if spl[spl.len()-1] == b'g' && spl[spl.len()-2] == b'n' && spl[spl.len()-3] == b'p'{
+                let mut ia = ImageAsset::load_png(&paths[i]);
+                size[0] = ia.size[0];
+                size[1] = ia.size[1];
+                data.append(&mut ia.data);
+            }
             if spl[spl.len()-1] == b'f' && spl[spl.len()-2] == b'f' && spl[spl.len()-3] == b'i' && spl[spl.len()-4] == b't'{
                 let mut ia = ImageAsset::load_tiff(&paths[i]);
                 size[0] = ia.size[0];

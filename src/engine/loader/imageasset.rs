@@ -3,6 +3,16 @@
 
 use std::{fs, i8, vec};
 
+use std::ffi::CString;
+
+unsafe extern "C"{
+    fn read_png_file(path: *const cty::c_char);
+    fn getx() -> cty::int32_t;
+    fn gety() -> cty::int32_t;
+    fn get_pixel(x: cty::int32_t, y: cty::int32_t, c: cty::int32_t) -> cty::int8_t;
+    fn clear();
+}
+
 pub struct ImageAsset{
     pub data: Vec<i8>,
     pub size: [u32; 2],
@@ -62,6 +72,27 @@ impl ImageAsset{
             for _ in 0..(4 - componentscnt){
                 data.push(tiff[i as usize] as i8);
             }
+        }
+        ImageAsset { 
+            data: data, 
+            size: size, 
+        }
+    }
+    pub fn load_png(path: &str) -> ImageAsset{
+        let size;
+        let mut data = vec![];
+        unsafe {
+            read_png_file(CString::new(path).unwrap().as_ptr());
+            size = [getx() as u32, gety() as u32];
+            for y in 0..size[1]{
+                for x in 0..size[0]{
+                    data.push(get_pixel(x as i32, y as i32, 0));
+                    data.push(get_pixel(x as i32, y as i32, 1));
+                    data.push(get_pixel(x as i32, y as i32, 2));
+                    data.push(get_pixel(x as i32, y as i32, 3));
+                }   
+            }
+            clear();
         }
         ImageAsset { 
             data: data, 
