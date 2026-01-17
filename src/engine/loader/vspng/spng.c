@@ -1,26 +1,33 @@
 #include "spng.h"
 #include <stdint.h>
-#include <png.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <png.h>
+#include <string.h>
 
 int width, height;
 png_byte color_type;
 png_byte bit_depth;
 png_bytep *row_pointers = NULL;
 
-void read_png_file(char *filename) {
-  FILE *fp = fopen(filename, "rb");
+typedef struct {
+    const unsigned char *buffer;
+    size_t size;
+    size_t position;
+} MemoryBufferState;
 
-  png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-  if(!png) abort();
+static void user_read_data(png_structp png_ptr, png_bytep out_buffer, png_size_t bytes_to_read){
+  MemoryBufferState *state = (MemoryBufferState *) png_get_io_ptr(png_ptr);
 
-  png_infop info = png_create_info_struct(png);
-  if(!info) abort();
+  if (state->position + bytes_to_read > state->size){
+    png_error(png_ptr, "Attempt to read beyond end of memory buffer");
+  }
 
-  if(setjmp(png_jmpbuf(png))) abort();
+  memcpy(out_buffer, state->buffer + state->position, bytes_to_read);
+  state->position += bytes_to_read;
+}
 
-  png_init_io(png, fp);
-
+void parsepng(png_structp png, png_infop info){
   png_read_info(png, info);
 
   width      = png_get_image_width(png, info);
@@ -59,8 +66,45 @@ void read_png_file(char *filename) {
   }
 
   png_read_image(png, row_pointers);
+}
+
+void read_png_file(const char *path){
+  FILE *fp = fopen(path, "rb");
+  png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if(!png) abort();
+
+  png_infop info = png_create_info_struct(png);
+  if(!info) abort();
+
+  if(setjmp(png_jmpbuf(png))) abort();
+
+  png_init_io(png, fp);
+
+  parsepng(png, info);
 
   fclose(fp);
+
+  png_destroy_read_struct(&png, &info, NULL);
+}
+
+void parse_png_buffer(const unsigned char* data, uint32_t size){
+  png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if(!png) abort();
+
+  png_infop info = png_create_info_struct(png);
+  if(!info) abort();
+
+  if(setjmp(png_jmpbuf(png))) abort();
+
+  MemoryBufferState state = {
+    .buffer   = data,
+    .size     = size,
+    .position = 0
+  };
+
+  png_set_read_fn(png, &state, (png_rw_ptr)user_read_data);
+
+  parsepng(png, info);
 
   png_destroy_read_struct(&png, &info, NULL);
 }

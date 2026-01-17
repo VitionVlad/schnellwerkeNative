@@ -3,10 +3,9 @@
 
 use std::{fs, i8, vec};
 
-use std::ffi::CString;
-
 unsafe extern "C"{
-    fn read_png_file(path: *const cty::c_char);
+    fn read_png_file(path: *const cty::c_uchar);
+    fn parse_png_buffer(data: *const cty::c_uchar, size: cty::uint32_t);
     fn getx() -> cty::int32_t;
     fn gety() -> cty::int32_t;
     fn get_pixel(x: cty::int32_t, y: cty::int32_t, c: cty::int32_t) -> cty::int8_t;
@@ -82,7 +81,7 @@ impl ImageAsset{
         let size;
         let mut data = vec![];
         unsafe {
-            read_png_file(CString::new(path).unwrap().as_ptr());
+            read_png_file(path.as_ptr());
             size = [getx() as u32, gety() as u32];
             for y in 0..size[1]{
                 for x in 0..size[0]{
