@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::{fs, i8, vec};
+use std::{ffi::CString, fs, i8, vec};
 
 unsafe extern "C"{
-    fn read_png_file(path: *const cty::c_uchar);
+    fn read_png_file(path: *const cty::c_char);
     fn parse_png_buffer(data: *const cty::c_uchar, size: cty::uint32_t);
     fn getx() -> cty::int32_t;
     fn gety() -> cty::int32_t;
@@ -77,11 +77,33 @@ impl ImageAsset{
             size: size, 
         }
     }
+    pub fn parse_png(png: Vec<u8>) -> ImageAsset{
+        let size;
+        let mut data = vec![];
+        let pngl = png.len() as u32;
+        unsafe {
+            parse_png_buffer(png.as_ptr(), pngl);
+            size = [getx() as u32, gety() as u32];
+            for y in 0..size[1]{
+                for x in 0..size[0]{
+                    data.push(get_pixel(x as i32, y as i32, 0));
+                    data.push(get_pixel(x as i32, y as i32, 1));
+                    data.push(get_pixel(x as i32, y as i32, 2));
+                    data.push(get_pixel(x as i32, y as i32, 3));
+                }   
+            }
+            clear();
+        }
+        ImageAsset { 
+            data: data, 
+            size: size, 
+        }
+    }
     pub fn load_png(path: &str) -> ImageAsset{
         let size;
         let mut data = vec![];
         unsafe {
-            read_png_file(path.as_ptr());
+            read_png_file(CString::new(path).unwrap().as_ptr());
             size = [getx() as u32, gety() as u32];
             for y in 0..size[1]{
                 for x in 0..size[0]{

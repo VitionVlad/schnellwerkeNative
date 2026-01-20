@@ -3,7 +3,7 @@ use std::fs::{self};
 
 use engine::{engine::Engine, image::Image, material::Material, ui::UIplane};
 
-use crate::engine::{loader::jsonparser::JsonF, ui::UItext};
+use crate::engine::{loader::{gltf::Gltf, jsonparser::JsonF}, ui::UItext};
 mod engine;
 
 fn main() {
@@ -11,7 +11,7 @@ fn main() {
     const TICKSZ: f32 = 1.0/250.0;
     let mut eng = Engine::new();
     //let mut wkfc = 2.0f32;
-    eng.render.set_title("Project Preost");
+    eng.render.set_title("ARSD");
     eng.render.set_new_resolution(1280, 720);
 
     let vert = fs::read("shaders/vert").unwrap();
@@ -30,7 +30,19 @@ fn main() {
 
     let mut fpscnt = UItext::new_from_file(&mut eng, matt, "assets/textlat.png", "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_[]{}/*`~$%");
 
-    let mut gltf = JsonF::load_from_file("assets/BRD2.gltf");
+    let jgltf = JsonF::load_from_file("assets/BRD2.gltf");
+    let pgltf = Gltf::parse_gltf(jgltf);
+
+    println!("selected scene number: {}", pgltf.scene);
+    println!("scenes number: {}", pgltf.scenes.len());
+    println!("nodes number: {}", pgltf.scenes[0].nodes.len());
+    println!("object number: {}", pgltf.objects.len());
+    println!("mesh number: {}", pgltf.meshes.len());
+    println!("texture number: {}", pgltf.textures.len());
+
+    for i in 0..pgltf.objects.len(){
+      println!("{}, {}, {}", pgltf.meshes[i].attributes[0], pgltf.meshes[i].attributes[1], pgltf.meshes[i].attributes[2]);
+    }
 
     while eng.work(){
       viewport.exec(&mut eng);

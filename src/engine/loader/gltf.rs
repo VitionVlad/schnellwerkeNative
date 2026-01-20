@@ -1,4 +1,4 @@
-use crate::engine::math::{ vec3::Vec3, vec4::Vec4 };
+use crate::engine::{loader::jsonparser::JsonF, math::{ vec3::Vec3, vec4::Vec4 }};
 
 pub struct Gobject{
     pub mesh: usize,
@@ -16,7 +16,7 @@ pub struct Gmaterial{
 
 pub struct Gmesh{
     pub name: String,
-    pub attributes: Vec<(usize, u32)>,
+    pub attributes: Vec<usize>,
     pub enable_indices: bool,
     pub indices: usize,
     pub material: usize,
@@ -28,11 +28,12 @@ pub struct Gtexture{
 
 pub struct Gimage{
     pub name: String,
+    pub tip: String,
     pub uri: String,
 }
 
 pub struct Gacc{
-    pub bufferviwe: usize,
+    pub bufferview: usize,
     pub component_type: u32,
     pub count: usize,
     pub tp: String
@@ -51,7 +52,13 @@ pub struct Gbf{
 }
 
 pub struct Scene{
+    pub name: String,
     pub nodes: Vec<usize>,
+}
+
+pub struct Gltf{
+    pub scene: usize,
+    pub scenes: Vec<Scene>,
     pub objects: Vec<Gobject>,
     pub materials: Vec<Gmaterial>,
     pub meshes: Vec<Gmesh>,
@@ -62,10 +69,193 @@ pub struct Scene{
     pub buffers: Vec<Gbf>
 }
 
-pub struct Gltf{
-    pub scenes: Vec<Scene>,
-}
-
 impl Gltf {
-    //pub fn parse()
+    pub fn parse_gltf(json: JsonF) -> Gltf{
+        let mut lgltf = Gltf{ 
+            scene: 0, 
+            scenes: vec![],
+            objects: vec![],
+            materials: vec![],
+            meshes: vec![],
+            textures: vec![],
+            images: vec![],
+            accesories: vec![],
+            bufferview: vec![],
+            buffers: vec![]
+        };
+        for i in 0..json.other_nodes.len(){
+            if json.other_nodes[i].name == "scene"{
+                lgltf.scene = json.other_nodes[i].numeral_val as usize;
+            }
+            else if json.other_nodes[i].name == "scenes"{
+                for j in 0..json.other_nodes[i].other_nodes.len(){
+                    let mut name = "";
+                    let mut nodes = vec![];
+                    if json.other_nodes[i].other_nodes[j].name == "name"{
+                        name = &json.other_nodes[i].other_nodes[j].strval;
+                    }
+                    else if json.other_nodes[i].other_nodes[j].name == "nodes"{
+                        for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
+                            nodes.push(json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize);
+                        }
+                    }
+                    lgltf.scenes.push(Scene{
+                        name: name.to_string(),
+                        nodes: nodes,
+                    });
+                }
+            }else if json.other_nodes[i].name == "nodes"{
+                for j in 0..json.other_nodes[i].other_nodes.len(){
+                    let mut msg = Gobject{ name: "".to_string(), mesh: 0, position: Vec3::new(), scale: Vec3::new(), rotation: Vec4::new() };
+                    for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
+                        let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
+                        if fname == "mesh"{
+                            msg.mesh = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize;
+                        }else if fname == "name"{
+                            msg.name = json.other_nodes[i].other_nodes[j].other_nodes[l].strval.clone();
+                        }else if fname == "rotation"{
+                            msg.rotation.x = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].numeral_val;
+                            msg.rotation.y = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[1].numeral_val;
+                            msg.rotation.z = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[2].numeral_val;
+                            msg.rotation.w = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[3].numeral_val;
+                        }else if fname == "scale"{
+                            msg.scale.x = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].numeral_val;
+                            msg.scale.y = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[1].numeral_val;
+                            msg.scale.z = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[2].numeral_val;
+                        }else if fname == "translation"{
+                            msg.position.x = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].numeral_val;
+                            msg.position.y = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[1].numeral_val;
+                            msg.position.z = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[2].numeral_val;
+                        }
+                    }
+                    lgltf.objects.push(msg);
+                }
+            }else if json.other_nodes[i].name == "materials"{
+                for j in 0..json.other_nodes[i].other_nodes.len(){
+                    let mut msg = Gmaterial{ double_sided: false, name: "".to_string(), texture_indices: vec![] };
+                    for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
+                        let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
+                        if fname == "doubleSided"{
+                            msg.double_sided = json.other_nodes[i].other_nodes[j].other_nodes[l].bolean;
+                        }else if fname == "name"{
+                            msg.name = json.other_nodes[i].other_nodes[j].other_nodes[l].strval.clone();
+                        }else if fname == "pbrMetallicRoughness"{
+                            for h in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes.len(){
+                                let lfname = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].name.clone();
+                                if lfname == "baseColorTexture" || lfname == "metallicRoughnessTexture" {
+                                    for p in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes.len(){
+                                        if json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].name == "index"{
+                                            msg.texture_indices.push(json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].numeral_val as usize);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    lgltf.materials.push(msg);
+                }
+            }else if json.other_nodes[i].name == "meshes"{
+                for j in 0..json.other_nodes[i].other_nodes.len(){
+                    let mut msg = Gmesh{ name: "".to_string(), attributes: vec![], enable_indices: true, indices: 0, material: 0 };
+                    for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
+                        let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
+                        if fname == "primitives"{
+                            for k in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes.len(){
+                                let kfname = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].name.clone();
+                                if kfname == "indices"{
+                                    msg.indices = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].numeral_val as usize;
+                                }else if kfname == "material"{
+                                    msg.material = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].numeral_val as usize;
+                                }else if kfname == "attributes"{
+                                    for p in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].other_nodes.len(){
+                                        let atn = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].other_nodes[p].name.clone();
+                                        if atn == "POSITION" || atn == "NORMAL" || atn == "TEXCOORD_0"{
+                                            msg.attributes.push(json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].other_nodes[p].numeral_val as usize);
+                                        }
+                                    }
+                                }
+                            }
+                        }else if fname == "name"{
+                            msg.name = json.other_nodes[i].other_nodes[j].other_nodes[l].strval.clone();
+                        }
+                    }
+                    lgltf.meshes.push(msg);
+                }
+            }else if json.other_nodes[i].name == "textures"{
+                for j in 0..json.other_nodes[i].other_nodes.len(){
+                    let mut msg = Gtexture{ image: 0 };
+                    for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
+                        let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
+                        if fname == "source"{
+                            msg.image = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize;
+                        }
+                    }
+                    lgltf.textures.push(msg);
+                }
+            }else if json.other_nodes[i].name == "images"{
+                for j in 0..json.other_nodes[i].other_nodes.len(){
+                    let mut msg = Gimage{ name: "".to_string(), tip: "".to_string(), uri: "".to_string() };
+                    for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
+                        let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
+                        if fname == "mimeType"{
+                            msg.name = json.other_nodes[i].other_nodes[j].other_nodes[l].strval.clone();
+                        }else if fname == "name"{
+                            msg.tip = json.other_nodes[i].other_nodes[j].other_nodes[l].strval.clone();
+                        }else if fname == "uri"{
+                            msg.uri = json.other_nodes[i].other_nodes[j].other_nodes[l].strval.clone();
+                        }
+                    }
+                    lgltf.images.push(msg);
+                }
+            }else if json.other_nodes[i].name == "accessors"{
+                for j in 0..json.other_nodes[i].other_nodes.len(){
+                    let mut msg = Gacc{ bufferview: 0, component_type: 0, count: 0, tp: "".to_string() };
+                    for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
+                        let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
+                        if fname == "bufferView"{
+                            msg.bufferview = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize;
+                        }else if fname == "componentType"{
+                            msg.component_type = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as u32;
+                        }else if fname == "count"{
+                            msg.count = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize;
+                        }else if fname == "type"{
+                            msg.tp = json.other_nodes[i].other_nodes[j].other_nodes[l].strval.clone();
+                        }
+                    }
+                    lgltf.accesories.push(msg);
+                }
+            }else if json.other_nodes[i].name == "bufferViews"{
+                for j in 0..json.other_nodes[i].other_nodes.len(){
+                    let mut msg = Gbfv{ buffer: 0, blenght: 0, boffset: 0, target: 0 };
+                    for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
+                        let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
+                        if fname == "buffer"{
+                            msg.buffer = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize;
+                        }else if fname == "byteLength"{
+                            msg.blenght = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize;
+                        }else if fname == "byteOffset"{
+                            msg.boffset = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize;
+                        }else if fname == "target"{
+                            msg.target = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize;
+                        }
+                    }
+                    lgltf.bufferview.push(msg);
+                }
+            }else if json.other_nodes[i].name == "buffers"{
+                for j in 0..json.other_nodes[i].other_nodes.len(){
+                    let mut msg = Gbf{ bl: 0, uri: "".to_string() };
+                    for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
+                        let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
+                        if fname == "byteLength"{
+                            msg.bl = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize;
+                        }else if fname == "uri"{
+                            msg.uri = json.other_nodes[i].other_nodes[j].other_nodes[l].strval.clone();
+                        }
+                    }
+                    lgltf.buffers.push(msg);
+                }
+            }
+        }
+        lgltf
+    }
 }
