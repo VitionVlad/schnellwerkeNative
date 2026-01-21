@@ -23,16 +23,16 @@ impl Camera{
         }
         let mut t: Mat4 = Mat4::new();
         t.xrot(self.physic_object.rot.x);
-        ubm.mul(&t);
+        ubm *= t;
         t = Mat4::new();
         t.yrot(self.physic_object.rot.y);
-        ubm.mul(&t);
+        ubm *= t;
         t = Mat4::new();
         t.zrot(self.physic_object.rot.z);
-        ubm.mul(&t);
+        ubm *= t;
         t = Mat4::new();
-        t.trans(Vec3::newdefined(-self.physic_object.pos.x, -self.physic_object.pos.y, -self.physic_object.pos.z));
-        ubm.mul(&t);
+        t.trans(Vec3{ x: -self.physic_object.pos.x, y: -self.physic_object.pos.y, z: -self.physic_object.pos.z});
+        ubm *= t;
         ubm.transpose();
         return ubm;
     }

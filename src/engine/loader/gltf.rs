@@ -51,14 +51,14 @@ pub struct Gbf{
     pub uri: String,
 }
 
-pub struct Scene{
+pub struct Gscene{
     pub name: String,
     pub nodes: Vec<usize>,
 }
 
 pub struct Gltf{
     pub scene: usize,
-    pub scenes: Vec<Scene>,
+    pub scenes: Vec<Gscene>,
     pub objects: Vec<Gobject>,
     pub materials: Vec<Gmaterial>,
     pub meshes: Vec<Gmesh>,
@@ -99,7 +99,7 @@ impl Gltf {
                             nodes.push(json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize);
                         }
                     }
-                    lgltf.scenes.push(Scene{
+                    lgltf.scenes.push(Gscene{
                         name: name.to_string(),
                         nodes: nodes,
                     });

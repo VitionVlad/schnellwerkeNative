@@ -3,7 +3,7 @@ use std::fs::{self};
 
 use engine::{engine::Engine, image::Image, material::Material, ui::UIplane};
 
-use crate::engine::{loader::{gltf::Gltf, jsonparser::JsonF}, ui::UItext};
+use crate::engine::{loader::{gltf::Gltf, jsonparser::JsonF}, scene::Scene, ui::UItext};
 mod engine;
 
 fn main() {
@@ -33,16 +33,9 @@ fn main() {
     let jgltf = JsonF::load_from_file("assets/BRD2.gltf");
     let pgltf = Gltf::parse_gltf(jgltf);
 
-    println!("selected scene number: {}", pgltf.scene);
-    println!("scenes number: {}", pgltf.scenes.len());
-    println!("nodes number: {}", pgltf.scenes[0].nodes.len());
-    println!("object number: {}", pgltf.objects.len());
-    println!("mesh number: {}", pgltf.meshes.len());
-    println!("texture number: {}", pgltf.textures.len());
+    let mut scn = Scene::new_blank();
 
-    for i in 0..pgltf.objects.len(){
-      println!("{}, {}, {}", pgltf.meshes[i].attributes[0], pgltf.meshes[i].attributes[1], pgltf.meshes[i].attributes[2]);
-    }
+    scn.use_global_values = false;
 
     while eng.work(){
       viewport.exec(&mut eng);

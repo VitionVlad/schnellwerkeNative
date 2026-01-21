@@ -70,7 +70,7 @@ impl Object {
     }
     #[allow(dead_code)]
     fn getbgp(v: Vec<Vec4>) -> Vec3 {
-        let mut f = Vec3::newdefined(v[0].x, v[0].y, v[0].z);
+        let mut f = Vec3{ x: v[0].x, y: v[0].y, z: v[0].z};
         for i in 0..v.len(){
             if v[i].x > f.x{
                 f.x = v[i].x;
@@ -86,7 +86,7 @@ impl Object {
     }
     #[allow(dead_code)]
     fn getbsp(v: Vec<Vec4>) -> Vec3 {
-        let mut f = Vec3::newdefined(v[0].x, v[0].y, v[0].z);
+        let mut f = Vec3{ x: v[0].x, y: v[0].y, z: v[0].z};
         for i in 0..v.len(){
             if v[i].x < f.x{
                 f.x = v[i].x;
@@ -127,12 +127,12 @@ impl Object {
             ubm = Mat4::new();
             ubm.xrot(self.physic_object.rot.x);
             t.yrot(self.physic_object.rot.y);
-            ubm.mul(&t);
+            ubm *= t;
             t = Mat4::new();
             t.zrot(self.physic_object.rot.z);
-            ubm.mul(&t);
+            ubm *= t;
 
-            lubm.mul(&ubm);
+            lubm *= ubm;
 
             ubm.transpose();
             for i in 0..16{
@@ -142,7 +142,7 @@ impl Object {
             ubm = Mat4::new();
             ubm.scale(self.physic_object.scale);
 
-            lubm.mul(&ubm);
+            lubm *= ubm;
             
             ubm.transpose();
             for i in 0..16{
@@ -154,14 +154,14 @@ impl Object {
                 mt.transpose();
 
                 let mut c1 = [
-                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v1.x, self.physic_object.v1.y, self.physic_object.v1.z, 1.0)),
-                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v1.x, self.physic_object.v2.y, self.physic_object.v1.z, 1.0)),
-                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v2.x, self.physic_object.v2.y, self.physic_object.v1.z, 1.0)),
-                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v2.x, self.physic_object.v1.y, self.physic_object.v1.z, 1.0)),
-                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v2.x, self.physic_object.v2.y, self.physic_object.v2.z, 1.0)),
-                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v1.x, self.physic_object.v2.y, self.physic_object.v2.z, 1.0)),
-                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v1.x, self.physic_object.v1.y, self.physic_object.v2.z, 1.0)),
-                    lubm.vec4mul(Vec4::newdefined(self.physic_object.v2.x, self.physic_object.v1.y, self.physic_object.v2.z, 1.0)),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.v1.x, y: self.physic_object.v1.y, z: self.physic_object.v1.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.v1.x, y: self.physic_object.v2.y, z: self.physic_object.v1.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.v2.x, y: self.physic_object.v2.y, z: self.physic_object.v1.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.v2.x, y: self.physic_object.v1.y, z: self.physic_object.v1.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.v2.x, y: self.physic_object.v2.y, z: self.physic_object.v2.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.v1.x, y: self.physic_object.v2.y, z: self.physic_object.v2.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.v1.x, y: self.physic_object.v1.y, z: self.physic_object.v2.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.v2.x, y: self.physic_object.v1.y, z: self.physic_object.v2.z, w: 1.0}),
                 ];
 
                 let bg = Self::getbgp(c1.to_vec());

@@ -53,7 +53,7 @@ impl Scene{
             use_global_values: true,
             pos: Vec3::new(),
             rot: Vec3::new(),
-            scale: Vec3::newdefined(1.0f32, 1.0f32, 1.0f32),
+            scale: Vec3{ x: 1.0f32, y: 1.0f32, z: 1.0f32},
             render_all_cameras: true,
             exclude_selected_camera: false,
             camera_number: 0,
@@ -62,9 +62,9 @@ impl Scene{
     pub fn exec(&mut self, eng: &mut Engine){
         for i in 0..self.objects.len(){
             if self.use_global_values{
-                self.objects[i].physic_object.pos = self.pos;
-                self.objects[i].physic_object.rot = self.rot;
-                self.objects[i].physic_object.scale = self.scale;
+                self.objects[i].physic_object.pos += self.pos;
+                self.objects[i].physic_object.rot += self.rot;
+                self.objects[i].physic_object.scale += self.scale;
                 self.objects[i].mesh.render_all_cameras = self.render_all_cameras;
                 self.objects[i].mesh.exclude_selected_camera = self.exclude_selected_camera;
                 self.objects[i].mesh.camera_number = self.camera_number;

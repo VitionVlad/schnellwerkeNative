@@ -32,7 +32,7 @@ impl Engine{
             render: rn,
             audio: AudioEngine::new(),
             control: Control::new(rn), 
-            cameras: [Camera{ physic_object: PhysicsObject::new(vec![Vec3::newdefined(0.15, 0f32, 0.15), Vec3::newdefined(-0.15, -2f32, -0.15)], false), fov: 90f32, znear: 0.1f32, zfar: 100f32, is_orthographic: false, rotation_colision_calc: false }; 10],
+            cameras: [Camera{ physic_object: PhysicsObject::new(vec![Vec3{ x: 0.15, y: 0f32, z: 0.15}, Vec3{ x: -0.15, y: -2f32, z: -0.15}], false), fov: 90f32, znear: 0.1f32, zfar: 100f32, is_orthographic: false, rotation_colision_calc: false }; 10],
             used_camera_count: 1,
             lights: [Light::new(super::light::LightType::Directional); 100],
             used_light_count: 1,
