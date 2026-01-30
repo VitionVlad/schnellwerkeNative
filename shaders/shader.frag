@@ -236,13 +236,15 @@ void main() {
     op = vec4(albedo, 1.0);
   }
 
-  float mxpw = smoothstep(10.0, 20.0, distance(mi.addinfo.yz, wrldpos.xz));
+  //float mxpw = smoothstep(10.0, 20.0, distance(mi.addinfo.yz, wrldpos.xz));
 
-  op = mix(op, vec4(smi.lightcol[0].xyz, 1.0), mxpw);
+  //op = mix(op, vec4(smi.lightcol[0].xyz, 1.0), mxpw);
 
-  op = mix(op, vec4(0.0, 0.0, 0.0, 1.0), mi.addinfo.x);
+  //op = mix(op, vec4(0.0, 0.0, 0.0, 1.0), mi.addinfo.x);
 
   outColor = op;
+
+  //outColor = vec4(texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb, 1.0);
 
   //float camd = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
   //float camd2 = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 1)).r;

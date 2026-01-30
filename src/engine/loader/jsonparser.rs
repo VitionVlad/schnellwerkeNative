@@ -45,7 +45,7 @@ impl JsonF {
 
     while json[i] != b']' {
       if !brackop{
-        if (json[i] >= b'0' && json[i] <= b'9') || json[i] == b'.'{
+        if (json[i] >= b'0' && json[i] <= b'9') || json[i] == b'.' || (json[i] == b'-' && !valgiv){
           rdp += &(json[i] as char).to_string();
           nt = NodeType::Number;
           valgiv = true;
@@ -124,7 +124,7 @@ impl JsonF {
 
     while json[i] != b'}' {
       if !brackop{
-        if (json[i] >= b'0' && json[i] <= b'9') || json[i] == b'.'{
+        if (json[i] >= b'0' && json[i] <= b'9') || json[i] == b'.' || (json[i] == b'-' && !valgiv){
           rdp += &(json[i] as char).to_string();
           nt = NodeType::Number;
           valgiv = true;

@@ -1,5 +1,16 @@
 use crate::engine::{loader::jsonparser::JsonF, math::{ vec3::Vec3, vec4::Vec4 }};
 
+#[derive(Clone)]
+pub enum GLtypes{
+    SignedByte = 5120,	
+    UnsignedByte = 5121,	
+    SignedShort = 5122,
+    UnsignedShort = 5123,	
+    UnsignedInt = 5125,
+    Float = 5126,
+}
+
+#[derive(Clone)]
 pub struct Gobject{
     pub mesh: usize,
     pub name: String,
@@ -8,30 +19,36 @@ pub struct Gobject{
     pub rotation: Vec4,
 }
 
+#[derive(Clone)]
 pub struct Gmaterial{
     pub double_sided: bool,
     pub name: String,
     pub texture_indices: Vec<usize>,
 }
 
+#[derive(Clone)]
 pub struct Gmesh{
     pub name: String,
     pub attributes: Vec<usize>,
+    pub attributesu: Vec<String>,
     pub enable_indices: bool,
     pub indices: usize,
     pub material: usize,
 }
 
+#[derive(Copy, Clone)]
 pub struct Gtexture{
     pub image: usize,
 }
 
+#[derive(Clone)]
 pub struct Gimage{
     pub name: String,
     pub tip: String,
     pub uri: String,
 }
 
+#[derive(Clone)]
 pub struct Gacc{
     pub bufferview: usize,
     pub component_type: u32,
@@ -39,6 +56,7 @@ pub struct Gacc{
     pub tp: String
 }
 
+#[derive(Copy, Clone)]
 pub struct Gbfv{
     pub buffer: usize,
     pub blenght: usize,
@@ -46,16 +64,19 @@ pub struct Gbfv{
     pub target: usize,
 }
 
+#[derive(Clone)]
 pub struct Gbf{
     pub bl: usize,
     pub uri: String,
 }
 
+#[derive(Clone)]
 pub struct Gscene{
     pub name: String,
     pub nodes: Vec<usize>,
 }
 
+#[derive(Clone)]
 pub struct Gltf{
     pub scene: usize,
     pub scenes: Vec<Gscene>,
@@ -156,7 +177,7 @@ impl Gltf {
                 }
             }else if json.other_nodes[i].name == "meshes"{
                 for j in 0..json.other_nodes[i].other_nodes.len(){
-                    let mut msg = Gmesh{ name: "".to_string(), attributes: vec![], enable_indices: true, indices: 0, material: 0 };
+                    let mut msg = Gmesh{ name: "".to_string(), attributes: vec![], attributesu: vec![], enable_indices: false, indices: 0, material: 0 };
                     for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
                         let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
                         if fname == "primitives"{
@@ -164,14 +185,14 @@ impl Gltf {
                                 let kfname = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].name.clone();
                                 if kfname == "indices"{
                                     msg.indices = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].numeral_val as usize;
+                                    msg.enable_indices = true;
                                 }else if kfname == "material"{
                                     msg.material = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].numeral_val as usize;
                                 }else if kfname == "attributes"{
                                     for p in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].other_nodes.len(){
                                         let atn = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].other_nodes[p].name.clone();
-                                        if atn == "POSITION" || atn == "NORMAL" || atn == "TEXCOORD_0"{
-                                            msg.attributes.push(json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].other_nodes[p].numeral_val as usize);
-                                        }
+                                        msg.attributes.push(json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].other_nodes[k].other_nodes[p].numeral_val as usize);
+                                        msg.attributesu.push(atn);
                                     }
                                 }
                             }

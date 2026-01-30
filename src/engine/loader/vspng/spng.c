@@ -58,7 +58,7 @@ void parsepng(png_structp png, png_infop info){
 
   png_read_update_info(png, info);
 
-  if (row_pointers) abort();
+  //if (row_pointers) abort();
 
   row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
   for(int y = 0; y < height; y++) {
@@ -66,9 +66,12 @@ void parsepng(png_structp png, png_infop info){
   }
 
   png_read_image(png, row_pointers);
+
 }
 
 void read_png_file(const char *path){
+  //printf(path);
+  //printf("\n");
   FILE *fp = fopen(path, "rb");
   png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
   if(!png) abort();
@@ -85,6 +88,10 @@ void read_png_file(const char *path){
   fclose(fp);
 
   png_destroy_read_struct(&png, &info, NULL);
+
+  printf("loaded ");
+  printf(path);
+  printf("\n");
 }
 
 void parse_png_buffer(const unsigned char* data, uint32_t size){
