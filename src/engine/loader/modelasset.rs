@@ -3,11 +3,64 @@
 
 use std::{fs::File, io::{BufRead, BufReader}};
 
+use crate::engine::math::{vec2::Vec2, vec3::Vec3, vec4::Vec4};
+
 use super::mtlasset::MtlAsset;
+
+#[derive(Clone)]
+#[derive(PartialEq)]
+enum Rdbft{
+  SCALAR,
+  VEC2,
+  VEC3,
+  VEC4
+}
+
+#[derive(Clone)]
+#[derive(PartialEq)]
+enum Aus{
+  POSITION,
+  NORMAL,
+  UV,
+  INDICES,
+  OTHER,
+}
+
+struct Rdbf{
+  tp: Rdbft,
+  mu: Aus,
+  scalar: Vec<u32>,
+  vec2: Vec<Vec2>,
+  vec3: Vec<Vec3>,
+  vec4: Vec<Vec4>,
+}
+
+fn quat_to_euler(q: Vec4) -> Vec3 {
+    let sinr_cosp = 2.0 * (q.w * q.x + q.y * q.z);
+    let cosr_cosp = 1.0 - 2.0 * (q.x * q.x + q.y * q.y);
+    let roll = sinr_cosp.atan2(cosr_cosp);
+
+    let sinp = 2.0 * (q.w * q.y - q.z * q.x);
+    let pitch = if sinp.abs() >= 1.0 {
+        std::f32::consts::FRAC_PI_2.copysign(sinp)
+    } else {
+        sinp.asin()
+    };
+
+    let siny_cosp = 2.0 * (q.w * q.z + q.x * q.y);
+    let cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
+    let yaw = siny_cosp.atan2(cosy_cosp);
+
+    Vec3 { x: roll, y: pitch, z: yaw }
+}
 
 pub struct ModelAsset{
     pub vertices: Vec<Vec<f32>>,
     pub matnam: Vec<String>,
+    pub objpos: Vec<Vec3>,
+    pub objrot: Vec<Vec3>,
+    pub objscale: Vec<Vec3>,
+    pub obn: Vec<String>,
     pub mtl: MtlAsset,
 }
 
@@ -32,6 +85,7 @@ impl ModelAsset{
         let mut mtl: MtlAsset = MtlAsset { matinfo: vec![], matnam: vec![] };
 
         let mut mtsl: Vec<String> = vec![];
+        let mut obn: Vec<String> = vec![];
         for line in reader.lines() {
             let va = line.unwrap_or_default();
             if va.clone().chars().next().unwrap_or_default() == '#' {
@@ -54,6 +108,7 @@ impl ModelAsset{
                 continue;
             }
             if va.clone().as_bytes()[0] == b'o' && va.clone().as_bytes()[1] == b' '{
+                obn.push(spl[1].to_string());
                 objcnt += 1usize;
                 objbegind.push([ivert.len(), iuv.len(), inorm.len()]);
                 continue;
@@ -118,6 +173,10 @@ impl ModelAsset{
         ModelAsset { 
             vertices: fnobj, 
             matnam: mtsl,
+            obn: obn,
+            objpos: vec![],
+            objrot: vec![],
+            objscale: vec![],
             mtl: mtl,
         }
     }

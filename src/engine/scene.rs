@@ -7,6 +7,8 @@ use super::{engine::Engine, image::Image, loader::modelasset::ModelAsset, materi
 
 pub struct Scene{
     pub objects: Vec<Object>,
+    pub images: Vec<Image>,
+    pub models: Vec<Model>,
     pub use_global_values: bool,
     pub pos: Vec3,
     pub scale: Vec3,
@@ -19,7 +21,9 @@ pub struct Scene{
 impl Scene{
     pub fn new_blank() -> Scene{
         Scene { 
-            objects: vec![], 
+            objects: vec![],
+            images: vec![], 
+            models: vec![], 
             use_global_values: false, 
             pos: Vec3::new(), 
             scale: Vec3::new(), 
@@ -50,6 +54,8 @@ impl Scene{
         }
         Scene { 
             objects: fobj,
+            images: mdtx,
+            models: mdst,
             use_global_values: true,
             pos: Vec3::new(),
             rot: Vec3::new(),

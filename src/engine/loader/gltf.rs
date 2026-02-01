@@ -127,7 +127,7 @@ impl Gltf {
                 }
             }else if json.other_nodes[i].name == "nodes"{
                 for j in 0..json.other_nodes[i].other_nodes.len(){
-                    let mut msg = Gobject{ name: "".to_string(), mesh: 0, position: Vec3::new(), scale: Vec3::new(), rotation: Vec4::new() };
+                    let mut msg = Gobject{ name: "".to_string(), mesh: 0, position: Vec3::new(), scale: Vec3::new(), rotation: Vec4{ x: 0.0, y: 0.0, z: 0.0, w: 1.0 } };
                     for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
                         let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
                         if fname == "mesh"{
