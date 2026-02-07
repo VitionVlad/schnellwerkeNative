@@ -12,7 +12,7 @@ pub enum NodeType{
 pub struct JsonF{
   pub name: String,
   pub strval: String,
-  pub numeral_val: f32,
+  pub numeral_val: f64,
   pub bolean: bool,
   pub index: u32,
   pub indexed: bool,
@@ -32,7 +32,7 @@ impl JsonF {
   fn readarr(json: Vec<u8>, brackloc: usize, jname: String, nindex: u32, indexed: bool) -> (JsonF, usize){
     let mut index = 0u32;
     let mut rdp = "".to_string();
-    let mut rdn = 0f32;
+    let mut rdn = 0f64;
     let mut rdb = false;
     let mut nt = NodeType::String;
 
@@ -111,7 +111,7 @@ impl JsonF {
   fn readbracket(json: Vec<u8>, brackloc: usize, jname: String, nindex: u32, indexed: bool) -> (JsonF, usize){
     let mut name = "".to_string();
     let mut rdp = "".to_string();
-    let mut rdn = 0f32;
+    let mut rdn = 0f64;
     let mut rdb = false;
     let mut nt = NodeType::String;
 

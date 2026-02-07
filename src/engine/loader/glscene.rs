@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::engine::{loader::{gltf::Gltf, jsonparser::JsonF}, math::{vec2::Vec2, vec3::Vec3, vec4::Vec4}};
+use crate::engine::{loader::{gltf::{GLtypes, Gltf}, jsonparser::JsonF}, math::{vec2::Vec2, vec3::Vec3, vec4::Vec4}};
 
 
 #[derive(Clone)]
@@ -25,7 +25,8 @@ enum Aus{
 struct Rdbf{
   pub tp: Rdbft,
   pub mu: Aus,
-  pub scalar: Vec<u32>,
+  pub scalar: Vec<f32>,
+  pub indices: Vec<u32>,
   pub vec2: Vec<Vec2>,
   pub vec3: Vec<Vec3>,
   pub vec4: Vec<Vec4>,
@@ -124,19 +125,80 @@ impl Glscene{
       let mut bfvp = vec![];
       for i in 0..bfv.len(){
         let mut lbf = vec![];
-        for j in bfv[i].boffset..(bfv[i].boffset+bfv[i].blenght){
+        let to = bfv[i].boffset+bfv[i].blenght;
+        for j in bfv[i].boffset..to{
           lbf.push(rwbf[bfv[i].buffer][j]);
         }
         bfvp.push(lbf);
       }
 
       for i in 0..acc.len(){
-        if acc[i].tp == "SCALAR"{
+        if acc[i].tp == "SCALAR" && accu[i] == Aus::INDICES{
           let mut lbf = vec![];
-          for j in (0..bfvp[i].len()).step_by(2){
-            lbf.push(u16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as u32);
+          match acc[i].component_type {
+            GLtypes::SignedByte => {
+              for j in 0..bfvp[i].len(){
+                lbf.push(i8::from_le_bytes([bfvp[i][j]]) as u32);
+              }
+            },
+            GLtypes::UnsignedByte => {
+              for j in 0..bfvp[i].len(){
+                lbf.push(u8::from_le_bytes([bfvp[i][j]]) as u32);
+              }
+            },
+            GLtypes::SignedShort => {
+              for j in (0..bfvp[i].len()).step_by(2){
+                lbf.push(i16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as u32);
+              }
+            },
+            GLtypes::UnsignedShort => {
+              for j in (0..bfvp[i].len()).step_by(2){
+                lbf.push(u16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as u32);
+              }
+            },
+            GLtypes::UnsignedInt => {
+              for j in (0..bfvp[i].len()).step_by(4){
+                lbf.push(u32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]) as u32);
+              }
+            },
+            _ => {}
           }
-          sbf.push(Rdbf { tp: Rdbft::SCALAR, mu: accu[i].clone(), scalar: lbf, vec2: vec![], vec3: vec![], vec4: vec![] });
+          sbf.push(Rdbf { tp: Rdbft::SCALAR, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: vec![], vec4: vec![], indices: lbf });
+        }else if acc[i].tp == "SCALAR" && accu[i] != Aus::INDICES{
+          let mut lbf = vec![];
+          match acc[i].component_type {
+            GLtypes::SignedByte => {
+              for j in 0..bfvp[i].len(){
+                lbf.push(i8::from_le_bytes([bfvp[i][j]]) as f32);
+              }
+            },
+            GLtypes::UnsignedByte => {
+              for j in 0..bfvp[i].len(){
+                lbf.push(u8::from_le_bytes([bfvp[i][j]]) as f32);
+              }
+            },
+            GLtypes::SignedShort => {
+              for j in (0..bfvp[i].len()).step_by(2){
+                lbf.push(i16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as f32);
+              }
+            },
+            GLtypes::UnsignedShort => {
+              for j in (0..bfvp[i].len()).step_by(2){
+                lbf.push(u16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as f32);
+              }
+            },
+            GLtypes::UnsignedInt => {
+              for j in (0..bfvp[i].len()).step_by(4){
+                lbf.push(u32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]) as f32);
+              }
+            },
+            GLtypes::Float => {
+              for j in (0..bfvp[i].len()).step_by(4){
+                lbf.push(f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]));
+              }
+            },
+          }
+          sbf.push(Rdbf { tp: Rdbft::SCALAR, mu: accu[i].clone(), scalar: lbf, vec2: vec![], vec3: vec![], vec4: vec![], indices: vec![] });
         }else if acc[i].tp == "VEC2"{
           let mut lbf = vec![];
           for j in (0..bfvp[i].len()).step_by(8){
@@ -145,7 +207,7 @@ impl Glscene{
               y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]])
             });
           }
-          sbf.push(Rdbf { tp: Rdbft::VEC2, mu: accu[i].clone(), scalar: vec![], vec2: lbf, vec3: vec![], vec4: vec![] });
+          sbf.push(Rdbf { tp: Rdbft::VEC2, mu: accu[i].clone(), scalar: vec![], vec2: lbf, vec3: vec![], vec4: vec![], indices: vec![] });
         }else if acc[i].tp == "VEC3"{
           let mut lbf = vec![];
           for j in (0..bfvp[i].len()).step_by(12){
@@ -155,7 +217,7 @@ impl Glscene{
               z: f32::from_le_bytes([bfvp[i][j+8], bfvp[i][j+9], bfvp[i][j+10], bfvp[i][j+11]])
             });
           }
-          sbf.push(Rdbf { tp: Rdbft::VEC3, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: lbf, vec4: vec![] });
+          sbf.push(Rdbf { tp: Rdbft::VEC3, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: lbf, vec4: vec![], indices: vec![] });
         }else if acc[i].tp == "VEC4"{
           let mut lbf = vec![];
           for j in (0..bfvp[i].len()).step_by(12){
@@ -166,7 +228,7 @@ impl Glscene{
               w: f32::from_le_bytes([bfvp[i][j+12], bfvp[i][j+13], bfvp[i][j+14], bfvp[i][j+15]])
             });
           }
-          sbf.push(Rdbf { tp: Rdbft::VEC4, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: vec![], vec4: lbf });
+          sbf.push(Rdbf { tp: Rdbft::VEC4, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: vec![], vec4: lbf, indices: vec![] });
         }
       }
 
@@ -189,179 +251,21 @@ impl Glscene{
         }
       }
 
-      for i in 0..sbf[ii].scalar.len(){
-        fvrt.push(sbf[pi].vec3[sbf[ii].scalar[i] as usize].x);
-        fvrt.push(sbf[pi].vec3[sbf[ii].scalar[i] as usize].y);
-        fvrt.push(sbf[pi].vec3[sbf[ii].scalar[i] as usize].z);
+      for i in 0..sbf[ii].indices.len(){
+        fvrt.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].x);
+        fvrt.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].y);
+        fvrt.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].z);
       }
 
-      for i in 0..sbf[ii].scalar.len(){
-        fvrt.push(sbf[uvi].vec2[sbf[ii].scalar[i] as usize].x);
-        fvrt.push(sbf[uvi].vec2[sbf[ii].scalar[i] as usize].y);
+      for i in 0..sbf[ii].indices.len(){
+        fvrt.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].x);
+        fvrt.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].y);
       }
 
-      for i in 0..sbf[ii].scalar.len(){
-        fvrt.push(sbf[ni].vec3[sbf[ii].scalar[i] as usize].x);
-        fvrt.push(sbf[ni].vec3[sbf[ii].scalar[i] as usize].y);
-        fvrt.push(sbf[ni].vec3[sbf[ii].scalar[i] as usize].z);
-      }
-
-      objvec.push(Globject{
-        name: gobj.name,
-        vertices: fvrt,
-        position: Vec3 { x: gobj.position.x, y: gobj.position.y, z: gobj.position.z },
-        scale: Vec3 { x: gobj.scale.x, y: gobj.scale.y, z: gobj.scale.z },
-        rot: quat_to_euler(gobj.rotation),
-        material: mesh.material,
-      });
-    }
-
-    Glscene { 
-      objs: objvec,
-      material: matimg
-    }
-  }
-  pub fn read_glb(path: &str) -> Glscene{
-    let seppath: Vec<&str> = path.split("/").collect();
-    let mut prefix = "".to_string(); 
-
-    for i in 0..seppath.len()-1{
-      prefix += seppath[i];
-      prefix += "/";
-    }
-
-    let jgltf = JsonF::load_from_file(path);
-    let pgltf = Gltf::parse_gltf(jgltf);
-
-    let mut matimg = vec![];
-    let mut objvec = vec![];
-    let mut rwbf = vec![];
-
-    for i in 0..pgltf.materials.len(){
-      let mut uris = vec![];
-      for j in 0..pgltf.materials[i].texture_indices.len(){
-        let str = format!("{}{}", prefix, pgltf.images[pgltf.textures[pgltf.materials[i].texture_indices[j]].image].uri.clone());
-        uris.push(str.clone());
-      }
-      matimg.push(uris);
-    }
-
-    for i in 0..pgltf.buffers.len(){
-      rwbf.push(fs::read(format!("{}{}", prefix, pgltf.buffers[i].uri.clone())).unwrap());
-    }
-
-    for gobj in pgltf.objects{
-      let mesh = pgltf.meshes[gobj.mesh].clone();
-      let mut acc = vec![];
-      let mut accu = vec![];
-      let mut bfv = vec![];
-
-      let mut sbf: Vec<Rdbf> = vec![];
-
-      for i in 0..mesh.attributes.len(){
-        acc.push(pgltf.accesories[mesh.attributes[i]].clone());
-        if mesh.attributesu[i] == "POSITION"{
-          accu.push(Aus::POSITION);
-        }else if mesh.attributesu[i] == "NORMAL"{
-          accu.push(Aus::NORMAL);
-        }else if mesh.attributesu[i] == "TEXCOORD_0"{
-          accu.push(Aus::UV);
-        }else{
-          accu.push(Aus::OTHER);
-        }
-      }
-      if mesh.enable_indices{
-        acc.push(pgltf.accesories[mesh.indices].clone());
-        accu.push(Aus::INDICES);
-      }
-
-      for i in 0..acc.len(){
-        bfv.push(pgltf.bufferview[acc[i].bufferview]);
-      }
-
-      let mut bfvp = vec![];
-      for i in 0..bfv.len(){
-        let mut lbf = vec![];
-        for j in bfv[i].boffset..(bfv[i].boffset+bfv[i].blenght){
-          lbf.push(rwbf[bfv[i].buffer][j]);
-        }
-        bfvp.push(lbf);
-      }
-
-      for i in 0..acc.len(){
-        if acc[i].tp == "SCALAR"{
-          let mut lbf = vec![];
-          for j in (0..bfvp[i].len()).step_by(2){
-            lbf.push(u16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as u32);
-          }
-          sbf.push(Rdbf { tp: Rdbft::SCALAR, mu: accu[i].clone(), scalar: lbf, vec2: vec![], vec3: vec![], vec4: vec![] });
-        }else if acc[i].tp == "VEC2"{
-          let mut lbf = vec![];
-          for j in (0..bfvp[i].len()).step_by(8){
-            lbf.push(Vec2{ 
-              x: f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]), 
-              y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]])
-            });
-          }
-          sbf.push(Rdbf { tp: Rdbft::VEC2, mu: accu[i].clone(), scalar: vec![], vec2: lbf, vec3: vec![], vec4: vec![] });
-        }else if acc[i].tp == "VEC3"{
-          let mut lbf = vec![];
-          for j in (0..bfvp[i].len()).step_by(12){
-            lbf.push(Vec3{ 
-              x: f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]), 
-              y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]]),
-              z: f32::from_le_bytes([bfvp[i][j+8], bfvp[i][j+9], bfvp[i][j+10], bfvp[i][j+11]])
-            });
-          }
-          sbf.push(Rdbf { tp: Rdbft::VEC3, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: lbf, vec4: vec![] });
-        }else if acc[i].tp == "VEC4"{
-          let mut lbf = vec![];
-          for j in (0..bfvp[i].len()).step_by(12){
-            lbf.push(Vec4{ 
-              x: f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]), 
-              y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]]),
-              z: f32::from_le_bytes([bfvp[i][j+8], bfvp[i][j+9], bfvp[i][j+10], bfvp[i][j+11]]),
-              w: f32::from_le_bytes([bfvp[i][j+12], bfvp[i][j+13], bfvp[i][j+14], bfvp[i][j+15]])
-            });
-          }
-          sbf.push(Rdbf { tp: Rdbft::VEC4, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: vec![], vec4: lbf });
-        }
-      }
-
-      let mut fvrt = vec![];
-
-      let mut pi = 0usize;
-      let mut ni = 0usize;
-      let mut uvi = 0usize;
-      let mut ii = 0usize;
-
-      for i in 0..sbf.len(){
-        if sbf[i].mu == Aus::INDICES{
-          ii = i;
-        }else if sbf[i].mu == Aus::POSITION{
-          pi = i;
-        }else if sbf[i].mu == Aus::UV{
-          uvi = i;
-        }else if sbf[i].mu == Aus::NORMAL{
-          ni = i;
-        }
-      }
-
-      for i in 0..sbf[ii].scalar.len(){
-        fvrt.push(sbf[pi].vec3[sbf[ii].scalar[i] as usize].x);
-        fvrt.push(sbf[pi].vec3[sbf[ii].scalar[i] as usize].y);
-        fvrt.push(sbf[pi].vec3[sbf[ii].scalar[i] as usize].z);
-      }
-
-      for i in 0..sbf[ii].scalar.len(){
-        fvrt.push(sbf[uvi].vec2[sbf[ii].scalar[i] as usize].x);
-        fvrt.push(sbf[uvi].vec2[sbf[ii].scalar[i] as usize].y);
-      }
-
-      for i in 0..sbf[ii].scalar.len(){
-        fvrt.push(sbf[ni].vec3[sbf[ii].scalar[i] as usize].x);
-        fvrt.push(sbf[ni].vec3[sbf[ii].scalar[i] as usize].y);
-        fvrt.push(sbf[ni].vec3[sbf[ii].scalar[i] as usize].z);
+      for i in 0..sbf[ii].indices.len(){
+        fvrt.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].x);
+        fvrt.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].y);
+        fvrt.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].z);
       }
 
       objvec.push(Globject{

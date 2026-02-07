@@ -88,10 +88,6 @@ void read_png_file(const char *path){
   fclose(fp);
 
   png_destroy_read_struct(&png, &info, NULL);
-
-  printf("loaded ");
-  printf(path);
-  printf("\n");
 }
 
 void parse_png_buffer(const unsigned char* data, uint32_t size){

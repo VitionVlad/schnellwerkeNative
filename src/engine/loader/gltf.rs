@@ -1,6 +1,7 @@
 use crate::engine::{loader::jsonparser::JsonF, math::{ vec3::Vec3, vec4::Vec4 }};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
+#[repr(u32)]
 pub enum GLtypes{
     SignedByte = 5120,	
     UnsignedByte = 5121,	
@@ -51,7 +52,7 @@ pub struct Gimage{
 #[derive(Clone)]
 pub struct Gacc{
     pub bufferview: usize,
-    pub component_type: u32,
+    pub component_type: GLtypes,
     pub count: usize,
     pub tp: String
 }
@@ -135,18 +136,18 @@ impl Gltf {
                         }else if fname == "name"{
                             msg.name = json.other_nodes[i].other_nodes[j].other_nodes[l].strval.clone();
                         }else if fname == "rotation"{
-                            msg.rotation.x = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].numeral_val;
-                            msg.rotation.y = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[1].numeral_val;
-                            msg.rotation.z = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[2].numeral_val;
-                            msg.rotation.w = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[3].numeral_val;
+                            msg.rotation.x = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].numeral_val as f32;
+                            msg.rotation.y = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[1].numeral_val as f32;
+                            msg.rotation.z = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[2].numeral_val as f32;
+                            msg.rotation.w = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[3].numeral_val as f32;
                         }else if fname == "scale"{
-                            msg.scale.x = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].numeral_val;
-                            msg.scale.y = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[1].numeral_val;
-                            msg.scale.z = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[2].numeral_val;
+                            msg.scale.x = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].numeral_val as f32;
+                            msg.scale.y = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[1].numeral_val as f32;
+                            msg.scale.z = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[2].numeral_val as f32;
                         }else if fname == "translation"{
-                            msg.position.x = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].numeral_val;
-                            msg.position.y = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[1].numeral_val;
-                            msg.position.z = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[2].numeral_val;
+                            msg.position.x = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[0].numeral_val as f32;
+                            msg.position.y = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[1].numeral_val as f32;
+                            msg.position.z = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[2].numeral_val as f32;
                         }
                     }
                     lgltf.objects.push(msg);
@@ -230,13 +231,34 @@ impl Gltf {
                 }
             }else if json.other_nodes[i].name == "accessors"{
                 for j in 0..json.other_nodes[i].other_nodes.len(){
-                    let mut msg = Gacc{ bufferview: 0, component_type: 0, count: 0, tp: "".to_string() };
+                    let mut msg = Gacc{ bufferview: 0, component_type: GLtypes::UnsignedByte, count: 0, tp: "".to_string() };
                     for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
                         let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
                         if fname == "bufferView"{
                             msg.bufferview = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize;
                         }else if fname == "componentType"{
-                            msg.component_type = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as u32;
+                            let nm = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as u32;
+                            match nm {
+                                5120 => {
+                                    msg.component_type = GLtypes::SignedByte;
+                                },
+                                5121 => {
+                                    msg.component_type = GLtypes::UnsignedByte;
+                                },
+                                5122 => {
+                                    msg.component_type = GLtypes::SignedShort;
+                                },
+                                5123 => {
+                                    msg.component_type = GLtypes::UnsignedShort;
+                                },
+                                5125 => {
+                                    msg.component_type = GLtypes::UnsignedInt;
+                                },
+                                5126 => {
+                                    msg.component_type = GLtypes::Float;
+                                },
+                                _ => {}
+                            }
                         }else if fname == "count"{
                             msg.count = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize;
                         }else if fname == "type"{
