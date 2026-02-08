@@ -47,6 +47,7 @@ pub struct Gimage{
     pub name: String,
     pub tip: String,
     pub uri: String,
+    pub buffer_view: usize,
 }
 
 #[derive(Clone)]
@@ -216,7 +217,7 @@ impl Gltf {
                 }
             }else if json.other_nodes[i].name == "images"{
                 for j in 0..json.other_nodes[i].other_nodes.len(){
-                    let mut msg = Gimage{ name: "".to_string(), tip: "".to_string(), uri: "".to_string() };
+                    let mut msg = Gimage{ name: "".to_string(), tip: "".to_string(), uri: "".to_string(), buffer_view: 0usize };
                     for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
                         let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
                         if fname == "mimeType"{
@@ -225,6 +226,8 @@ impl Gltf {
                             msg.tip = json.other_nodes[i].other_nodes[j].other_nodes[l].strval.clone();
                         }else if fname == "uri"{
                             msg.uri = json.other_nodes[i].other_nodes[j].other_nodes[l].strval.clone();
+                        }else if fname == "bufferView"{
+                            msg.buffer_view = json.other_nodes[i].other_nodes[j].other_nodes[l].numeral_val as usize;
                         }
                     }
                     lgltf.images.push(msg);

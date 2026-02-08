@@ -104,6 +104,9 @@ impl JsonF {
       i += 1;
     }
     if valgiv {
+      if nt == NodeType::Number{
+        rdn = rdp.parse().unwrap();
+      }
       lnode.other_nodes.push(JsonF{ name: "".to_string(), strval: rdp.clone(), numeral_val: rdn, bolean: rdb, index: index.clone(), indexed: true, other_nodes: vec![], node_type: nt });
     }
     return (lnode, i);
@@ -187,6 +190,9 @@ impl JsonF {
       i += 1;
     }
     if valgiv{
+      if nt == NodeType::Number{
+        rdn = rdp.parse().unwrap();
+      }
       lnode.other_nodes.push(JsonF{ name: name.clone(), strval: rdp.clone(), numeral_val: rdn, bolean: rdb, index: 0, indexed: false, other_nodes: vec![], node_type: nt });
     }
     return (lnode, i);

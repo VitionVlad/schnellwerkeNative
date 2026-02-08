@@ -80,12 +80,16 @@ fn main() {
 
     let mut scn = Scene::new_blank();
 
-    let gltfsc  = Glscene::read_gltf_json("assets/BRD2.gltf");
+    let gltfsc  = Glscene::readglb("assets/BRD1.glb");
 
     let mut ldmt = vec![];
 
-    for i in 0..gltfsc.material.len(){
-      ldmt.push(Image::new_from_files(&eng, gltfsc.material[i].clone()));
+    for i in 0..gltfsc.material_data.len(){
+      let mut totdata = vec![];
+      for j in 0..gltfsc.material_data[i].len(){
+        totdata.extend_from_slice(&gltfsc.material_data[i][j].data);
+      }
+      ldmt.push(Image::new(&mut eng, [gltfsc.material_data[i][0].size[0], gltfsc.material_data[i][0].size[1], gltfsc.material_data[i].len() as u32], totdata));
     }
 
     for i in 0..gltfsc.objs.len(){
@@ -143,10 +147,7 @@ fn main() {
       }
       if eng.control.get_key_state(49) && tm <= 0{
         eng.control.mouse_lock = !eng.control.mouse_lock;
-        //pause = !pause;
         tm = 50;
-        //pausemn = 0;
-        //gmus = false;
       }
 
       if eng.control.mouse_lock{
