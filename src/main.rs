@@ -3,7 +3,7 @@ use std::fs::{self};
 
 use engine::{engine::Engine, image::Image, material::Material, ui::UIplane};
 
-use crate::engine::{loader::glscene::Glscene, math::{vec2::Vec2, vec3::Vec3, vec4::Vec4}, model::Model, object::Object, scene::Scene, ui::UItext};
+use crate::engine::{math::{vec2::Vec2, vec3::Vec3, vec4::Vec4}, scene::Scene, ui::UItext};
 mod engine;
 
 #[derive(Clone)]
@@ -78,30 +78,7 @@ fn main() {
 
     let mut fpscnt = UItext::new_from_file(&mut eng, matt, "assets/textlat.png", "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_[]{}/*`~$%");
 
-    let mut scn = Scene::new_blank();
-
-    let gltfsc  = Glscene::readglb("assets/BRD1.glb");
-
-    let mut ldmt = vec![];
-
-    for i in 0..gltfsc.material_data.len(){
-      let mut totdata = vec![];
-      for j in 0..gltfsc.material_data[i].len(){
-        totdata.extend_from_slice(&gltfsc.material_data[i][j].data);
-      }
-      ldmt.push(Image::new(&mut eng, [gltfsc.material_data[i][0].size[0], gltfsc.material_data[i][0].size[1], gltfsc.material_data[i].len() as u32], totdata));
-    }
-
-    for i in 0..gltfsc.objs.len(){
-      let tobj = Model::new(&mut eng, gltfsc.objs[i].vertices.clone());
-      scn.objects.push(Object::new(&mut eng, tobj, matgeneral, ldmt[gltfsc.objs[i].material], engine::render::render::MeshUsage::ShadowAndDefferedPass, true));
-      let lobj = scn.objects.len()-1;
-      scn.objects[lobj].physic_object.pos = gltfsc.objs[i].position;
-      scn.objects[lobj].physic_object.scale = gltfsc.objs[i].scale;
-      scn.objects[lobj].physic_object.rot = gltfsc.objs[i].rot;
-    }
-
-    scn.use_global_values = false;
+    let mut scn = Scene::load_from_gltf(&mut eng, "assets/BRD1.glb", matgeneral);
 
     eng.cameras[0].physic_object.gravity = false;
     eng.cameras[0].physic_object.solid = false;

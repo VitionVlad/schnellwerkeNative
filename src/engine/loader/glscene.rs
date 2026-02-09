@@ -535,4 +535,11 @@ impl Glscene{
       images_bin: true,
     }
   }
+  pub fn is_glb(path: &str) -> bool{
+    let rglb = fs::read(path).unwrap();
+    if rglb[0] == b'g' && rglb[1] == b'l' && rglb[2] == b'T' && rglb[3] == b'F'{
+      return true;
+    }
+    false
+  }
 }
