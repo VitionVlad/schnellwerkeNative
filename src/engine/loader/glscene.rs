@@ -74,6 +74,190 @@ pub struct Glscene{
 }
 
 impl Glscene{
+  pub fn perobj(pgltf: Gltf, bfvp: Vec<Vec<u8>>) -> Vec<Globject>{
+    let mut objvec = vec![];
+
+    let mut sbf: Vec<Rdbf> = vec![];
+
+    for i in 0..pgltf.accesories.len(){
+      let bfvi = pgltf.accesories[i].bufferview;
+      if pgltf.accesories[i].tp == "SCALAR" && pgltf.accesories[i].component_type != GLtypes::Float{
+        let mut lbf = vec![];
+        match pgltf.accesories[i].component_type {
+          GLtypes::SignedByte => {
+            for j in 0..bfvp[bfvi].len(){
+              lbf.push(i8::from_le_bytes([bfvp[bfvi][j]]) as u32);
+            }
+          },
+          GLtypes::UnsignedByte => {
+            for j in 0..bfvp[bfvi].len(){
+              lbf.push(u8::from_le_bytes([bfvp[bfvi][j]]) as u32);
+            }
+          },
+          GLtypes::SignedShort => {
+            for j in (0..bfvp[bfvi].len()).step_by(2){
+              lbf.push(i16::from_le_bytes([bfvp[bfvi][j], bfvp[bfvi][j+1]]) as u32);
+            }
+          },
+          GLtypes::UnsignedShort => {
+            for j in (0..bfvp[bfvi].len()).step_by(2){
+              lbf.push(u16::from_le_bytes([bfvp[bfvi][j], bfvp[bfvi][j+1]]) as u32);
+            }
+          },
+          GLtypes::UnsignedInt => {
+            //for j in (0..bfvp[bfvi].len()).step_by(4){
+            //  lbf.push(u32::from_le_bytes([bfvp[bfvi][j], bfvp[bfvi][j+1], bfvp[bfvi][j+2], bfvp[bfvi][j+3]]) as u32);
+            //}
+            unsafe {
+              lbf = std::slice::from_raw_parts(
+                bfvp[bfvi][0..bfvp[bfvi].len()].as_ptr() as *const u32,
+                bfvp[bfvi].len() / 4,
+              ).to_vec();
+            }
+          },
+          _ => {}
+        }
+        sbf.push(Rdbf { tp: Rdbft::SCALAR, mu: Aus::OTHER, scalar: vec![], vec2: vec![], vec3: vec![], vec4: vec![], indices: lbf });
+      }else if pgltf.accesories[i].tp == "SCALAR" && pgltf.accesories[i].component_type == GLtypes::Float{
+        let mut lbf = vec![];
+        //for j in (0..bfvp[bfvi].len()).step_by(4){
+        //  lbf.push(f32::from_le_bytes([bfvp[bfvi][j], bfvp[bfvi][j+1], bfvp[bfvi][j+2], bfvp[bfvi][j+3]]));
+        //}
+        unsafe {
+          lbf = std::slice::from_raw_parts(
+            bfvp[bfvi][0..bfvp[bfvi].len()].as_ptr() as *const f32,
+            bfvp[bfvi].len() / 4,
+          ).to_vec();
+        }
+        sbf.push(Rdbf { tp: Rdbft::SCALAR, mu: Aus::OTHER, scalar: lbf, vec2: vec![], vec3: vec![], vec4: vec![], indices: vec![] });
+      }else if pgltf.accesories[i].tp == "VEC2"{
+        let mut lbf = vec![];
+        //for j in (0..bfvp[i].len()).step_by(8){
+        //  lbf.push(Vec2{ 
+        //    x: f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]), 
+        //    y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]])
+        //  });
+        //}
+        unsafe {
+          lbf = std::slice::from_raw_parts(
+            bfvp[bfvi][0..bfvp[bfvi].len()].as_ptr() as *const Vec2,
+            bfvp[bfvi].len() / 8,
+          ).to_vec();
+        }
+        sbf.push(Rdbf { tp: Rdbft::VEC2, mu: Aus::OTHER, scalar: vec![], vec2: lbf, vec3: vec![], vec4: vec![], indices: vec![] });
+      }else if pgltf.accesories[i].tp == "VEC3"{
+        let mut lbf = vec![];
+        //for j in (0..bfvp[i].len()).step_by(12){
+        //  lbf.push(Vec3{ 
+        //    x: f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]), 
+        //    y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]]),
+        //    z: f32::from_le_bytes([bfvp[i][j+8], bfvp[i][j+9], bfvp[i][j+10], bfvp[i][j+11]])
+        //  });
+        //}
+        unsafe {
+          lbf = std::slice::from_raw_parts(
+            bfvp[bfvi][0..bfvp[bfvi].len()].as_ptr() as *const Vec3,
+            bfvp[bfvi].len() / 12,
+          ).to_vec();
+        }
+        sbf.push(Rdbf { tp: Rdbft::VEC3, mu: Aus::OTHER, scalar: vec![], vec2: vec![], vec3: lbf, vec4: vec![], indices: vec![] });
+      }else if pgltf.accesories[i].tp == "VEC4"{
+        let mut lbf = vec![];
+        //for j in (0..bfvp[i].len()).step_by(16){
+        //  lbf.push(Vec4{ 
+        //    x: f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]), 
+        //    y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]]),
+        //    z: f32::from_le_bytes([bfvp[i][j+8], bfvp[i][j+9], bfvp[i][j+10], bfvp[i][j+11]]),
+        //    w: f32::from_le_bytes([bfvp[i][j+12], bfvp[i][j+13], bfvp[i][j+14], bfvp[i][j+15]])
+        //  });
+        //}
+        unsafe {
+          lbf = std::slice::from_raw_parts(
+            bfvp[bfvi][0..bfvp[bfvi].len()].as_ptr() as *const Vec4,
+            bfvp[bfvi].len() / 16,
+          ).to_vec();
+        }
+        sbf.push(Rdbf { tp: Rdbft::VEC4, mu: Aus::OTHER, scalar: vec![], vec2: vec![], vec3: vec![], vec4: lbf, indices: vec![] });
+      }
+    }
+
+    for gobj in pgltf.objects{
+      let mesh = pgltf.meshes[gobj.mesh].clone();
+      let mut acc = vec![];
+      let mut accu = vec![];
+
+      for i in 0..mesh.attributes.len(){
+        acc.push(mesh.attributes[i]);
+        if mesh.attributesu[i] == "POSITION"{
+          sbf[mesh.attributes[i]].mu = Aus::INDICES;
+          accu.push(Aus::POSITION);
+        }else if mesh.attributesu[i] == "NORMAL"{
+          sbf[mesh.attributes[i]].mu = Aus::INDICES;
+          accu.push(Aus::NORMAL);
+        }else if mesh.attributesu[i] == "TEXCOORD_0"{
+          sbf[mesh.attributes[i]].mu = Aus::INDICES;
+          accu.push(Aus::UV);
+        }else{
+          accu.push(Aus::OTHER);
+        }
+      }
+      if mesh.enable_indices{
+        acc.push(mesh.indices);
+        sbf[mesh.indices].mu = Aus::INDICES;
+        accu.push(Aus::INDICES);
+      }
+
+      let mut fvert = vec![];
+      let mut fuv = vec![];
+      let mut fnorm = vec![];
+      let mut fvrt = vec![];
+
+      let mut pi = 0usize;
+      let mut ni = 0usize;
+      let mut uvi = 0usize;
+      let mut ii = 0usize;
+
+      for i in 0..accu.len(){
+        if accu[i] == Aus::INDICES{
+          ii = acc[i];
+        }else if accu[i] == Aus::POSITION{
+          pi = acc[i];
+        }else if accu[i] == Aus::UV{
+          uvi = acc[i];
+        }else if accu[i] == Aus::NORMAL{
+          ni = acc[i];
+        }
+      }
+
+      for i in 0..sbf[ii].indices.len(){
+        fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].x);
+        fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].y);
+        fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].z);
+
+        fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].x);
+        fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].y);
+
+        fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].x);
+        fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].y);
+        fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].z);
+      }
+
+      fvrt.append(&mut fvert);
+      fvrt.append(&mut fuv);
+      fvrt.append(&mut fnorm);
+
+      objvec.push(Globject{
+        name: gobj.name,
+        vertices: fvrt,
+        position: Vec3 { x: gobj.position.x, y: gobj.position.y, z: gobj.position.z },
+        scale: Vec3 { x: gobj.scale.x, y: gobj.scale.y, z: gobj.scale.z },
+        rot: quat_to_euler(gobj.rotation),
+        material: mesh.material,
+      });
+    }
+
+    objvec
+  }
   pub fn read_gltf_json(path: &str) -> Glscene{
     let seppath: Vec<&str> = path.split("/").collect();
     let mut prefix = "".to_string(); 
@@ -87,7 +271,6 @@ impl Glscene{
     let pgltf = Gltf::parse_gltf(jgltf);
 
     let mut matimg = vec![];
-    let mut objvec = vec![];
     let mut rwbf = vec![];
 
     for i in 0..pgltf.materials.len(){
@@ -103,190 +286,13 @@ impl Glscene{
       rwbf.push(fs::read(format!("{}{}", prefix, pgltf.buffers[i].uri.clone())).unwrap());
     }
 
-    for gobj in pgltf.objects{
-      let mesh = pgltf.meshes[gobj.mesh].clone();
-      let mut acc = vec![];
-      let mut accu = vec![];
-      let mut bfv = vec![];
-
-      let mut sbf: Vec<Rdbf> = vec![];
-
-      for i in 0..mesh.attributes.len(){
-        acc.push(pgltf.accesories[mesh.attributes[i]].clone());
-        if mesh.attributesu[i] == "POSITION"{
-          accu.push(Aus::POSITION);
-        }else if mesh.attributesu[i] == "NORMAL"{
-          accu.push(Aus::NORMAL);
-        }else if mesh.attributesu[i] == "TEXCOORD_0"{
-          accu.push(Aus::UV);
-        }else{
-          accu.push(Aus::OTHER);
-        }
-      }
-      if mesh.enable_indices{
-        acc.push(pgltf.accesories[mesh.indices].clone());
-        accu.push(Aus::INDICES);
-      }
-
-      for i in 0..acc.len(){
-        bfv.push(pgltf.bufferview[acc[i].bufferview]);
-      }
-
-      let mut bfvp = vec![];
-      for i in 0..bfv.len(){
-        let mut lbf = vec![];
-        let to = bfv[i].boffset+bfv[i].blenght;
-        for j in bfv[i].boffset..to{
-          lbf.push(rwbf[bfv[i].buffer][j]);
-        }
-        bfvp.push(lbf);
-      }
-
-      for i in 0..acc.len(){
-        if acc[i].tp == "SCALAR" && accu[i] == Aus::INDICES{
-          let mut lbf = vec![];
-          match acc[i].component_type {
-            GLtypes::SignedByte => {
-              for j in 0..bfvp[i].len(){
-                lbf.push(i8::from_le_bytes([bfvp[i][j]]) as u32);
-              }
-            },
-            GLtypes::UnsignedByte => {
-              for j in 0..bfvp[i].len(){
-                lbf.push(u8::from_le_bytes([bfvp[i][j]]) as u32);
-              }
-            },
-            GLtypes::SignedShort => {
-              for j in (0..bfvp[i].len()).step_by(2){
-                lbf.push(i16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as u32);
-              }
-            },
-            GLtypes::UnsignedShort => {
-              for j in (0..bfvp[i].len()).step_by(2){
-                lbf.push(u16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as u32);
-              }
-            },
-            GLtypes::UnsignedInt => {
-              for j in (0..bfvp[i].len()).step_by(4){
-                lbf.push(u32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]) as u32);
-              }
-            },
-            _ => {}
-          }
-          sbf.push(Rdbf { tp: Rdbft::SCALAR, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: vec![], vec4: vec![], indices: lbf });
-        }else if acc[i].tp == "SCALAR" && accu[i] != Aus::INDICES{
-          let mut lbf = vec![];
-          match acc[i].component_type {
-            GLtypes::SignedByte => {
-              for j in 0..bfvp[i].len(){
-                lbf.push(i8::from_le_bytes([bfvp[i][j]]) as f32);
-              }
-            },
-            GLtypes::UnsignedByte => {
-              for j in 0..bfvp[i].len(){
-                lbf.push(u8::from_le_bytes([bfvp[i][j]]) as f32);
-              }
-            },
-            GLtypes::SignedShort => {
-              for j in (0..bfvp[i].len()).step_by(2){
-                lbf.push(i16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as f32);
-              }
-            },
-            GLtypes::UnsignedShort => {
-              for j in (0..bfvp[i].len()).step_by(2){
-                lbf.push(u16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as f32);
-              }
-            },
-            GLtypes::UnsignedInt => {
-              for j in (0..bfvp[i].len()).step_by(4){
-                lbf.push(u32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]) as f32);
-              }
-            },
-            GLtypes::Float => {
-              for j in (0..bfvp[i].len()).step_by(4){
-                lbf.push(f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]));
-              }
-            },
-          }
-          sbf.push(Rdbf { tp: Rdbft::SCALAR, mu: accu[i].clone(), scalar: lbf, vec2: vec![], vec3: vec![], vec4: vec![], indices: vec![] });
-        }else if acc[i].tp == "VEC2"{
-          let mut lbf = vec![];
-          for j in (0..bfvp[i].len()).step_by(8){
-            lbf.push(Vec2{ 
-              x: f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]), 
-              y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]])
-            });
-          }
-          sbf.push(Rdbf { tp: Rdbft::VEC2, mu: accu[i].clone(), scalar: vec![], vec2: lbf, vec3: vec![], vec4: vec![], indices: vec![] });
-        }else if acc[i].tp == "VEC3"{
-          let mut lbf = vec![];
-          for j in (0..bfvp[i].len()).step_by(12){
-            lbf.push(Vec3{ 
-              x: f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]), 
-              y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]]),
-              z: f32::from_le_bytes([bfvp[i][j+8], bfvp[i][j+9], bfvp[i][j+10], bfvp[i][j+11]])
-            });
-          }
-          sbf.push(Rdbf { tp: Rdbft::VEC3, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: lbf, vec4: vec![], indices: vec![] });
-        }else if acc[i].tp == "VEC4"{
-          let mut lbf = vec![];
-          for j in (0..bfvp[i].len()).step_by(12){
-            lbf.push(Vec4{ 
-              x: f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]), 
-              y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]]),
-              z: f32::from_le_bytes([bfvp[i][j+8], bfvp[i][j+9], bfvp[i][j+10], bfvp[i][j+11]]),
-              w: f32::from_le_bytes([bfvp[i][j+12], bfvp[i][j+13], bfvp[i][j+14], bfvp[i][j+15]])
-            });
-          }
-          sbf.push(Rdbf { tp: Rdbft::VEC4, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: vec![], vec4: lbf, indices: vec![] });
-        }
-      }
-
-      let mut fvrt = vec![];
-
-      let mut pi = 0usize;
-      let mut ni = 0usize;
-      let mut uvi = 0usize;
-      let mut ii = 0usize;
-
-      for i in 0..sbf.len(){
-        if sbf[i].mu == Aus::INDICES{
-          ii = i;
-        }else if sbf[i].mu == Aus::POSITION{
-          pi = i;
-        }else if sbf[i].mu == Aus::UV{
-          uvi = i;
-        }else if sbf[i].mu == Aus::NORMAL{
-          ni = i;
-        }
-      }
-
-      for i in 0..sbf[ii].indices.len(){
-        fvrt.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].x);
-        fvrt.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].y);
-        fvrt.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].z);
-      }
-
-      for i in 0..sbf[ii].indices.len(){
-        fvrt.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].x);
-        fvrt.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].y);
-      }
-
-      for i in 0..sbf[ii].indices.len(){
-        fvrt.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].x);
-        fvrt.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].y);
-        fvrt.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].z);
-      }
-
-      objvec.push(Globject{
-        name: gobj.name,
-        vertices: fvrt,
-        position: Vec3 { x: gobj.position.x, y: gobj.position.y, z: gobj.position.z },
-        scale: Vec3 { x: gobj.scale.x, y: gobj.scale.y, z: gobj.scale.z },
-        rot: quat_to_euler(gobj.rotation),
-        material: mesh.material,
-      });
+    let mut bfvp = vec![];
+    for i in 0..pgltf.bufferview.len(){
+      let to = pgltf.bufferview[i].boffset+pgltf.bufferview[i].blenght;
+      bfvp.push(rwbf[pgltf.bufferview[i].buffer][pgltf.bufferview[i].boffset..to].to_vec());
     }
+
+    let objvec = Self::perobj(pgltf, bfvp);
 
     Glscene { 
       objs: objvec,
@@ -312,9 +318,10 @@ impl Glscene{
       }
       i += 8;
       let ti = i;
-      for j in ti..(ti+cl as usize){
-        chunkd.data.push(rglb[j]);
-      }
+      //for j in ti..(ti+cl as usize){
+      //  chunkd.data.push(rglb[j]);
+      //}
+      chunkd.data.extend(&rglb[ti..(ti+cl as usize)]);
       chunksrd.push(chunkd);
       i += cl as usize;
     }
@@ -331,7 +338,7 @@ impl Glscene{
     let pgltf = Gltf::parse_gltf(jgltf);
 
     let mut matimg = vec![];
-    let mut objvec = vec![];
+
 
     for i in 0..pgltf.materials.len(){
       let mut data = vec![];
@@ -343,190 +350,13 @@ impl Glscene{
       matimg.push(data);
     }
 
-    for gobj in pgltf.objects{
-      let mesh = pgltf.meshes[gobj.mesh].clone();
-      let mut acc = vec![];
-      let mut accu = vec![];
-      let mut bfv = vec![];
-
-      let mut sbf: Vec<Rdbf> = vec![];
-
-      for i in 0..mesh.attributes.len(){
-        acc.push(pgltf.accesories[mesh.attributes[i]].clone());
-        if mesh.attributesu[i] == "POSITION"{
-          accu.push(Aus::POSITION);
-        }else if mesh.attributesu[i] == "NORMAL"{
-          accu.push(Aus::NORMAL);
-        }else if mesh.attributesu[i] == "TEXCOORD_0"{
-          accu.push(Aus::UV);
-        }else{
-          accu.push(Aus::OTHER);
-        }
-      }
-      if mesh.enable_indices{
-        acc.push(pgltf.accesories[mesh.indices].clone());
-        accu.push(Aus::INDICES);
-      }
-
-      for i in 0..acc.len(){
-        bfv.push(pgltf.bufferview[acc[i].bufferview]);
-      }
-
-      let mut bfvp = vec![];
-      for i in 0..bfv.len(){
-        let mut lbf = vec![];
-        let to = bfv[i].boffset+bfv[i].blenght;
-        for j in bfv[i].boffset..to{
-          lbf.push(chunksrd[bini].data[j]);
-        }
-        bfvp.push(lbf);
-      }
-
-      for i in 0..acc.len(){
-        if acc[i].tp == "SCALAR" && accu[i] == Aus::INDICES{
-          let mut lbf = vec![];
-          match acc[i].component_type {
-            GLtypes::SignedByte => {
-              for j in 0..bfvp[i].len(){
-                lbf.push(i8::from_le_bytes([bfvp[i][j]]) as u32);
-              }
-            },
-            GLtypes::UnsignedByte => {
-              for j in 0..bfvp[i].len(){
-                lbf.push(u8::from_le_bytes([bfvp[i][j]]) as u32);
-              }
-            },
-            GLtypes::SignedShort => {
-              for j in (0..bfvp[i].len()).step_by(2){
-                lbf.push(i16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as u32);
-              }
-            },
-            GLtypes::UnsignedShort => {
-              for j in (0..bfvp[i].len()).step_by(2){
-                lbf.push(u16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as u32);
-              }
-            },
-            GLtypes::UnsignedInt => {
-              for j in (0..bfvp[i].len()).step_by(4){
-                lbf.push(u32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]) as u32);
-              }
-            },
-            _ => {}
-          }
-          sbf.push(Rdbf { tp: Rdbft::SCALAR, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: vec![], vec4: vec![], indices: lbf });
-        }else if acc[i].tp == "SCALAR" && accu[i] != Aus::INDICES{
-          let mut lbf = vec![];
-          match acc[i].component_type {
-            GLtypes::SignedByte => {
-              for j in 0..bfvp[i].len(){
-                lbf.push(i8::from_le_bytes([bfvp[i][j]]) as f32);
-              }
-            },
-            GLtypes::UnsignedByte => {
-              for j in 0..bfvp[i].len(){
-                lbf.push(u8::from_le_bytes([bfvp[i][j]]) as f32);
-              }
-            },
-            GLtypes::SignedShort => {
-              for j in (0..bfvp[i].len()).step_by(2){
-                lbf.push(i16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as f32);
-              }
-            },
-            GLtypes::UnsignedShort => {
-              for j in (0..bfvp[i].len()).step_by(2){
-                lbf.push(u16::from_le_bytes([bfvp[i][j], bfvp[i][j+1]]) as f32);
-              }
-            },
-            GLtypes::UnsignedInt => {
-              for j in (0..bfvp[i].len()).step_by(4){
-                lbf.push(u32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]) as f32);
-              }
-            },
-            GLtypes::Float => {
-              for j in (0..bfvp[i].len()).step_by(4){
-                lbf.push(f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]));
-              }
-            },
-          }
-          sbf.push(Rdbf { tp: Rdbft::SCALAR, mu: accu[i].clone(), scalar: lbf, vec2: vec![], vec3: vec![], vec4: vec![], indices: vec![] });
-        }else if acc[i].tp == "VEC2"{
-          let mut lbf = vec![];
-          for j in (0..bfvp[i].len()).step_by(8){
-            lbf.push(Vec2{ 
-              x: f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]), 
-              y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]])
-            });
-          }
-          sbf.push(Rdbf { tp: Rdbft::VEC2, mu: accu[i].clone(), scalar: vec![], vec2: lbf, vec3: vec![], vec4: vec![], indices: vec![] });
-        }else if acc[i].tp == "VEC3"{
-          let mut lbf = vec![];
-          for j in (0..bfvp[i].len()).step_by(12){
-            lbf.push(Vec3{ 
-              x: f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]), 
-              y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]]),
-              z: f32::from_le_bytes([bfvp[i][j+8], bfvp[i][j+9], bfvp[i][j+10], bfvp[i][j+11]])
-            });
-          }
-          sbf.push(Rdbf { tp: Rdbft::VEC3, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: lbf, vec4: vec![], indices: vec![] });
-        }else if acc[i].tp == "VEC4"{
-          let mut lbf = vec![];
-          for j in (0..bfvp[i].len()).step_by(12){
-            lbf.push(Vec4{ 
-              x: f32::from_le_bytes([bfvp[i][j], bfvp[i][j+1], bfvp[i][j+2], bfvp[i][j+3]]), 
-              y: f32::from_le_bytes([bfvp[i][j+4], bfvp[i][j+5], bfvp[i][j+6], bfvp[i][j+7]]),
-              z: f32::from_le_bytes([bfvp[i][j+8], bfvp[i][j+9], bfvp[i][j+10], bfvp[i][j+11]]),
-              w: f32::from_le_bytes([bfvp[i][j+12], bfvp[i][j+13], bfvp[i][j+14], bfvp[i][j+15]])
-            });
-          }
-          sbf.push(Rdbf { tp: Rdbft::VEC4, mu: accu[i].clone(), scalar: vec![], vec2: vec![], vec3: vec![], vec4: lbf, indices: vec![] });
-        }
-      }
-
-      let mut fvrt = vec![];
-
-      let mut pi = 0usize;
-      let mut ni = 0usize;
-      let mut uvi = 0usize;
-      let mut ii = 0usize;
-
-      for i in 0..sbf.len(){
-        if sbf[i].mu == Aus::INDICES{
-          ii = i;
-        }else if sbf[i].mu == Aus::POSITION{
-          pi = i;
-        }else if sbf[i].mu == Aus::UV{
-          uvi = i;
-        }else if sbf[i].mu == Aus::NORMAL{
-          ni = i;
-        }
-      }
-
-      for i in 0..sbf[ii].indices.len(){
-        fvrt.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].x);
-        fvrt.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].y);
-        fvrt.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].z);
-      }
-
-      for i in 0..sbf[ii].indices.len(){
-        fvrt.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].x);
-        fvrt.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].y);
-      }
-
-      for i in 0..sbf[ii].indices.len(){
-        fvrt.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].x);
-        fvrt.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].y);
-        fvrt.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].z);
-      }
-
-      objvec.push(Globject{
-        name: gobj.name,
-        vertices: fvrt,
-        position: Vec3 { x: gobj.position.x, y: gobj.position.y, z: gobj.position.z },
-        scale: Vec3 { x: gobj.scale.x, y: gobj.scale.y, z: gobj.scale.z },
-        rot: quat_to_euler(gobj.rotation),
-        material: mesh.material,
-      });
+    let mut bfvp = vec![];
+    for i in 0..pgltf.bufferview.len(){
+      let to = pgltf.bufferview[i].boffset+pgltf.bufferview[i].blenght;
+      bfvp.push(chunksrd[bini].data[pgltf.bufferview[i].boffset..to].to_vec());
     }
+
+    let objvec = Self::perobj(pgltf, bfvp);
 
     Glscene { 
       objs: objvec,
