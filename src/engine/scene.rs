@@ -47,7 +47,7 @@ impl Scene{
         for i in 0..mdst.len(){
             for j in 0..mdtx.len(){
                 if obj.mtl.matnam[j] == obj.matnam[i]{
-                    fobj.push(Object::new(eng, mdst[i], material, mdtx[j], super::render::render::MeshUsage::ShadowAndDefferedPass, true));
+                    fobj.push(Object::new(eng, mdst[i], material, mdtx[j], super::render::render::MeshUsage::ShadowAndDefferedPass, true, obj.obn[i].clone()));
                     break;
                 }
             }
@@ -96,7 +96,7 @@ impl Scene{
 
         for i in 0..gltfsc.objs.len(){
           let tobj = Model::new(eng, gltfsc.objs[i].vertices.clone());
-          scn.objects.push(Object::new(eng, tobj, material, ldmt[gltfsc.objs[i].material], super::render::render::MeshUsage::ShadowAndDefferedPass, true));
+          scn.objects.push(Object::new(eng, tobj, material, ldmt[gltfsc.objs[i].material], super::render::render::MeshUsage::ShadowAndDefferedPass, true, gltfsc.objs[i].name.clone()));
           let lobj = scn.objects.len()-1;
           scn.objects[lobj].physic_object.pos = gltfsc.objs[i].position;
           scn.objects[lobj].physic_object.scale = gltfsc.objs[i].scale;

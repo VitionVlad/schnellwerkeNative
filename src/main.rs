@@ -78,7 +78,7 @@ fn main() {
 
     let mut fpscnt = UItext::new_from_file(&mut eng, matt, "assets/textlat.png", "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_[]{}/*`~$%");
 
-    let mut scn = Scene::load_from_gltf(&mut eng, "assets/BRD2.gltf", matgeneral);
+    let mut scn = Scene::load_from_gltf(&mut eng, "assets/BRD1.glb", matgeneral);
 
     eng.cameras[0].physic_object.gravity = false;
     eng.cameras[0].physic_object.solid = false;

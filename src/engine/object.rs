@@ -15,13 +15,14 @@ pub struct Object{
     pub draw_distance: f32,
     pub view_reaction_distance: f32,
     pub render_in_behind: bool,
+    pub name: String,
     usage: MeshUsage,
     eng_ph_id: usize,
     blank: bool,
 }
 
 impl Object {
-    pub fn new(engine: &mut Engine, model: Model, material: Material, image: Image, usage: MeshUsage, is_static: bool) -> Object{
+    pub fn new(engine: &mut Engine, model: Model, material: Material, image: Image, usage: MeshUsage, is_static: bool, name: String) -> Object{
         let ph = PhysicsObject::new(model.points.to_vec(), is_static);
         let id = engine.obj_ph.len();
         if usage == MeshUsage::DefferedPass || usage == MeshUsage::ShadowAndDefferedPass || usage == MeshUsage::ShadowPass{
@@ -36,6 +37,7 @@ impl Object {
             draw_distance: 100f32,
             view_reaction_distance: 2f32,
             render_in_behind: true,
+            name: name,
             usage: usage,
             eng_ph_id: id,
             blank: false,
@@ -52,6 +54,7 @@ impl Object {
             draw_distance: 100f32,
             view_reaction_distance: 2f32,
             render_in_behind: true,
+            name: "".to_string(),
             eng_ph_id: 0,
             blank: true,
         }

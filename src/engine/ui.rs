@@ -34,7 +34,7 @@ impl UIplane {
     pub fn new(eng: &mut Engine, mat: Material, image: Image) -> UIplane{
         let model = Model::new(&eng, PLANEUI.to_vec());
         UIplane { 
-            object: Object::new(eng, model, mat, image, super::render::render::MeshUsage::LightingPass, true),
+            object: Object::new(eng, model, mat, image, super::render::render::MeshUsage::LightingPass, true, "".to_string()),
             clickzone: Clickzone { pos1: Vec2::new(), pos2: Vec2::new() },
             signal: false,
             allow_when_mouse_locked: false,
@@ -58,7 +58,7 @@ impl UIplane {
         let image = Image::new_from_files(eng, paths);
         let model = Model::new(&eng, PLANEUI.to_vec());
         UIplane { 
-            object: Object::new(eng, model, mat, image, super::render::render::MeshUsage::LightingPass, true),
+            object: Object::new(eng, model, mat, image, super::render::render::MeshUsage::LightingPass, true, "".to_string()),
             clickzone: Clickzone { pos1: Vec2::new(), pos2: Vec2::new() },
             signal: false,
             allow_when_mouse_locked: false,
@@ -210,7 +210,7 @@ impl UItext {
             let mut lbtst = btst;
             if self.planes.len() < bt.len() {
                 for i in  self.planes.len()..bt.len(){
-                    self.planes.push(Object::new(eng, self.plane, self.material, self.font, super::render::render::MeshUsage::LightingPass, true));
+                    self.planes.push(Object::new(eng, self.plane, self.material, self.font, super::render::render::MeshUsage::LightingPass, true, "".to_string()));
                 }
             }
             for i in  0..self.planes.len(){
