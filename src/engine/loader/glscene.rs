@@ -342,10 +342,31 @@ impl Glscene{
 
     for i in 0..pgltf.materials.len(){
       let mut data = vec![];
-      for j in 0..pgltf.materials[i].texture_indices.len(){
-        let view = pgltf.bufferview[pgltf.images[pgltf.textures[pgltf.materials[i].texture_indices[j]].image].buffer_view];
-        let rwimg = chunksrd[bini].data[view.boffset..(view.boffset+view.blenght)].to_vec();
-        data.push(ImageAsset::other_parse(rwimg));
+      if pgltf.materials[i].tex{
+        for j in 0..pgltf.materials[i].texture_indices.len(){
+          let view = pgltf.bufferview[pgltf.images[pgltf.textures[pgltf.materials[i].texture_indices[j]].image].buffer_view];
+          let rwimg = chunksrd[bini].data[view.boffset..(view.boffset+view.blenght)].to_vec();
+          data.push(ImageAsset::other_parse(rwimg));
+        }
+      }else{
+        data.push(ImageAsset { 
+          data: vec![
+            (pgltf.materials[i].basecol[0] * 255.0).min(255.0).max(0.0) as u32 as u8,
+            (pgltf.materials[i].basecol[1] * 255.0).min(255.0).max(0.0) as u32 as u8,
+            (pgltf.materials[i].basecol[2] * 255.0).min(255.0).max(0.0) as u32 as u8,
+            (pgltf.materials[i].basecol[3] * 255.0).min(255.0).max(0.0) as u32 as u8,
+          ], 
+          size: [1, 1], 
+        });
+        data.push(ImageAsset { 
+          data: vec![
+            (pgltf.materials[i].rough * 255.0).min(255.0).max(0.0) as u32 as u8,
+            (pgltf.materials[i].met * 255.0).min(255.0).max(0.0) as u32 as u8,
+            0,
+            0,
+          ], 
+          size: [1, 1], 
+        });
       }
       matimg.push(data);
     }

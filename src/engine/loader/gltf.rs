@@ -25,6 +25,10 @@ pub struct Gmaterial{
     pub double_sided: bool,
     pub name: String,
     pub texture_indices: Vec<usize>,
+    pub basecol: [f32; 4],
+    pub rough: f32,
+    pub met: f32,
+    pub tex: bool,
 }
 
 #[derive(Clone)]
@@ -155,7 +159,7 @@ impl Gltf {
                 }
             }else if json.other_nodes[i].name == "materials"{
                 for j in 0..json.other_nodes[i].other_nodes.len(){
-                    let mut msg = Gmaterial{ double_sided: false, name: "".to_string(), texture_indices: vec![] };
+                    let mut msg = Gmaterial{ double_sided: false, name: "".to_string(), texture_indices: vec![], basecol: [0.0, 0.0, 0.0, 0.0], rough: 0.0, met: 0.0, tex: true };
                     for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
                         let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
                         if fname == "doubleSided"{
@@ -165,12 +169,39 @@ impl Gltf {
                         }else if fname == "pbrMetallicRoughness"{
                             for h in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes.len(){
                                 let lfname = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].name.clone();
-                                if lfname == "baseColorTexture" || lfname == "metallicRoughnessTexture" {
+                                if lfname == "baseColorTexture" || lfname == "metallicRoughnessTexture" || lfname == "normalTexture" {
                                     for p in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes.len(){
                                         if json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].name == "index"{
                                             msg.texture_indices.push(json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].numeral_val as usize);
                                         }
                                     }
+                                }else if lfname == "baseColorFactor" {
+                                    //for p in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes.len(){
+                                    //    if json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].name == "index"{
+                                    //        msg.texture_indices.push(json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].numeral_val as usize);
+                                    //    }
+                                    //}
+                                    msg.basecol[0] = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[0].numeral_val as f32;
+                                    msg.basecol[1] = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[1].numeral_val as f32;
+                                    msg.basecol[2] = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[2].numeral_val as f32;
+                                    msg.basecol[3] = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[3].numeral_val as f32;
+                                    msg.tex = false;
+                                }else if lfname == "metallicFactor" {
+                                    //for p in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes.len(){
+                                    //    if json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].name == "index"{
+                                    //        msg.texture_indices.push(json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].numeral_val as usize);
+                                    //    }
+                                    //}
+                                    msg.met = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].numeral_val as f32;
+                                    msg.tex = false;
+                                }else if lfname == "roughnessFactor" {
+                                    //for p in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes.len(){
+                                    //    if json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].name == "index"{
+                                    //        msg.texture_indices.push(json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].numeral_val as usize);
+                                    //    }
+                                    //}
+                                    msg.rough = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].numeral_val as f32;
+                                    msg.tex = false;
                                 }
                             }
                         }
