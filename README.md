@@ -179,5 +179,3 @@ trains.exec(&mut eng);
 ...
 }
 ```
-
-# <p align="center"> <img width="1024" height="512" alt="postdev" src="https://github.com/user-attachments/assets/b7fb0768-696b-4328-977a-10dc5f5bbeda" /> </p>  
