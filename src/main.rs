@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use std::fs::{self};
+use std::{f32::consts::PI, fs::{self}};
 
 use engine::{engine::Engine, image::Image, material::Material, ui::UIplane};
 
@@ -78,88 +78,108 @@ fn main() {
 
     let mut fpscnt = UItext::new_from_file(&mut eng, matt, "assets/textlat.png", "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_[]{}/*`~$%");
 
-    let mut scn = Scene::load_from_gltf(&mut eng, "assets/BRD1.glb", matgeneral);
+    let mut scn = Scene::load_from_gltf(&mut eng, "assets/test1.glb", matgeneral);
 
     eng.cameras[0].physic_object.gravity = false;
     eng.cameras[0].physic_object.solid = false;
 
-    let mut relpos = Vec2::new();
+    //let mut relpos = Vec2::new();
 
-    let mut savpos = Vec2::new();
+    //let mut savpos = Vec2::new();
 
-    let mut relposx = 0.0;
+    //let mut relposx = 0.0;
 
     let mut tm: i32 = 0;
 
     eng.render.shadow_map_resolution = 4000;
+
+    let mut pu = 0usize;
+
+    let mut pivotr = 0.0f32;
+
+    for i in 0..scn.objects.len(){
+      scn.objects[i].draw_distance = 1000f32;
+      if scn.objects[i].name == "Pivot"{
+        pu = i;
+      }
+      //else{
+      //  let bt = scn.objects[i].name.as_bytes();
+      //  if bt[0] == b'G' && bt[1] == b'r'{
+      //    scn.objects[i].
+      //  }
+      //}
+    }
+
+    scn.objects[pu].physic_object.gravity = true;
+    scn.objects[pu].physic_object.is_static = false;
+    scn.objects[pu].physic_object.solid = true;
+    scn.objects[pu].physic_object.step_height = 0.1;
 
     while eng.work(){
       if tm > 0{
         tm -= eng.times_to_calculate_physics as i32;
       }
 
-      if !eng.control.mouse_lock{
-        relpos.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - savpos.x;
-        relpos.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - savpos.y;
-        relposx = 0.0;
-      }
-
       if eng.control.get_key_state(40){
-        eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-        eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-        eng.cameras[0].physic_object.acceleration.y += f32::sin(eng.cameras[0].physic_object.rot.x) * SPEED * eng.times_to_calculate_physics as f32;
+        scn.objects[pu].physic_object.acceleration.x += -SPEED;
+        //scn.objects[pu].physic_object.rot.y = PI/2.0;
+        pivotr = PI/2.0;
       }
-      if eng.control.get_key_state(44){
-        eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-        eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-        eng.cameras[0].physic_object.acceleration.y += f32::sin(eng.cameras[0].physic_object.rot.x) * -SPEED * eng.times_to_calculate_physics as f32;
+      else if eng.control.get_key_state(44){
+        scn.objects[pu].physic_object.acceleration.x += SPEED;
+        //scn.objects[pu].physic_object.rot.y = (PI/2.0)*3.0;
+        pivotr = (PI/2.0)*3.0;
       }
-      if eng.control.get_key_state(25){
-        eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-        eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
+      else if eng.control.get_key_state(25){
+        scn.objects[pu].physic_object.acceleration.z += SPEED;
+        //scn.objects[pu].physic_object.rot.y = PI;
+        pivotr = PI;
       }
-      if eng.control.get_key_state(22){
-        eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-        eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-      }
-      if eng.control.get_key_state(49) && tm <= 0{
-        eng.control.mouse_lock = !eng.control.mouse_lock;
-        tm = 50;
+      else if eng.control.get_key_state(22){
+        scn.objects[pu].physic_object.acceleration.z += -SPEED;
+        //scn.objects[pu].physic_object.rot.y = 0.0;
+        pivotr = 0.0;
       }
 
-      if eng.control.mouse_lock{
-        eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
-        eng.cameras[0].physic_object.rot.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - relpos.y;
-        savpos.x = eng.cameras[0].physic_object.rot.x;
-        savpos.y = eng.cameras[0].physic_object.rot.y;
-
-        if eng.cameras[0].physic_object.rot.x < -1.5 {
-          relposx = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x + 1.5;
-          eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
-        }
-        if eng.cameras[0].physic_object.rot.x > 1.5 {
-          relposx = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - 1.5;
-          eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
-        }
-
-        if eng.control.mousebtn[0] && tm <= 0{
-          eng.used_light_count += 1;
-          eng.lights[eng.used_light_count as usize - 1 as usize].pos = eng.cameras[0].physic_object.pos;
-          eng.lights[eng.used_light_count as usize - 1 as usize].rot = eng.cameras[0].physic_object.rot;
-          eng.lights[eng.used_light_count as usize - 1 as usize].color = Vec3 { x: 10.0, y: 10.0, z: 10.0 };
-          eng.lights[eng.used_light_count as usize - 1 as usize].light_type = engine::light::LightType::Spot;
-          eng.lights[eng.used_light_count as usize - 1 as usize].shadow = true;
-          tm = 50;
-          println!("light source created");
-        }
-        if eng.control.mousebtn[2] && eng.used_light_count > 0 {
-          eng.lights[eng.used_light_count as usize - 1 as usize].pos = eng.cameras[0].physic_object.pos;
-          eng.lights[eng.used_light_count as usize - 1 as usize].rot = eng.cameras[0].physic_object.rot;
-          eng.lights[eng.used_light_count as usize - 1 as usize].color = Vec3 { x: 10.0, y: 10.0, z: 10.0 };
-          eng.lights[eng.used_light_count as usize - 1 as usize].light_type = engine::light::LightType::Spot;
-          eng.lights[eng.used_light_count as usize - 1 as usize].shadow = true;
+      let step = SPEED * eng.times_to_calculate_physics as f32 * 20.0;
+      let error_margin = SPEED * 5.0;
+      let mut delta = (pivotr - scn.objects[pu].physic_object.rot.y + std::f32::consts::PI) % (2.0 * std::f32::consts::PI) - std::f32::consts::PI;
+      if delta < -std::f32::consts::PI {
+          delta += 2.0 * std::f32::consts::PI;
+      }
+      if delta.abs() <= error_margin{
+        scn.objects[pu].physic_object.rot.y = pivotr;
+      } else {
+        let direction = delta.signum(); 
+        let movement = direction * step;
+        if step > delta.abs(){
+          scn.objects[pu].physic_object.rot.y = pivotr;
+        }else{
+          scn.objects[pu].physic_object.rot.y += movement;
         }
       }
+
+      eng.cameras[0].physic_object.pos = Vec3 { 
+        x: scn.objects[pu].physic_object.pos.x - 7.5f32, 
+        y: 10f32, 
+        z: scn.objects[pu].physic_object.pos.z - 7.5f32 
+      };
+      eng.cameras[0].fov = 35f32;
+      eng.cameras[0].physic_object.rot.x = 0.7f32;
+      eng.cameras[0].physic_object.rot.y = 2.355f32;
+
+      eng.lights[0].camera.physic_object.pos = Vec3 { 
+        x: scn.objects[pu].physic_object.pos.x - 47.5f32, 
+        y: 55f32, 
+        z: scn.objects[pu].physic_object.pos.z - 47.5f32 
+      };
+      eng.lights[0].color = Vec3 { x: 1.0, y: 0.9, z: 0.5 };
+      eng.lights[0].light_type = engine::light::LightType::Directional;
+      eng.lights[0].direction = Vec3 { x: 1.0f32, y: -1.0f32, z: 1.0f32 };
+      eng.lights[0].pos = eng.lights[0].camera.physic_object.pos;
+      eng.lights[0].rot.x = 0.7f32;
+      eng.lights[0].rot.y = 2.355f32;
+      eng.lights[0].camera.fov = 15f32;
 
       scn.exec(&mut eng);
 
