@@ -212,34 +212,63 @@ impl Glscene{
       let mut fnorm = vec![];
       let mut fvrt = vec![];
 
-      let mut pi = 0usize;
-      let mut ni = 0usize;
-      let mut uvi = 0usize;
-      let mut ii = 0usize;
+      if mesh.enable_indices {
+        let mut pi = 0usize;
+        let mut ni = 0usize;
+        let mut uvi = 0usize;
+        let mut ii = 0usize;
 
-      for i in 0..accu.len(){
-        if accu[i] == Aus::INDICES{
-          ii = acc[i];
-        }else if accu[i] == Aus::POSITION{
-          pi = acc[i];
-        }else if accu[i] == Aus::UV{
-          uvi = acc[i];
-        }else if accu[i] == Aus::NORMAL{
-          ni = acc[i];
+        for i in 0..accu.len(){
+          if accu[i] == Aus::INDICES{
+            ii = acc[i];
+          }else if accu[i] == Aus::POSITION{
+            pi = acc[i];
+          }else if accu[i] == Aus::UV{
+            uvi = acc[i];
+          }else if accu[i] == Aus::NORMAL{
+            ni = acc[i];
+          }
         }
-      }
 
-      for i in 0..sbf[ii].indices.len(){
-        fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].x);
-        fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].y);
-        fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].z);
+        for i in 0..sbf[ii].indices.len(){
+          fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].x);
+          fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].y);
+          fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].z);
 
-        fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].x);
-        fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].y);
+          fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].x);
+          fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].y);
 
-        fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].x);
-        fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].y);
-        fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].z);
+          fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].x);
+          fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].y);
+          fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].z);
+        }
+      }else{
+        let mut pi = 0usize;
+        let mut ni = 0usize;
+        let mut uvi = 0usize;
+
+        for i in 0..accu.len(){
+          if accu[i] == Aus::POSITION{
+            pi = acc[i];
+          }else if accu[i] == Aus::UV{
+            uvi = acc[i];
+          }else if accu[i] == Aus::NORMAL{
+            ni = acc[i];
+          }
+        }
+
+        for i in 0..sbf[pi].vec3.len(){
+          fvert.push(sbf[pi].vec3[i].x);
+          fvert.push(sbf[pi].vec3[i].y);
+          fvert.push(sbf[pi].vec3[i].z);
+
+          fuv.push(sbf[uvi].vec2[i].x);
+          fuv.push(sbf[uvi].vec2[i].y);
+
+          fnorm.push(sbf[ni].vec3[i].x);
+          fnorm.push(sbf[ni].vec3[i].y);
+          fnorm.push(sbf[ni].vec3[i].z);
+        }
       }
 
       fvrt.append(&mut fvert);

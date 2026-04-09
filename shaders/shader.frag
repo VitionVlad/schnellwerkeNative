@@ -91,6 +91,24 @@ float shcalcpl(vec3 WorldPos, float bias, int i){
   return visibility / 9.0;
 }
 
+float shcalcpld(vec3 WorldPos, float bias, int i){
+  float visibility = 0.0;
+  vec4 smv = smi.shadowViews[i] * vec4(WorldPos, 1.0);
+  vec3 proj = vec3((smv.x / smv.w)*0.5+0.5, (smv.y / smv.w)*-0.5+0.5, smv.z / smv.w);
+  float oneOverShadowDepthTextureSize = 1.0 / mi.resolutions.z;
+  for (int y = -1; y <= 1; y++) {
+    for (int x = -1; x <= 1; x++) {
+      vec2 offset = vec2(vec2(x, y)) * oneOverShadowDepthTextureSize;
+      float lv = 0.0;
+      if (proj.z - bias < texture(sampler2DArray(shadowTexture, attachmentSampler), vec3(proj.x + offset.x, 1.0 - proj.y + offset.y, i)).r){
+        lv = 1.0;
+      }
+      visibility += lv;
+    }
+  }
+  return visibility / 9.0;
+}
+
 vec3 PBR(vec3 norm, vec3 albedo, float metallic, float roughness, float ao, vec3 WorldPos){
   vec3 N = normalize(norm);
   vec3 V = normalize(dmi.deffpos[0].xyz - WorldPos - vec3(1.0));
@@ -119,7 +137,11 @@ vec3 PBR(vec3 norm, vec3 albedo, float metallic, float roughness, float ao, vec3
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
     vec3 specular     = numerator / denominator;  
     float NdotL = max(dot(N, L), 0.0);
-    Lo += (kD * albedo / PI + specular) * radiance * NdotL * max(shcalcpl(WorldPos, 0.0, i), 0.001); 
+    if(smi.lightpos[i].w == 1.0){
+      Lo += (kD * albedo / PI + specular) * radiance * NdotL * max(shcalcpl(WorldPos, 0.0, i), 0.001); 
+    }else{
+      Lo += (kD * albedo / PI + specular) * radiance * NdotL * max(shcalcpld(WorldPos, 0.0, i), 0.001); 
+    }
   }
   vec3 ambient = vec3(0.001) * albedo * ao;
   vec3 color = ambient + Lo;
@@ -153,7 +175,11 @@ void main() {
   vec3 normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
   vec3 wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]);
 
-  vec4 op = vec4(PBR(normal, albedo, rma.y, rma.x, 1.0, wrldpos), 1.0);
+  vec4 op = vec4(PBR(normal, albedo, rma.x, rma.y, 1.0, wrldpos), 1.0);
+
+  float dst = smoothstep(16.0, 25.0, length(vec3(dmi.deffpos[0].x+7.5, dmi.deffpos[0].y, dmi.deffpos[0].z+10.0) - wrldpos));
+
+  op = mix(vec4(smi.lightcol[0].xyz, 1.0), op, 1.0-max(min(dst, 1.0), 0.0));
 
   //op = vec4(abs(normal), 1.0);
 

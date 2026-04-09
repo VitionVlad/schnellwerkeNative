@@ -59,7 +59,7 @@ fn main() {
     let mut eng = Engine::new();
     //let mut wkfc = 2.0f32;
     eng.render.set_title("ARSD");
-    eng.render.set_new_resolution(1280, 720);
+    eng.render.set_new_resolution(800, 600);
 
     let vert = fs::read("shaders/vert").unwrap();
     let frag = fs::read("shaders/frag").unwrap();
@@ -121,22 +121,22 @@ fn main() {
       }
 
       if eng.control.get_key_state(40){
-        scn.objects[pu].physic_object.acceleration.x += -SPEED;
+        scn.objects[pu].physic_object.acceleration.x += -SPEED*eng.times_to_calculate_physics as f32;
         //scn.objects[pu].physic_object.rot.y = PI/2.0;
         pivotr = PI/2.0;
       }
       else if eng.control.get_key_state(44){
-        scn.objects[pu].physic_object.acceleration.x += SPEED;
+        scn.objects[pu].physic_object.acceleration.x += SPEED*eng.times_to_calculate_physics as f32;
         //scn.objects[pu].physic_object.rot.y = (PI/2.0)*3.0;
         pivotr = (PI/2.0)*3.0;
       }
       else if eng.control.get_key_state(25){
-        scn.objects[pu].physic_object.acceleration.z += SPEED;
+        scn.objects[pu].physic_object.acceleration.z += SPEED*eng.times_to_calculate_physics as f32;
         //scn.objects[pu].physic_object.rot.y = PI;
         pivotr = PI;
       }
       else if eng.control.get_key_state(22){
-        scn.objects[pu].physic_object.acceleration.z += -SPEED;
+        scn.objects[pu].physic_object.acceleration.z += -SPEED*eng.times_to_calculate_physics as f32;
         //scn.objects[pu].physic_object.rot.y = 0.0;
         pivotr = 0.0;
       }
@@ -173,13 +173,13 @@ fn main() {
         y: 55f32, 
         z: scn.objects[pu].physic_object.pos.z - 47.5f32 
       };
-      eng.lights[0].color = Vec3 { x: 1.0, y: 0.9, z: 0.5 };
+      eng.lights[0].color = Vec3 { x: 1.0, y: 0.9, z: 0.8 };
       eng.lights[0].light_type = engine::light::LightType::Directional;
       eng.lights[0].direction = Vec3 { x: 1.0f32, y: -1.0f32, z: 1.0f32 };
       eng.lights[0].pos = eng.lights[0].camera.physic_object.pos;
       eng.lights[0].rot.x = 0.7f32;
       eng.lights[0].rot.y = 2.355f32;
-      eng.lights[0].camera.fov = 15f32;
+      eng.lights[0].camera.fov = 20f32;
 
       scn.exec(&mut eng);
 
