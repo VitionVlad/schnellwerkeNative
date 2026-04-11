@@ -177,7 +177,7 @@ void main() {
 
   vec4 op = vec4(PBR(normal, albedo, rma.x, rma.y, 1.0, wrldpos), 1.0);
 
-  float dst = smoothstep(16.0, 25.0, length(vec3(dmi.deffpos[0].x+7.5, dmi.deffpos[0].y, dmi.deffpos[0].z+10.0) - wrldpos));
+  float dst = smoothstep(0.0, 30.0, distance(mi.addinfo.yz, wrldpos.xz));
 
   op = mix(vec4(smi.lightcol[0].xyz, 1.0), op, 1.0-max(min(dst, 1.0), 0.0));
 
