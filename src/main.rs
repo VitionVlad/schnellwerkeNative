@@ -3,54 +3,16 @@ use std::{f32::consts::PI, fs::{self}};
 
 use engine::{engine::Engine, image::Image, material::Material, ui::UIplane};
 
-use crate::engine::{math::{vec2::Vec2, vec3::Vec3, vec4::Vec4}, scene::Scene, ui::UItext};
+use crate::engine::{math::vec3::Vec3, scene::Scene, ui::UItext};
 mod engine;
 
-#[derive(Clone)]
-#[derive(PartialEq)]
-enum Rdbft{
-  SCALAR,
-  VEC2,
-  VEC3,
-  VEC4
+struct Colectable{
+  index: usize,
+  ctype: u8,
+  consumed: bool,
 }
-
-#[derive(Clone)]
-#[derive(PartialEq)]
-enum Aus{
-  POSITION,
-  NORMAL,
-  UV,
-  INDICES,
-  OTHER,
-}
-
-struct Rdbf{
-  tp: Rdbft,
-  mu: Aus,
-  scalar: Vec<u32>,
-  vec2: Vec<Vec2>,
-  vec3: Vec<Vec3>,
-  vec4: Vec<Vec4>,
-}
-
-fn quat_to_euler(q: Vec4) -> Vec3 {
-    let sinr_cosp = 2.0 * (q.w * q.x + q.y * q.z);
-    let cosr_cosp = 1.0 - 2.0 * (q.x * q.x + q.y * q.y);
-    let roll = sinr_cosp.atan2(cosr_cosp);
-
-    let sinp = 2.0 * (q.w * q.y - q.z * q.x);
-    let pitch = if sinp.abs() >= 1.0 {
-        std::f32::consts::FRAC_PI_2.copysign(sinp)
-    } else {
-        sinp.asin()
-    };
-
-    let siny_cosp = 2.0 * (q.w * q.z + q.x * q.y);
-    let cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
-    let yaw = siny_cosp.atan2(cosy_cosp);
-
-    Vec3 { x: roll, y: pitch, z: yaw }
+pub fn distance(v1: Vec3, v2: Vec3) -> f32{
+  f32::sqrt((v2.x - v1.x).powi(2) + (v2.z - v1.z).powi(2))
 }
 
 fn main() {
@@ -83,6 +45,8 @@ fn main() {
     eng.cameras[0].physic_object.gravity = false;
     eng.cameras[0].physic_object.solid = false;
 
+    let mut cvec = vec![];
+
     //let mut relpos = Vec2::new();
 
     //let mut savpos = Vec2::new();
@@ -102,23 +66,58 @@ fn main() {
       if scn.objects[i].name == "Pivot"{
         pu = i;
       }
-      //else{
-      //  let bt = scn.objects[i].name.as_bytes();
-      //  if bt[0] == b'G' && bt[1] == b'r'{
-      //    scn.objects[i].
-      //  }
-      //}
+      else{
+        let bt = scn.objects[i].name.as_bytes();
+        if bt[0] == b'c' && bt[1] == b'a' && bt[2] == b'm'{
+          scn.objects[i].physic_object.gravity = false;
+          scn.objects[i].physic_object.is_static = false;
+          scn.objects[i].physic_object.solid = false;
+          cvec.push(Colectable{
+            index: i,
+            ctype: 0,
+            consumed: false,
+          });
+        }else if bt[0] == b'b' && bt[1] == b'w' && bt[2] == b'f'{
+          scn.objects[i].physic_object.gravity = false;
+          scn.objects[i].physic_object.is_static = false;
+          scn.objects[i].physic_object.solid = false;
+          cvec.push(Colectable{
+            index: i,
+            ctype: 1,
+            consumed: false,
+          });
+        }else if bt[0] == b'c' && bt[1] == b'l' && bt[2] == b'f'{
+          scn.objects[i].physic_object.gravity = false;
+          scn.objects[i].physic_object.is_static = false;
+          scn.objects[i].physic_object.solid = false;
+          cvec.push(Colectable{
+            index: i,
+            ctype: 2,
+            consumed: false,
+          });
+        }
+      }
     }
+
+    println!("{}", cvec.len());
 
     scn.objects[pu].physic_object.gravity = true;
     scn.objects[pu].physic_object.is_static = false;
     scn.objects[pu].physic_object.solid = true;
     scn.objects[pu].physic_object.step_height = 0.1;
 
+    let mut bwfilm = 0u32;
+    let mut clfilm = 0u32;
+    let mut cme = false;
+
     while eng.work(){
       if tm > 0{
         tm -= eng.times_to_calculate_physics as i32;
       }
+
+      viewport.ubo_index = 51;
+      viewport.object.mesh.ubo[49] = scn.objects[pu].physic_object.pos.x;
+      viewport.object.mesh.ubo[50] = scn.objects[pu].physic_object.pos.z;
 
       if eng.control.get_key_state(40){
         scn.objects[pu].physic_object.acceleration.x += -SPEED*eng.times_to_calculate_physics as f32;
@@ -180,6 +179,34 @@ fn main() {
       eng.lights[0].rot.x = 0.7f32;
       eng.lights[0].rot.y = 2.355f32;
       eng.lights[0].camera.fov = 20f32;
+
+      for i in 0..cvec.len(){
+        let p1 = scn.objects[pu].physic_object.pos;
+        let p2 = scn.objects[cvec[i].index].physic_object.pos;
+        let d = distance(p1, p2);
+        if d <= 5.0 && d > 0.5 {
+          if p2.x > p1.x{
+            scn.objects[cvec[i].index].physic_object.acceleration.x -= 2.0*SPEED*eng.times_to_calculate_physics as f32;
+          }else{
+            scn.objects[cvec[i].index].physic_object.acceleration.x += 2.0*SPEED*eng.times_to_calculate_physics as f32;
+          }
+          if p2.z > p1.z{
+            scn.objects[cvec[i].index].physic_object.acceleration.z -= 2.0*SPEED*eng.times_to_calculate_physics as f32;
+          }else{
+            scn.objects[cvec[i].index].physic_object.acceleration.z += 2.0*SPEED*eng.times_to_calculate_physics as f32;
+          }
+        }else if d <= 0.5 {
+          cvec[i].consumed = true;
+          scn.objects[cvec[i].index].draw = false;
+          scn.objects[cvec[i].index].draw_shadow = false;
+          match cvec[i].ctype {
+              0 => {cme = true},
+              1 => {bwfilm += 12},
+              2 => {clfilm += 12},
+              _ => {}
+          }
+        }
+      }
 
       scn.exec(&mut eng);
 
