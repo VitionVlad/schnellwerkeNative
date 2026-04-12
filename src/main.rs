@@ -20,7 +20,7 @@ fn main() {
     const TICKSZ: f32 = 1.0/250.0;
     let mut eng = Engine::new();
     //let mut wkfc = 2.0f32;
-    eng.render.set_title("ARSD");
+    eng.render.set_title("35mm");
     eng.render.set_new_resolution(800, 600);
 
     let vert = fs::read("shaders/vert").unwrap();
@@ -37,6 +37,7 @@ fn main() {
 
     let mut viewport = UIplane::new(&mut eng, mat, black);
     viewport.object.physic_object.pos.z = 1.0;
+    viewport.signal = false;
 
     let mut fpscnt = UItext::new_from_file(&mut eng, matt, "assets/textlat.png", "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_[]{}/*`~$%");
 
@@ -60,6 +61,8 @@ fn main() {
     let mut pu = 0usize;
 
     let mut pivotr = 0.0f32;
+
+    let mut pkbf = 1f32;
 
     for i in 0..scn.objects.len(){
       scn.objects[i].draw_distance = 1000f32;
@@ -118,6 +121,11 @@ fn main() {
       viewport.ubo_index = 51;
       viewport.object.mesh.ubo[49] = scn.objects[pu].physic_object.pos.x;
       viewport.object.mesh.ubo[50] = scn.objects[pu].physic_object.pos.z;
+      viewport.object.mesh.ubo[51] = pkbf;
+
+      if pkbf < 1f32{
+        pkbf += SPEED*5.0*eng.times_to_calculate_physics as f32;
+      }
 
       if eng.control.get_key_state(40){
         scn.objects[pu].physic_object.acceleration.x += -SPEED*eng.times_to_calculate_physics as f32;
@@ -181,29 +189,32 @@ fn main() {
       eng.lights[0].camera.fov = 20f32;
 
       for i in 0..cvec.len(){
-        let p1 = scn.objects[pu].physic_object.pos;
-        let p2 = scn.objects[cvec[i].index].physic_object.pos;
-        let d = distance(p1, p2);
-        if d <= 5.0 && d > 0.5 {
-          if p2.x > p1.x{
-            scn.objects[cvec[i].index].physic_object.acceleration.x -= 2.0*SPEED*eng.times_to_calculate_physics as f32;
-          }else{
-            scn.objects[cvec[i].index].physic_object.acceleration.x += 2.0*SPEED*eng.times_to_calculate_physics as f32;
-          }
-          if p2.z > p1.z{
-            scn.objects[cvec[i].index].physic_object.acceleration.z -= 2.0*SPEED*eng.times_to_calculate_physics as f32;
-          }else{
-            scn.objects[cvec[i].index].physic_object.acceleration.z += 2.0*SPEED*eng.times_to_calculate_physics as f32;
-          }
-        }else if d <= 0.5 {
-          cvec[i].consumed = true;
-          scn.objects[cvec[i].index].draw = false;
-          scn.objects[cvec[i].index].draw_shadow = false;
-          match cvec[i].ctype {
-              0 => {cme = true},
-              1 => {bwfilm += 12},
-              2 => {clfilm += 12},
-              _ => {}
+        if !cvec[i].consumed{
+          let p1 = scn.objects[pu].physic_object.pos;
+          let p2 = scn.objects[cvec[i].index].physic_object.pos;
+          let d = distance(p1, p2);
+          if d <= 5.0 && d > 0.5 {
+            if p2.x > p1.x{
+              scn.objects[cvec[i].index].physic_object.acceleration.x -= 2.0*SPEED*eng.times_to_calculate_physics as f32;
+            }else{
+              scn.objects[cvec[i].index].physic_object.acceleration.x += 2.0*SPEED*eng.times_to_calculate_physics as f32;
+            }
+            if p2.z > p1.z{
+              scn.objects[cvec[i].index].physic_object.acceleration.z -= 2.0*SPEED*eng.times_to_calculate_physics as f32;
+            }else{
+              scn.objects[cvec[i].index].physic_object.acceleration.z += 2.0*SPEED*eng.times_to_calculate_physics as f32;
+            }
+          }else if d <= 0.5{
+            cvec[i].consumed = true;
+            scn.objects[cvec[i].index].draw = false;
+            scn.objects[cvec[i].index].draw_shadow = false;
+            pkbf = 0.0;
+            match cvec[i].ctype {
+                0 => {cme = true},
+                1 => {bwfilm += 12},
+                2 => {clfilm += 12},
+                _ => {}
+            }
           }
         }
       }

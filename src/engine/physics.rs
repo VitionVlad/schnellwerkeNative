@@ -235,30 +235,6 @@ impl PhysicsObject{
     pub fn reset_states(&mut self){
         self.is_interacting = false;
     }
-    fn xcalcifmv(&mut self, ph2: PhysicsObject) -> bool{
-        let xcenter = (self.savedp1.x-self.savedp2.x)/2.0+self.savedp2.x;
-        if xcenter >= ph2.savedp1.x{
-            self.pos.x += self.intersectionp.x - self.savedp2.x;
-            return true;
-        }
-        if xcenter < ph2.savedp2.x{
-            self.pos.x -= self.savedp1.x - self.intersectionp.x;
-            return true;
-        }
-        return false;
-    }
-    fn zcalcifmv(&mut self, ph2: PhysicsObject) -> bool{
-        let zcenter = (self.savedp1.z-self.savedp2.z)/2.0+self.savedp2.z;
-        if zcenter >= ph2.savedp1.z{
-            self.pos.z += self.intersectionp.y - self.savedp2.z;
-            return true;
-        }
-        if zcenter < ph2.savedp2.z{
-            self.pos.z -= self.savedp1.z - self.intersectionp.y;
-            return true;
-        }
-        return false;
-    }
     fn calclninter(&mut self, l1p1: Vec2, l1p2: Vec2, l2p1: Vec2, l2p2: Vec2){
         self.hit = false;
 
