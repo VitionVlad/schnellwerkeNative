@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
 use std::fs;
 
 use crate::engine::{loader::{gltf::{GLtypes, Gltf}, imageasset::ImageAsset, jsonparser::JsonF}, math::{vec2::Vec2, vec3::Vec3, vec4::Vec4}};

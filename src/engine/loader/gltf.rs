@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
 use crate::engine::{loader::jsonparser::JsonF, math::{ vec3::Vec3, vec4::Vec4 }};
 
 #[derive(Clone, PartialEq)]
