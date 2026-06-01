@@ -107,6 +107,7 @@ pub struct UItext{
     pub signal_off_value: f32,
     pub new_line_symbol: u8,
     pub max_text_width: u32,
+    pub next_line_on_whitespace: bool,
     blank: bool,
 }
 
@@ -133,6 +134,7 @@ impl UItext {
             signal_off_value: 0.0f32,
             new_line_symbol: b'\n',
             max_text_width: 0,
+            next_line_on_whitespace: false,
             draw: true,
         }
     }
@@ -158,6 +160,7 @@ impl UItext {
             signal_off_value: 0.0f32,
             new_line_symbol: b'\n',
             max_text_width: 0,
+            next_line_on_whitespace: false,
             draw: false,
         }
     }
@@ -184,6 +187,7 @@ impl UItext {
             signal_off_value: 0.0f32,
             new_line_symbol: b'\n',
             max_text_width: 0,
+            next_line_on_whitespace: false,
             draw: true,
         }
     }
@@ -266,7 +270,7 @@ impl UItext {
                             bp2 = 0;
                             break;
                         }
-                        if bp2 > self.max_text_width && self.max_text_width != 0{
+                        if bp2 > self.max_text_width && self.max_text_width != 0 && ((bt[i] == b' ' && self.next_line_on_whitespace) || !self.next_line_on_whitespace){
                             posy += self.size.y;
                             bp = i;
                             bp2 = 0;
