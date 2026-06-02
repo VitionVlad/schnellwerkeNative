@@ -272,7 +272,7 @@ impl UItext {
                         }
                         if bp2 > self.max_text_width && self.max_text_width != 0 && ((bt[i] == b' ' && self.next_line_on_whitespace) || !self.next_line_on_whitespace){
                             posy += self.size.y;
-                            bp = i;
+                            bp = i+1;
                             bp2 = 0;
                         }
                     }
