@@ -54,6 +54,8 @@ typedef struct euclidh{
     uint32_t renderResolutionX;
     uint32_t renderResolutionY;
     uint32_t shadowMapsCount;
+    uint8_t enableShadowMaps;
+    uint32_t lightsCount;
     uint32_t oldshadowMapsCount;
     uint32_t defferedCount;
     uint32_t oldDefferedCount;
@@ -1381,9 +1383,17 @@ void startrender(uint32_t eh){
     vkBeginCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &beginInfo);
 }
 
-void modifyshadowdata(uint32_t eh, uint32_t ncnt, uint32_t nres){
+void modifyshadowdata(uint32_t eh, uint32_t ncnt, uint32_t nres, uint32_t lcnt){
     euclid.handle[eh].shadowMapResolution = nres;
     euclid.handle[eh].shadowMapsCount = ncnt;
+    euclid.handle[eh].lightsCount = lcnt;
+    if(ncnt == 0){
+        euclid.handle[eh].enableShadowMaps = 0;
+        euclid.handle[eh].shadowMapsCount = 1;
+        euclid.handle[eh].shadowMapResolution = 1;
+    } else {
+        euclid.handle[eh].enableShadowMaps = 1;
+    }
 }
 
 void modifydeffereddata(uint32_t eh, uint32_t ncnt, float nres){
@@ -1531,6 +1541,7 @@ uint32_t neweng(uint32_t shadowMapResolution){
     createShadowRenderPass(eh);
     createDefferedRenderPass(eh);
     euclid.handle[eh].shadowMapsCount = 1;
+    euclid.handle[eh].lightsCount = 1;
     euclid.handle[eh].oldshadowMapsCount = 1;
     euclid.handle[eh].shadowMapResolution = shadowMapResolution;
     euclid.handle[eh].oldshadowMapResolution = shadowMapResolution;
@@ -2902,6 +2913,7 @@ void draw(uint32_t eh, uint32_t eme){
     euclid.meshes[eme].lub[4] = (float) euclid.handle[eh].shadowMapsCount;
     euclid.meshes[eme].lub[5] = (float) euclid.handle[eh].resolutionScale;
     euclid.meshes[eme].lub[6] = (float) euclid.handle[eh].defferedCount;
+    euclid.meshes[eme].lub[7] = (float) euclid.handle[eh].lightsCount;
     memcpy(euclid.meshes[eme].uniformBuffersMapped[euclid.handle[eh].currentFrame], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
     vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].pipelineLayout, 0, 1, &euclid.meshes[eme].descriptorSets[euclid.handle[eh].currentFrame], 0, NULL);
 
@@ -2937,6 +2949,7 @@ void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
     euclid.meshes[eme].lub[4] = (float) euclid.handle[eh].shadowMapsCount;
     euclid.meshes[eme].lub[5] = (float) euclid.handle[eh].renderResolutionX;
     euclid.meshes[eme].lub[6] = (float) euclid.handle[eh].renderResolutionY;
+    euclid.meshes[eme].lub[7] = (float) euclid.handle[eh].lightsCount;
     memcpy(euclid.meshes[eme].uniformBuffersMapped[MAX_FRAMES_IN_FLIGHT], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
     vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].shadowPipelineLayout, 0, 1, &euclid.meshes[eme].shadowDescriptorSets[cs], 0, NULL);
 
@@ -2972,6 +2985,7 @@ void drawdeffered(uint32_t eh, uint32_t eme, uint32_t cs){
     euclid.meshes[eme].lub[4] = (float) euclid.handle[eh].shadowMapsCount;
     euclid.meshes[eme].lub[5] = (float) euclid.handle[eh].renderResolutionX;
     euclid.meshes[eme].lub[6] = (float) euclid.handle[eh].renderResolutionY;
+    euclid.meshes[eme].lub[7] = (float) euclid.handle[eh].lightsCount;
     memcpy(euclid.meshes[eme].uniformBuffersMapped[MAX_FRAMES_IN_FLIGHT], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
     vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].defferedPipelineLayout, 0, 1, &euclid.meshes[eme].defferedDescriptorSets[cs], 0, NULL);
 
@@ -2984,11 +2998,13 @@ uint32_t loopcont(uint32_t eh){
     keywork(eh);
     glfwGetFramebufferSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
     startrender(eh);
-    for(uint32_t i = 0; i != euclid.handle[eh].shadowMapsCount; i++){
-        startshadowrenderpass(eh, i);
-        for(uint32_t j = 0; j != euclid.mesize; j++){
-            if(euclid.meshes[j].euclidid == eh && (euclid.meshes[j].drawable == 1 || euclid.meshes[j].drawable == 2) && (euclid.meshes[j].usage == 2 || euclid.meshes[j].usage == 3)){
-                drawshadow(eh, j, i);
+    if(euclid.handle[eh].enableShadowMaps){
+        for(uint32_t i = 0; i != euclid.handle[eh].shadowMapsCount; i++){
+            startshadowrenderpass(eh, i);
+            for(uint32_t j = 0; j != euclid.mesize; j++){
+                if(euclid.meshes[j].euclidid == eh && (euclid.meshes[j].drawable == 1 || euclid.meshes[j].drawable == 2) && (euclid.meshes[j].usage == 2 || euclid.meshes[j].usage == 3)){
+                    drawshadow(eh, j, i);
+                }
             }
         }
         endrenderpass(eh);

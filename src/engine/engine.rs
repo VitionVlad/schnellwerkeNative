@@ -62,7 +62,8 @@ impl Engine{
             self.cumulated_time -= (self.times_to_calculate_physics * self.physics_tick) as f32;
         }
         self.render.camera_count = self.used_camera_count;
-        self.render.shadow_map_count = self.used_light_count;
+        self.render.lights_count = self.used_light_count;
+        self.render.shadow_map_count = self.lights.iter().take(self.used_light_count as usize).filter(|l| l.shadow).count() as u32;
         for i in 0..u32::min(self.used_camera_count, 10){
             let mt = self.cameras[i as usize].get_projection(self.render.resolution_x as f32/self.render.resolution_y as f32);
             for j in 0..16{
@@ -81,11 +82,16 @@ impl Engine{
             self.render.set_deffered_uniform_data(i*4+362, self.cameras[i as usize].physic_object.rot.z);
             self.render.set_deffered_uniform_data(i*4+363, 0.0);
         }
+        let mut li = 0;
         for i in 0..u32::min(self.used_light_count, 100){
-            let mt = self.lights[i as usize].getvec();
-            for j in 0..16{
-                self.render.set_shadow_uniform_data(j+i*16, mt[j as usize]);
+            if self.lights[i as usize].shadow{
+                let mt = self.lights[i as usize].getvec();
+                for j in 0..16{
+                    self.render.set_shadow_uniform_data(j+li*16, mt[j as usize]);
+                }
+                li += 1;
             }
+
             if self.lights[i as usize].light_type == LightType::Spot{
                 self.render.set_shadow_uniform_data(i*4+1600, self.lights[i as usize].pos.x);
                 self.render.set_shadow_uniform_data(i*4+1601, self.lights[i as usize].pos.y);
@@ -100,7 +106,7 @@ impl Engine{
             self.render.set_shadow_uniform_data(i*4+2000, self.lights[i as usize].color.x);
             self.render.set_shadow_uniform_data(i*4+2001, self.lights[i as usize].color.y);
             self.render.set_shadow_uniform_data(i*4+2002, self.lights[i as usize].color.z);
-            self.render.set_shadow_uniform_data(i*4+2003, 0.0);
+            self.render.set_shadow_uniform_data(i*4+2003, if self.lights[i as usize].shadow { 1.0f32 } else { 0.0f32 });
         }
         self.control.get_mouse_pos();
         for _ in 0..self.times_to_calculate_physics{
