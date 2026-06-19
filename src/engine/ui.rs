@@ -239,7 +239,7 @@ impl UItext {
                             self.planes[i].physic_object.scale.x = self.size.x;
                             self.planes[i].physic_object.scale.y = self.size.y;
                             self.planes[i].physic_object.scale.z = 1.0;
-                            self.planes[i].physic_object.pos.x = self.pos.x + ((i - bp) as f32)*self.size.x;
+                            self.planes[i].physic_object.pos.x = self.pos.x + ((i as i32 - bp as i32) as f32)*self.size.x;
                             self.planes[i].physic_object.pos.y = posy;
                             self.planes[i].physic_object.pos.z = self.pos.z;
 
