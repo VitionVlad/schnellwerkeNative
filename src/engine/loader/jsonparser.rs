@@ -45,7 +45,8 @@ impl JsonF {
 
     let mut i = brackloc;
 
-    while json[i] != b']' {
+    while !(json[i] == b']' && !brackop){
+      print!("{}", json[i] as char);
       if !brackop{
         if (json[i] >= b'0' && json[i] <= b'9') || json[i] == b'.' || json[i] == b'-' || json[i] == b'e' || json[i] == b'E'{
           rdp += &(json[i] as char).to_string();
@@ -127,7 +128,8 @@ impl JsonF {
 
     let mut i = brackloc;
 
-    while json[i] != b'}' {
+    while !(json[i] == b'}' && !brackop){
+      print!("{}", json[i] as char);
       if !brackop{
         if (json[i] >= b'0' && json[i] <= b'9') || json[i] == b'.' || json[i] == b'-' || json[i] == b'e' || json[i] == b'E'{
           rdp += &(json[i] as char).to_string();
