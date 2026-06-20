@@ -30,4 +30,5 @@ fn main(){
     println!("cargo::rustc-link-lib=vulkan-1");
     println!("cargo::rustc-link-lib=glfw3");
     println!("cargo::rerun-if-changed=src/engine/render/euclidc/euclid.c");
+    println!("cargo::rerun-if-changed=src/engine/audio/mozartc/mozart.c");
 }
