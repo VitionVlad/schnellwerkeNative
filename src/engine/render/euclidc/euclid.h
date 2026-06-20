@@ -23,7 +23,7 @@ unsigned char get_button(uint32_t eh, uint8_t n);
 uint8_t gamepad_con(uint32_t eh);
 uint8_t gamepad_axisnm(uint32_t eh);
 uint8_t gamepad_buttonnm(uint32_t eh);
-void modifyshadowdata(uint32_t eh, uint32_t ncnt, uint32_t nres);
+void modifyshadowdata(uint32_t eh, uint32_t ncnt, uint32_t nres, uint32_t lcnt);
 void modifydeffereddata(uint32_t eh, uint32_t ncnt, float nres);
 void modifyshadowuniform(uint32_t eh, uint32_t pos, float value);
 void modifydeffereduniform(uint32_t eh, uint32_t pos, float value);

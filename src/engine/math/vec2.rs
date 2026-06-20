@@ -1,3 +1,5 @@
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+
 #[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub struct Vec2{
@@ -10,28 +12,72 @@ impl Vec2{
     pub fn new() -> Vec2{
         Vec2 { x: 0.0f32, y: 0.0f32 }
     }
-    #[allow(dead_code)]
-    pub fn newdefined(x: f32, y: f32) -> Vec2{
-        Vec2 { x:x, y: y }
+}
+
+impl Add for Vec2 {
+    type Output = Self;
+    fn add(self, other: Self) -> Self::Output {
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
     }
-    #[allow(dead_code)]
-    pub fn sum(&mut self, v2: Vec2){
-        self.x += v2.x;
-        self.y += v2.y;
+}
+
+impl AddAssign for Vec2 {
+    fn add_assign(&mut self, other: Self) {
+        self.x += other.x;
+        self.y += other.y;
     }
-    #[allow(dead_code)]
-    pub fn sub(&mut self, v2: Vec2){
-        self.x -= v2.x;
-        self.y -= v2.y;
+}
+
+impl Sub for Vec2 {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self::Output {
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
     }
-    #[allow(dead_code)]
-    pub fn mul(&mut self, v2: Vec2){
-        self.x *= v2.x;
-        self.y *= v2.y;
+}
+
+impl SubAssign for Vec2 {
+    fn sub_assign(&mut self, other: Self) {
+        self.x -= other.x;
+        self.y -= other.y;
     }
-    #[allow(dead_code)]
-    pub fn div(&mut self, v2: Vec2){
-        self.x /= v2.x;
-        self.y /= v2.y;
+}
+
+impl Mul for Vec2 {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self::Output {
+        Self {
+            x: self.x * other.x,
+            y: self.y * other.y,
+        }
+    }
+}
+
+impl MulAssign for Vec2 {
+    fn mul_assign(&mut self, other: Self) {
+        self.x *= other.x;
+        self.y *= other.y;
+    }
+}
+
+impl Div for Vec2 {
+    type Output = Self;
+    fn div(self, other: Self) -> Self::Output {
+        Self {
+            x: self.x / other.x,
+            y: self.y / other.y,
+        }
+    }
+}
+
+impl DivAssign for Vec2 {
+    fn div_assign(&mut self, other: Self) {
+        self.x /= other.x;
+        self.y /= other.y;
     }
 }

@@ -1,10 +1,11 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::{fs, i8, vec};
+use std::{fs, io::Cursor, vec};
+use image::{EncodableLayout, ImageReader};
 
 pub struct ImageAsset{
-    pub data: Vec<i8>,
+    pub data: Vec<u8>,
     pub size: [u32; 2],
 }
 
@@ -12,13 +13,13 @@ impl ImageAsset{
     pub fn load_tga(path: &str) -> ImageAsset{
         let tga = fs::read(path).unwrap();
         let size16: [u32; 2] = [ ((tga[12] as u32) << 16) | ((tga[13] as u32) << 8) , ((tga[14] as u32) << 16) | ((tga[15] as u32) << 8)];
-        let mut data: Vec<i8> = vec![];
+        let mut data: Vec<u8> = vec![];
         let sz = size16[0] * size16[1] * 3;
         for i in (0..sz as usize).step_by(3) {
-            data.push(tga[i+18] as i8);
-            data.push(tga[i+19] as i8);
-            data.push(tga[i+20] as i8);
-            data.push(i8::MAX);
+            data.push(tga[i+18] as u8);
+            data.push(tga[i+19] as u8);
+            data.push(tga[i+20] as u8);
+            data.push(u8::MAX);
         }
         ImageAsset { 
             data: data, 
@@ -53,18 +54,36 @@ impl ImageAsset{
                 componentscnt = (tiff[i as usize + 11] as u32) << 24 | (tiff[i as usize + 10] as u32) << 16 | (tiff[i as usize + 9] as u32) << 8 | (tiff[i as usize + 8] as u32);
             }
         }
-        let mut data: Vec<i8> = vec![];
+        let mut data: Vec<u8> = vec![];
         let esz: u32 = size[0]*size[1]*componentscnt + begoff;
         for i in (begoff..esz).step_by(componentscnt as usize){
             for j in 0..componentscnt{
-                data.push(tiff[i as usize + j as usize] as i8);
+                data.push(tiff[i as usize + j as usize] as u8);
             }
             for _ in 0..(4 - componentscnt){
-                data.push(tiff[i as usize] as i8);
+                data.push(tiff[i as usize] as u8);
             }
         }
         ImageAsset { 
             data: data, 
+            size: size, 
+        }
+    }
+    pub fn other_parse(raw_data: Vec<u8>) -> ImageAsset{
+        let img = ImageReader::new(Cursor::new(raw_data)).with_guessed_format().unwrap().decode().unwrap().into_rgba8();
+        let size = [img.width(), img.height()];
+        let data = img.as_bytes();
+        ImageAsset { 
+            data: data.to_vec(), 
+            size: size, 
+        }
+    }
+    pub fn other_load(path: &str) -> ImageAsset{
+        let img = ImageReader::open(path).unwrap().decode().unwrap().into_rgba8();
+        let size = [img.width(), img.height()];
+        let data = img.as_bytes();
+        ImageAsset { 
+            data: data.to_vec(), 
             size: size, 
         }
     }

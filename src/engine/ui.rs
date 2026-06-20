@@ -34,8 +34,8 @@ impl UIplane {
     pub fn new(eng: &mut Engine, mat: Material, image: Image) -> UIplane{
         let model = Model::new(&eng, PLANEUI.to_vec());
         UIplane { 
-            object: Object::new(eng, model, mat, image, super::render::render::MeshUsage::LightingPass, true),
-            clickzone: Clickzone { pos1: Vec2::newdefined(0.0, 0.0), pos2: Vec2::newdefined(0.0, 0.0) },
+            object: Object::new(eng, model, mat, image, super::render::render::MeshUsage::LightingPass, true, "".to_string()),
+            clickzone: Clickzone { pos1: Vec2::new(), pos2: Vec2::new() },
             signal: false,
             allow_when_mouse_locked: false,
             ubo_index: 50,
@@ -46,7 +46,7 @@ impl UIplane {
     pub fn new_blank() -> UIplane{
         UIplane { 
             object: Object::new_blank(),
-            clickzone: Clickzone { pos1: Vec2::newdefined(0.0, 0.0), pos2: Vec2::newdefined(0.0, 0.0) },
+            clickzone: Clickzone { pos1: Vec2::new(), pos2: Vec2::new() },
             signal: false,
             allow_when_mouse_locked: false,
             ubo_index: 50,
@@ -58,8 +58,8 @@ impl UIplane {
         let image = Image::new_from_files(eng, paths);
         let model = Model::new(&eng, PLANEUI.to_vec());
         UIplane { 
-            object: Object::new(eng, model, mat, image, super::render::render::MeshUsage::LightingPass, true),
-            clickzone: Clickzone { pos1: Vec2::newdefined(0.0, 0.0), pos2: Vec2::newdefined(0.0, 0.0) },
+            object: Object::new(eng, model, mat, image, super::render::render::MeshUsage::LightingPass, true, "".to_string()),
+            clickzone: Clickzone { pos1: Vec2::new(), pos2: Vec2::new() },
             signal: false,
             allow_when_mouse_locked: false,
             ubo_index: 50,
@@ -72,7 +72,7 @@ impl UIplane {
         self.clickzone.pos1.y = self.object.physic_object.pos.y;
         self.clickzone.pos2.x = self.object.physic_object.pos.x + self.object.physic_object.scale.x;
         self.clickzone.pos2.y = self.object.physic_object.pos.y + self.object.physic_object.scale.y;
-        let btst = self.clickzone.check(Vec2::newdefined(eng.control.xpos as f32, eng.control.ypos as f32));
+        let btst = self.clickzone.check(Vec2{ x: eng.control.xpos as f32, y: eng.control.ypos as f32});
         if self.signal{
             if btst && (self.allow_when_mouse_locked || (!self.allow_when_mouse_locked && !eng.control.mouse_lock)) && self.object.draw{
                 self.object.mesh.ubo[self.ubo_index] = self.signal_on_value;
@@ -106,6 +106,8 @@ pub struct UItext{
     pub signal_on_value: f32,
     pub signal_off_value: f32,
     pub new_line_symbol: u8,
+    pub max_text_width: u32,
+    pub next_line_on_whitespace: bool,
     blank: bool,
 }
 
@@ -118,9 +120,9 @@ impl UItext {
             planes: vec![],
             symbol_number: symbols.len() as u32,
             material: mat,
-            size: Vec2::newdefined(20.0, 40.0),
+            size: Vec2{ x: 20.0, y: 40.0},
             pos: Vec3::new(),
-            clickzone: Clickzone { pos1: Vec2::newdefined(0.0, 0.0), pos2: Vec2::newdefined(0.0, 0.0) },
+            clickzone: Clickzone { pos1: Vec2::new(), pos2: Vec2::new() },
             signal: false,
             per_symbol: true,
             allow_when_mouse_locked: false,
@@ -131,6 +133,8 @@ impl UItext {
             signal_on_value: 1.0f32,
             signal_off_value: 0.0f32,
             new_line_symbol: b'\n',
+            max_text_width: 0,
+            next_line_on_whitespace: false,
             draw: true,
         }
     }
@@ -142,9 +146,9 @@ impl UItext {
             planes: vec![],
             symbol_number: 0,
             material: Material { material_shaders: MaterialShaders{ materialid: 0 } },
-            size: Vec2::newdefined(20.0, 40.0),
+            size: Vec2{ x: 20.0, y: 40.0},
             pos: Vec3::new(),
-            clickzone: Clickzone { pos1: Vec2::newdefined(0.0, 0.0), pos2: Vec2::newdefined(0.0, 0.0) },
+            clickzone: Clickzone { pos1: Vec2::new(), pos2: Vec2::new() },
             signal: false,
             per_symbol: true,
             allow_when_mouse_locked: false,
@@ -155,6 +159,8 @@ impl UItext {
             signal_on_value: 1.0f32,
             signal_off_value: 0.0f32,
             new_line_symbol: b'\n',
+            max_text_width: 0,
+            next_line_on_whitespace: false,
             draw: false,
         }
     }
@@ -167,9 +173,9 @@ impl UItext {
             planes: vec![],
             symbol_number: symbols.len() as u32,
             material: mat,
-            size: Vec2::newdefined(20.0, 40.0),
+            size: Vec2{ x: 20.0, y: 40.0},
             pos: Vec3::new(),
-            clickzone: Clickzone { pos1: Vec2::newdefined(0.0, 0.0), pos2: Vec2::newdefined(0.0, 0.0) },
+            clickzone: Clickzone { pos1: Vec2::new(), pos2: Vec2::new() },
             signal: false,
             per_symbol: true,
             allow_when_mouse_locked: false,
@@ -180,6 +186,8 @@ impl UItext {
             signal_on_value: 1.0f32,
             signal_off_value: 0.0f32,
             new_line_symbol: b'\n',
+            max_text_width: 0,
+            next_line_on_whitespace: false,
             draw: true,
         }
     }
@@ -206,11 +214,11 @@ impl UItext {
             self.clickzone.pos1.y = self.pos.y;
             self.clickzone.pos2.x = self.pos.x + self.size.x*(mx as f32 + 1.0);
             self.clickzone.pos2.y = self.pos.y + self.size.y*(my as f32);
-            let mut btst = self.clickzone.check(Vec2::newdefined(eng.control.xpos as f32, eng.control.ypos as f32));
+            let mut btst = self.clickzone.check(Vec2{ x: eng.control.xpos as f32, y: eng.control.ypos as f32});
             let mut lbtst = btst;
             if self.planes.len() < bt.len() {
                 for i in  self.planes.len()..bt.len(){
-                    self.planes.push(Object::new(eng, self.plane, self.material, self.font, super::render::render::MeshUsage::LightingPass, true));
+                    self.planes.push(Object::new(eng, self.plane, self.material, self.font, super::render::render::MeshUsage::LightingPass, true, "".to_string()));
                 }
             }
             for i in  0..self.planes.len(){
@@ -219,8 +227,10 @@ impl UItext {
             }
             let mut posy: f32 = self.pos.y;
             let mut bp: usize = 0;
+            let mut bp2 = 0;
             if self.draw{
                 for i in 0..bt.len(){
+                    bp2+=1;
                     for j in 0..self.symbols.len(){
                         if bt[i] == self.symbols[j] {
                             self.planes[i].mesh.draw = true;
@@ -229,7 +239,7 @@ impl UItext {
                             self.planes[i].physic_object.scale.x = self.size.x;
                             self.planes[i].physic_object.scale.y = self.size.y;
                             self.planes[i].physic_object.scale.z = 1.0;
-                            self.planes[i].physic_object.pos.x = self.pos.x + ((i - bp) as f32)*self.size.x;
+                            self.planes[i].physic_object.pos.x = self.pos.x + ((i as i32 - bp as i32) as f32)*self.size.x;
                             self.planes[i].physic_object.pos.y = posy;
                             self.planes[i].physic_object.pos.z = self.pos.z;
 
@@ -238,7 +248,7 @@ impl UItext {
                                 self.clickzone.pos1.y = self.planes[i].physic_object.pos.y;
                                 self.clickzone.pos2.x = self.planes[i].physic_object.pos.x + self.size.x;
                                 self.clickzone.pos2.y = self.planes[i].physic_object.pos.y + self.size.y;
-                                lbtst = self.clickzone.check(Vec2::newdefined(eng.control.xpos as f32, eng.control.ypos as f32));
+                                lbtst = self.clickzone.check(Vec2{ x: eng.control.xpos as f32, y: eng.control.ypos as f32});
                                 if lbtst{
                                     self.symbol_pressed = self.symbols[j];
                                     self.symbol_index = i;
@@ -254,10 +264,16 @@ impl UItext {
                             self.planes[i].exec(eng);
                             break;
                         }
-                        if bt[i] == self.new_line_symbol {
-                            posy+=self.size.y;
+                        if bt[i] == self.new_line_symbol{
+                            posy += self.size.y;
                             bp = i+1;
+                            bp2 = 0;
                             break;
+                        }
+                        if bp2 > self.max_text_width && self.max_text_width != 0 && ((bt[i] == b' ' && self.next_line_on_whitespace) || !self.next_line_on_whitespace){
+                            posy += self.size.y;
+                            bp = i+1;
+                            bp2 = 0;
                         }
                     }
                 }

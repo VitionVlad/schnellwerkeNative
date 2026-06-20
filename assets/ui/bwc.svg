@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="512"
+   height="512"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3 (0e150ed6c4, 2023-07-21)"
+   sodipodi:docname="bwc.svg"
+   inkscape:export-filename="bwc.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     inkscape:zoom="1.1835938"
+     inkscape:cx="255.99999"
+     inkscape:cy="255.57755"
+     inkscape:window-width="1600"
+     inkscape:window-height="877"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <linearGradient
+       id="linearGradient5"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#c800c8;stop-opacity:1;"
+         offset="0"
+         id="stop5" />
+      <stop
+         style="stop-color:#0064c8;stop-opacity:1;"
+         offset="0.25"
+         id="stop7" />
+      <stop
+         style="stop-color:#00c800;stop-opacity:1;"
+         offset="0.5"
+         id="stop8" />
+      <stop
+         style="stop-color:#a08c00;stop-opacity:1;"
+         offset="0.75"
+         id="stop6" />
+      <stop
+         style="stop-color:#c80000;stop-opacity:1;"
+         offset="1"
+         id="stop9" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient5"
+       id="linearGradient6"
+       x1="170.03908"
+       y1="459.03583"
+       x2="170.03908"
+       y2="92.027008"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.1191965,0,0,0.99768284,-9.5966159,0.63844941)"
+       spreadMethod="pad" />
+    <filter
+       inkscape:label="Pixellize"
+       inkscape:menu="Pixel Tools"
+       inkscape:menu-tooltip="Reduce or remove antialiasing around shapes"
+       style="color-interpolation-filters:sRGB;"
+       id="filter37"
+       x="-0.041402044"
+       y="-0.021756558"
+       width="1.0828041"
+       height="1.0435131">
+      <feColorMatrix
+         values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1000 -500 "
+         id="feColorMatrix37" />
+      <feGaussianBlur
+         stdDeviation="0.017144518"
+         id="feGaussianBlur44" />
+    </filter>
+  </defs>
+  <g
+     inkscape:label="Strat 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#0b1728;stroke-width:15.15;stroke-linejoin:bevel"
+       id="rect1"
+       width="512"
+       height="512"
+       x="0"
+       y="0" />
+    <g
+       id="g4"
+       transform="matrix(1.0752212,0,0,1.0752212,-19.256627,0.27478842)">
+      <rect
+         style="fill:#0b1728;stroke:#ffffff;stroke-width:15;stroke-linejoin:bevel"
+         id="rect2"
+         width="266.13861"
+         height="393.71616"
+         x="149.75578"
+         y="59.141922" />
+      <rect
+         style="fill:#1a1a1a;stroke:#ffffff;stroke-width:15;stroke-linejoin:bevel"
+         id="rect3"
+         width="319.78879"
+         height="341.33331"
+         x="96.105606"
+         y="85.333344" />
+      <rect
+         style="fill:#0b1728;stroke:#ffffff;stroke-width:15;stroke-linejoin:bevel"
+         id="rect4"
+         width="87.023102"
+         height="36.33004"
+         x="239.31354"
+         y="22.81188" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-weight:300;font-stretch:semi-condensed;font-size:146.667px;line-height:1;font-family:Bahnschrift;-inkscape-font-specification:'Bahnschrift Light Semi-Condensed';text-align:center;letter-spacing:4.24674px;text-anchor:middle;fill:#ffffff;stroke:#ffffff;stroke-width:13.7881;stroke-linejoin:bevel"
+       x="204.29955"
+       y="-301.68335"
+       id="text4"
+       transform="matrix(0,1.0048082,-0.99521481,-0.18343213,0,0)"><tspan
+         sodipodi:role="line"
+         id="tspan4"
+         x="206.42291"
+         y="-301.68335"
+         style="font-size:146.667px;stroke:none;stroke-width:13.7881">Color</tspan></text>
+    <rect
+       style="mix-blend-mode:normal;fill:url(#linearGradient6);stroke:#ffffff;stroke-width:15.8504;stroke-linejoin:bevel;stroke-opacity:1;filter:url(#filter37)"
+       id="rect5"
+       width="192.41434"
+       height="366.15842"
+       x="84.503365"
+       y="92.452217" />
+  </g>
+</svg>

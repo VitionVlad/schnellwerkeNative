@@ -1,3 +1,5 @@
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+
 #[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub struct Vec3{
@@ -11,32 +13,80 @@ impl Vec3{
     pub fn new() -> Vec3{
         Vec3 { x: 0.0f32, y: 0.0f32, z: 0.0f32 }
     }
-    #[allow(dead_code)]
-    pub fn newdefined(x: f32, y: f32, z:f32) -> Vec3{
-        Vec3 { x:x, y: y, z: z }
+}
+
+impl Add for Vec3 {
+    type Output = Self;
+    fn add(self, other: Self) -> Self::Output {
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
+        }
     }
-    #[allow(dead_code)]
-    pub fn sum(&mut self, v2: Vec3){
-        self.x += v2.x;
-        self.y += v2.y;
-        self.z += v2.z;
+}
+
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, other: Self) {
+        self.x += other.x;
+        self.y += other.y;
+        self.z += other.z;
     }
-    #[allow(dead_code)]
-    pub fn sub(&mut self, v2: Vec3){
-        self.x -= v2.x;
-        self.y -= v2.y;
-        self.z -= v2.z;
+}
+
+impl Sub for Vec3 {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self::Output {
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+            z: self.z - other.z,
+        }
     }
-    #[allow(dead_code)]
-    pub fn mul(&mut self, v2: Vec3){
-        self.x *= v2.x;
-        self.y *= v2.y;
-        self.z *= v2.z;
+}
+
+impl SubAssign for Vec3 {
+    fn sub_assign(&mut self, other: Self) {
+        self.x -= other.x;
+        self.y -= other.y;
+        self.z -= other.z;
     }
-    #[allow(dead_code)]
-    pub fn div(&mut self, v2: Vec3){
-        self.x /= v2.x;
-        self.y /= v2.y;
-        self.z /= v2.z;
+}
+
+impl Mul for Vec3 {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self::Output {
+        Self {
+            x: self.x * other.x,
+            y: self.y * other.y,
+            z: self.z * other.z,
+        }
+    }
+}
+
+impl MulAssign for Vec3 {
+    fn mul_assign(&mut self, other: Self) {
+        self.x *= other.x;
+        self.y *= other.y;
+        self.z *= other.z;
+    }
+}
+
+impl Div for Vec3 {
+    type Output = Self;
+    fn div(self, other: Self) -> Self::Output {
+        Self {
+            x: self.x / other.x,
+            y: self.y / other.y,
+            z: self.z / other.z,
+        }
+    }
+}
+
+impl DivAssign for Vec3 {
+    fn div_assign(&mut self, other: Self) {
+        self.x /= other.x;
+        self.y /= other.y;
+        self.z /= other.z;
     }
 }

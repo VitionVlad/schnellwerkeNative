@@ -1,3 +1,7 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+use std::ops::Mul;
+
 use crate::engine::math::vec2::Vec2;
 
 use super::math::{mat4::Mat4, vec3::Vec3};
@@ -7,10 +11,14 @@ pub fn check_for_intersection(x1: f32, x2: f32, y1: f32, y2: f32) -> bool{
     return x1 <= y2 && y1 <= x2;
 }
 
+pub fn distance(v1: Vec3, v2: Vec3) -> f32{
+  f32::sqrt((v2.x - v1.x).powi(2) + (v2.z - v1.z).powi(2))
+}
+
 #[allow(dead_code)]
 pub fn getpoints(v: Vec<f32>) -> Vec<Vec3>{
-    let mut v1 = Vec3::newdefined(v[0], v[1], v[2]);
-    let mut v2 = Vec3::newdefined(v[0], v[1], v[2]);
+    let mut v1 = Vec3{ x: v[0], y: v[1], z: v[2]};
+    let mut v2 = Vec3{ x: v[0], y: v[1], z: v[2]};
     for i in (0..v.len()/8*3).step_by(3){
         if v[i] > v1.x {
             v1.x = v[i];
@@ -79,7 +87,7 @@ impl PhysicsObject{
             air_friction: 0.9f32,
             pos: Vec3::new(),
             rot: Vec3::new(),
-            scale: Vec3::newdefined(1f32, 1f32, 1f32),
+            scale: Vec3{ x: 1f32, y: 1f32, z: 1f32},
             mat: Mat4::new(),
             solid: true,
             mass: 0.01f32,
@@ -96,25 +104,6 @@ impl PhysicsObject{
         }
     }
     #[allow(dead_code)]
-    fn mat4mat4mulop(m1: Mat4, m2: Mat4) -> Mat4 {
-        let mut t: Mat4 = Mat4::new();
-        t.mat[0] = m1.mat[0] * m2.mat[0] + m1.mat[1] * m2.mat[4] + m1.mat[2] * m2.mat[8] + m1.mat[3] * m2.mat[12];
-        t.mat[1] = m1.mat[0] * m2.mat[1] + m1.mat[1] * m2.mat[5] + m1.mat[2] * m2.mat[9] + m1.mat[3] * m2.mat[13];
-        t.mat[2] = m1.mat[0] * m2.mat[2] + m1.mat[1] * m2.mat[6] + m1.mat[2] * m2.mat[10] +m1.mat[3] * m2.mat[14];
-        t.mat[3] = m1.mat[0] * m2.mat[3] + m1.mat[1] * m2.mat[7] + m1.mat[2] * m2.mat[11] +m1.mat[3] * m2.mat[15];
-
-        t.mat[4] = m1.mat[4] * m2.mat[0] + m1.mat[5] * m2.mat[4] + m1.mat[6] * m2.mat[8] + m1.mat[7] * m2.mat[12];
-        t.mat[5] = m1.mat[4] * m2.mat[1] + m1.mat[5] * m2.mat[5] + m1.mat[6] * m2.mat[9] + m1.mat[7] * m2.mat[13];
-        t.mat[6] = m1.mat[4] * m2.mat[2] + m1.mat[5] * m2.mat[6] + m1.mat[6] * m2.mat[10] + m1.mat[7] * m2.mat[14];
-        t.mat[7] = m1.mat[4] * m2.mat[3] + m1.mat[5] * m2.mat[7] + m1.mat[6] * m2.mat[11] + m1.mat[7] * m2.mat[15];
-
-        t.mat[8] = m1.mat[8] * m2.mat[0] + m1.mat[9] * m2.mat[4] + m1.mat[10] * m2.mat[8] + m1.mat[11] * m2.mat[12];
-        t.mat[9] = m1.mat[8] * m2.mat[1] + m1.mat[9] * m2.mat[5] + m1.mat[10] * m2.mat[9] + m1.mat[11] * m2.mat[13];
-        t.mat[10] = m1.mat[8] * m2.mat[2] + m1.mat[9] * m2.mat[6] + m1.mat[10] * m2.mat[10] + m1.mat[11] * m2.mat[14];
-        t.mat[11] = m1.mat[8] * m2.mat[3] + m1.mat[9] * m2.mat[7] + m1.mat[10] * m2.mat[11] + m1.mat[11] * m2.mat[15];
-        return t;
-    }
-    #[allow(dead_code)]
     fn mat4vec3mulop(m1: Mat4, vec: Vec3) -> Vec3 {
         Vec3 { 
             x: vec.x * m1.mat[0] + vec.y * m1.mat[1] + vec.z * m1.mat[2] + m1.mat[3], 
@@ -124,7 +113,7 @@ impl PhysicsObject{
     }
     #[allow(dead_code)]
     fn getbgp(v: Vec<Vec3>) -> Vec3 {
-        let mut f = Vec3::newdefined(v[0].x, v[0].y, v[0].z);
+        let mut f = Vec3{ x: v[0].x, y: v[0].y, z: v[0].z};
         for i in 0..v.len(){
             if v[i].x > f.x{
                 f.x = v[i].x;
@@ -140,7 +129,7 @@ impl PhysicsObject{
     }
     #[allow(dead_code)]
     fn getbsp(v: Vec<Vec3>) -> Vec3 {
-        let mut f = Vec3::newdefined(v[0].x, v[0].y, v[0].z);
+        let mut f = Vec3{ x: v[0].x, y: v[0].y, z: v[0].z};
         for i in 0..v.len(){
             if v[i].x < f.x{
                 f.x = v[i].x;
@@ -162,7 +151,7 @@ impl PhysicsObject{
             self.oldpos = self.pos;
             self.oldrot = self.rot;
             self.oldscale = self.scale;
-            self.speed.sum(self.acceleration);
+            self.speed += self.acceleration;
             self.acceleration.x = 0.0;
             self.acceleration.y = 0.0;
             self.acceleration.z = 0.0;
@@ -170,7 +159,7 @@ impl PhysicsObject{
             self.speed.x *= self.air_friction;
             self.speed.y *= self.air_friction;
             self.speed.z *= self.air_friction;
-            self.pos.sum(self.speed);
+            self.pos += self.speed;
 
             if self.gravity{
                 self.acceleration.y = -self.mass;
@@ -180,27 +169,27 @@ impl PhysicsObject{
             let mut t: Mat4 = Mat4::new();
             if self.enable_rotation {
                 t.yrot(self.rot.y);
-                mmat = Self::mat4mat4mulop(mmat, t);
+                mmat = mmat.mul(t);
                 t = Mat4::new();
                 t.xrot(self.rot.x);
-                mmat = Self::mat4mat4mulop(mmat, t);
+                mmat =  mmat.mul(t);
                 t = Mat4::new();
                 t.zrot(self.rot.z);
-                mmat = Self::mat4mat4mulop(mmat, t);
+                mmat =  mmat.mul(t);
                 t = Mat4::new();
             }
             t.scale(self.scale);
-            mmat = Self::mat4mat4mulop(mmat, t);
+            mmat =  mmat.mul(t);
             self.mat = mmat;
             self.c1 = [
-                Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v1.y, self.v1.z)),
-                Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v2.y, self.v1.z)),
-                Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v2.x, self.v2.y, self.v1.z)),
-                Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v2.x, self.v1.y, self.v1.z)),
-                Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v2.x, self.v2.y, self.v2.z)),
-                Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v2.y, self.v2.z)),
-                Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v1.y, self.v2.z)),
-                Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v2.x, self.v1.y, self.v2.z)),
+                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v1.y, z: self.v1.z}),
+                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v2.y, z: self.v1.z}),
+                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v2.y, z: self.v1.z}),
+                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v1.y, z: self.v1.z}),
+                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v2.y, z: self.v2.z}),
+                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v2.y, z: self.v2.z}),
+                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v1.y, z: self.v2.z}),
+                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v1.y, z: self.v2.z}),
             ];
             self.savedp1 = Self::getbgp(self.c1.to_vec());
             self.savedp2 = Self::getbsp(self.c1.to_vec());
@@ -211,30 +200,30 @@ impl PhysicsObject{
                 let mut t: Mat4 = Mat4::new();
                 if self.enable_rotation {
                     t.yrot(self.rot.y);
-                    mmat = Self::mat4mat4mulop(mmat, t);
+                    mmat =  mmat.mul(t);
                     t = Mat4::new();
                     t.xrot(self.rot.x);
-                    mmat = Self::mat4mat4mulop(mmat, t);
+                    mmat =  mmat.mul(t);
                     t = Mat4::new();
                     t.zrot(self.rot.z);
-                    mmat = Self::mat4mat4mulop(mmat, t);
+                    mmat =  mmat.mul(t);
                     t = Mat4::new();
                 }
                 t.scale(self.scale);
-                mmat = Self::mat4mat4mulop(mmat, t);
+                mmat =  mmat.mul(t);
                 self.mat = mmat;
                 self.oldpos = self.pos;
                 self.oldrot = self.rot;
                 self.oldscale = self.scale;
                 self.c1 = [
-                    Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v1.y, self.v1.z)),
-                    Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v2.y, self.v1.z)),
-                    Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v2.x, self.v2.y, self.v1.z)),
-                    Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v2.x, self.v1.y, self.v1.z)),
-                    Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v2.x, self.v2.y, self.v2.z)),
-                    Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v2.y, self.v2.z)),
-                    Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v1.x, self.v1.y, self.v2.z)),
-                    Self::mat4vec3mulop(self.mat, Vec3::newdefined(self.v2.x, self.v1.y, self.v2.z)),
+                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v1.y, z: self.v1.z}),
+                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v2.y, z: self.v1.z}),
+                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v2.y, z: self.v1.z}),
+                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v1.y, z: self.v1.z}),
+                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v2.y, z: self.v2.z}),
+                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v2.y, z: self.v2.z}),
+                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v1.y, z: self.v2.z}),
+                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v1.y, z: self.v2.z}),
                 ];
                 self.savedp1 = Self::getbgp(self.c1.to_vec());
                 self.savedp2 = Self::getbsp(self.c1.to_vec());
@@ -248,36 +237,13 @@ impl PhysicsObject{
     pub fn reset_states(&mut self){
         self.is_interacting = false;
     }
-    fn xcalcifmv(&mut self, ph2: PhysicsObject) -> bool{
-        let xcenter = (self.savedp1.x-self.savedp2.x)/2.0+self.savedp2.x;
-        if xcenter >= ph2.savedp1.x{
-            self.pos.x += self.intersectionp.x - self.savedp2.x;
-            return true;
-        }
-        if xcenter < ph2.savedp2.x{
-            self.pos.x -= self.savedp1.x - self.intersectionp.x;
-            return true;
-        }
-        return false;
-    }
-    fn zcalcifmv(&mut self, ph2: PhysicsObject) -> bool{
-        let zcenter = (self.savedp1.z-self.savedp2.z)/2.0+self.savedp2.z;
-        if zcenter >= ph2.savedp1.z{
-            self.pos.z += self.intersectionp.y - self.savedp2.z;
-            return true;
-        }
-        if zcenter < ph2.savedp2.z{
-            self.pos.z -= self.savedp1.z - self.intersectionp.y;
-            return true;
-        }
-        return false;
-    }
+
     fn calclninter(&mut self, l1p1: Vec2, l1p2: Vec2, l2p1: Vec2, l2p2: Vec2){
         self.hit = false;
 
-        let d1 = Vec2::newdefined(l1p2.x - l1p1.x, l1p2.y - l1p1.y); 
-        let d2 = Vec2::newdefined(l2p2.x - l2p1.x, l2p2.y - l2p1.y); 
-        let d3 = Vec2::newdefined(l2p1.x - l1p1.x, l2p1.y - l1p1.y); 
+        let d1 = Vec2{ x: l1p2.x - l1p1.x, y: l1p2.y - l1p1.y}; 
+        let d2 = Vec2{ x: l2p2.x - l2p1.x, y: l2p2.y - l2p1.y}; 
+        let d3 = Vec2{ x: l2p1.x - l1p1.x, y: l2p1.y - l1p1.y}; 
 
         let denom = Self::cross(d1, d2);
 
@@ -308,17 +274,17 @@ impl PhysicsObject{
                 self.speed.y = -self.speed.y * self.elasticity;
                 if self.savedp2.y + self.step_height <= ph2.savedp1.y{
                     let m = [
-                        [Vec2::newdefined(self.c1[3].x, self.c1[3].z), Vec2::newdefined(self.c1[0].x, self.c1[0].z)],
-                        [Vec2::newdefined(self.c1[0].x, self.c1[0].z), Vec2::newdefined(self.c1[6].x, self.c1[6].z)],
-                        [Vec2::newdefined(self.c1[6].x, self.c1[6].z), Vec2::newdefined(self.c1[7].x, self.c1[7].z)],
-                        [Vec2::newdefined(self.c1[7].x, self.c1[7].z), Vec2::newdefined(self.c1[3].x, self.c1[3].z)],
+                        [Vec2{ x: self.c1[3].x, y: self.c1[3].z}, Vec2{ x: self.c1[0].x, y: self.c1[0].z}],
+                        [Vec2{ x: self.c1[0].x, y: self.c1[0].z}, Vec2{ x: self.c1[6].x, y: self.c1[6].z}],
+                        [Vec2{ x: self.c1[6].x, y: self.c1[6].z}, Vec2{ x: self.c1[7].x, y: self.c1[7].z}],
+                        [Vec2{ x: self.c1[7].x, y: self.c1[7].z}, Vec2{ x: self.c1[3].x, y: self.c1[3].z}],
                     ];
 
                     let o = [
-                        [Vec2::newdefined(ph2.c1[3].x, ph2.c1[3].z), Vec2::newdefined(ph2.c1[0].x, ph2.c1[0].z)],
-                        [Vec2::newdefined(ph2.c1[0].x, ph2.c1[0].z), Vec2::newdefined(ph2.c1[6].x, ph2.c1[6].z)],
-                        [Vec2::newdefined(ph2.c1[6].x, ph2.c1[6].z), Vec2::newdefined(ph2.c1[7].x, ph2.c1[7].z)],
-                        [Vec2::newdefined(ph2.c1[7].x, ph2.c1[7].z), Vec2::newdefined(ph2.c1[3].x, ph2.c1[3].z)],
+                        [Vec2{ x: ph2.c1[3].x, y: ph2.c1[3].z}, Vec2{ x: ph2.c1[0].x, y: ph2.c1[0].z}],
+                        [Vec2{ x: ph2.c1[0].x, y: ph2.c1[0].z}, Vec2{ x: ph2.c1[6].x, y: ph2.c1[6].z}],
+                        [Vec2{ x: ph2.c1[6].x, y: ph2.c1[6].z}, Vec2{ x: ph2.c1[7].x, y: ph2.c1[7].z}],
+                        [Vec2{ x: ph2.c1[7].x, y: ph2.c1[7].z}, Vec2{ x: ph2.c1[3].x, y: ph2.c1[3].z}],
                     ];
 
                     for i in 0..4{
@@ -329,15 +295,31 @@ impl PhysicsObject{
                             }
                         }
                         if self.hit{
-                            if self.xcalcifmv(ph2){
-                                self.speed.x = -self.speed.x * self.elasticity;
-                                self.speed.z *= self.air_friction;
-                            }else if self.zcalcifmv(ph2){
-                                self.speed.z = -self.speed.z * self.elasticity;
-                                self.speed.x *= self.air_friction;
+                            let overlap_x_right = self.savedp1.x - ph2.savedp2.x;
+                            let overlap_x_left  = ph2.savedp1.x - self.savedp2.x;
+                            let overlap_z_front = self.savedp1.z - ph2.savedp2.z;
+                            let overlap_z_back  = ph2.savedp1.z - self.savedp2.z;
+
+                            let pen_x = overlap_x_right.min(overlap_x_left);
+                            let pen_z = overlap_z_front.min(overlap_z_back);
+
+                            if pen_x < pen_z {
+                                let sign = if overlap_x_right < overlap_x_left { -1.0f32 } else { 1.0f32 };
+                                self.pos.x += sign * (pen_x + 0.001);
+                            
+                                if self.speed.x * sign < 0.0 {
+                                    self.speed.x = -self.speed.x * self.elasticity;
+                                }
+                                self.acceleration.x = 0.0;
+                            } else {
+                                let sign = if overlap_z_front < overlap_z_back { -1.0f32 } else { 1.0f32 };
+                                self.pos.z += sign * (pen_z + 0.001);
+                            
+                                if self.speed.z * sign < 0.0 {
+                                    self.speed.z = -self.speed.z * self.elasticity;
+                                }
+                                self.acceleration.z = 0.0;
                             }
-                            self.acceleration.x = 0f32;
-                            self.acceleration.z = 0f32;
                             break;
                         }
                     }

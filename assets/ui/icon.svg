@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="512"
+   height="512"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3 (0e150ed6c4, 2023-07-21)"
+   sodipodi:docname="icon.svg"
+   inkscape:export-filename="icon.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     inkscape:zoom="1.1835938"
+     inkscape:cx="256.42243"
+     inkscape:cy="255.57755"
+     inkscape:window-width="1920"
+     inkscape:window-height="1057"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <filter
+       inkscape:label="Pixellize"
+       inkscape:menu="Pixel Tools"
+       inkscape:menu-tooltip="Reduce or remove antialiasing around shapes"
+       style="color-interpolation-filters:sRGB;"
+       id="filter37"
+       x="-0.041402044"
+       y="-0.021756558"
+       width="1.0828041"
+       height="1.0435131">
+      <feColorMatrix
+         values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1000 -500 "
+         id="feColorMatrix37" />
+      <feGaussianBlur
+         stdDeviation="0.017144518"
+         id="feGaussianBlur44" />
+    </filter>
+  </defs>
+  <g
+     inkscape:label="Strat 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#0b1728;stroke-width:15.15;stroke-linejoin:bevel"
+       id="rect1"
+       width="512"
+       height="512"
+       x="0"
+       y="0" />
+    <rect
+       style="fill:#0b1728;stroke:#ffffff;stroke-width:21.7486;stroke-linejoin:bevel"
+       id="rect3-4"
+       width="80.85022"
+       height="82.687729"
+       x="39.669678"
+       y="369.702" />
+    <rect
+       style="fill:#0b1728;stroke:#ffffff;stroke-width:21.7486;stroke-linejoin:bevel"
+       id="rect3-0-6"
+       width="80.85022"
+       height="82.687729"
+       x="215.57489"
+       y="369.702" />
+    <rect
+       style="fill:#0b1728;stroke:#ffffff;stroke-width:21.7486;stroke-linejoin:bevel"
+       id="rect3-01-0"
+       width="80.85022"
+       height="82.687729"
+       x="391.4801"
+       y="369.702" />
+    <rect
+       style="fill:#0b1728;stroke:#ffffff;stroke-width:21.7486;stroke-linejoin:bevel"
+       id="rect3-4-4"
+       width="80.85022"
+       height="82.687729"
+       x="34.60368"
+       y="68.616882" />
+    <rect
+       style="fill:#0b1728;stroke:#ffffff;stroke-width:21.7486;stroke-linejoin:bevel"
+       id="rect3-0-6-7"
+       width="80.85022"
+       height="82.687729"
+       x="215.57489"
+       y="68.616882" />
+    <rect
+       style="fill:#0b1728;stroke:#ffffff;stroke-width:21.7486;stroke-linejoin:bevel"
+       id="rect3-01-0-9"
+       width="80.85022"
+       height="82.687729"
+       x="386.41406"
+       y="68.616882" />
+    <path
+       style="fill:#0b1728;stroke:#ffffff;stroke-width:10;stroke-linejoin:bevel"
+       d="M 0,30.838287 H 512"
+       id="path3" />
+    <path
+       style="fill:#0b1728;stroke:#ffffff;stroke-width:10;stroke-linejoin:bevel"
+       d="M 512,480.31683 H 0"
+       id="path4" />
+  </g>
+</svg>

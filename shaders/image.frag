@@ -39,12 +39,12 @@ layout(binding = 8) uniform sampler attachmentSampler;
 
 void main() {
     if(mi.addinfo.z > 0.0){
-        vec3 op = texture(sampler2DArray(texTexture, imageSampler), vec3(uv.x, -uv.y, 0)).rgb / 16.0;
-        op = mix(op, vec3(0.0, 0.0, 0.0), mi.addinfo.x);
+        vec3 op = pow(texture(sampler2DArray(texTexture, imageSampler), vec3(uv.x, -uv.y, 0)).rgb, vec3(2.2)) / 16.0;
+        //op = mix(op, vec3(0.0, 0.0, 0.0), mi.addinfo.x);
         outColor = vec4(op, 1.0);
     }else{
-        vec3 op = texture(sampler2DArray(texTexture, imageSampler), vec3(uv.x, -uv.y, 0)).rgb;
-        op = mix(op, vec3(0.0, 0.0, 0.0), mi.addinfo.x);
+        vec3 op = pow(texture(sampler2DArray(texTexture, imageSampler), vec3(uv.x, -uv.y, 0)).rgb, vec3(2.2));
+        //op = mix(op, vec3(0.0, 0.0, 0.0), mi.addinfo.x);
         outColor = vec4(op, 1.0);
     }
 }

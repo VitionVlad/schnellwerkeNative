@@ -1,3 +1,4 @@
+use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 use super::vec4::Vec4;
 use super::vec3::Vec3;
 
@@ -7,45 +8,155 @@ pub struct Mat4{
     pub mat: [f32; 16]
 }
 
+impl Add for Mat4 {
+    type Output = Self;
+    fn add(self, other: Self) -> Self::Output {
+        Self{
+            mat: [
+                self.mat[0] + other.mat[0],
+                self.mat[1] + other.mat[1],
+                self.mat[2] + other.mat[2],
+                self.mat[3] + other.mat[3],
+                self.mat[4] + other.mat[4],
+                self.mat[5] + other.mat[5],
+                self.mat[6] + other.mat[6],
+                self.mat[7] + other.mat[7],
+                self.mat[8] + other.mat[8],
+                self.mat[9] + other.mat[9],
+                self.mat[10] + other.mat[10],
+                self.mat[11] + other.mat[11],
+                self.mat[12] + other.mat[12],
+                self.mat[13] + other.mat[13],
+                self.mat[14] + other.mat[14],
+                self.mat[15] + other.mat[15],
+            ]
+        }
+    }
+}
+
+impl AddAssign for Mat4 {
+    fn add_assign(&mut self, other: Self) {
+        self.mat[0] += other.mat[0];
+        self.mat[1] += other.mat[1];
+        self.mat[2] += other.mat[2];
+        self.mat[3] += other.mat[3];
+        self.mat[4] += other.mat[4];
+        self.mat[5] += other.mat[5];
+        self.mat[6] += other.mat[6];
+        self.mat[7] += other.mat[7];
+        self.mat[8] += other.mat[8];
+        self.mat[9] += other.mat[9];
+        self.mat[10] += other.mat[10];
+        self.mat[11] += other.mat[11];
+        self.mat[12] += other.mat[12];
+        self.mat[13] += other.mat[13];
+        self.mat[14] += other.mat[14];
+        self.mat[15] += other.mat[15];
+    }
+}
+
+impl Sub for Mat4 {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self::Output {
+        Self{
+            mat: [
+                self.mat[0] - other.mat[0],
+                self.mat[1] - other.mat[1],
+                self.mat[2] - other.mat[2],
+                self.mat[3] - other.mat[3],
+                self.mat[4] - other.mat[4],
+                self.mat[5] - other.mat[5],
+                self.mat[6] - other.mat[6],
+                self.mat[7] - other.mat[7],
+                self.mat[8] - other.mat[8],
+                self.mat[9] - other.mat[9],
+                self.mat[10] - other.mat[10],
+                self.mat[11] - other.mat[11],
+                self.mat[12] - other.mat[12],
+                self.mat[13] - other.mat[13],
+                self.mat[14] - other.mat[14],
+                self.mat[15] - other.mat[15],
+            ]
+        }
+    }
+}
+
+impl SubAssign for Mat4 {
+    fn sub_assign(&mut self, other: Self) {
+        self.mat[0] -= other.mat[0];
+        self.mat[1] -= other.mat[1];
+        self.mat[2] -= other.mat[2];
+        self.mat[3] -= other.mat[3];
+        self.mat[4] -= other.mat[4];
+        self.mat[5] -= other.mat[5];
+        self.mat[6] -= other.mat[6];
+        self.mat[7] -= other.mat[7];
+        self.mat[8] -= other.mat[8];
+        self.mat[9] -= other.mat[9];
+        self.mat[10] -= other.mat[10];
+        self.mat[11] -= other.mat[11];
+        self.mat[12] -= other.mat[12];
+        self.mat[13] -= other.mat[13];
+        self.mat[14] -= other.mat[14];
+        self.mat[15] -= other.mat[15];
+    }
+}
+
+impl Mul for Mat4 {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self::Output{
+        Self{
+            mat: [
+                self.mat[0] * other.mat[0] + self.mat[1] * other.mat[4] + self.mat[2] * other.mat[8] + self.mat[3] * other.mat[12],
+                self.mat[0] * other.mat[1] + self.mat[1] * other.mat[5] + self.mat[2] * other.mat[9] + self.mat[3] * other.mat[13],
+                self.mat[0] * other.mat[2] + self.mat[1] * other.mat[6] + self.mat[2] * other.mat[10] + self.mat[3] * other.mat[14],
+                self.mat[0] * other.mat[3] + self.mat[1] * other.mat[7] + self.mat[2] * other.mat[11] + self.mat[3] * other.mat[15],
+                self.mat[4] * other.mat[0] + self.mat[5] * other.mat[4] + self.mat[6] * other.mat[8] + self.mat[7] * other.mat[12],
+                self.mat[4] * other.mat[1] + self.mat[5] * other.mat[5] + self.mat[6] * other.mat[9] + self.mat[7] * other.mat[13],
+                self.mat[4] * other.mat[2] + self.mat[5] * other.mat[6] + self.mat[6] * other.mat[10] + self.mat[7] * other.mat[14],
+                self.mat[4] * other.mat[3] + self.mat[5] * other.mat[7] + self.mat[6] * other.mat[11] + self.mat[7] * other.mat[15],
+                self.mat[8] * other.mat[0] + self.mat[9] * other.mat[4] + self.mat[10] * other.mat[8] + self.mat[11] * other.mat[12],
+                self.mat[8] * other.mat[1] + self.mat[9] * other.mat[5] + self.mat[10] * other.mat[9] + self.mat[11] * other.mat[13],
+                self.mat[8] * other.mat[2] + self.mat[9] * other.mat[6] + self.mat[10] * other.mat[10] + self.mat[11] * other.mat[14],
+                self.mat[8] * other.mat[3] + self.mat[9] * other.mat[7] + self.mat[10] * other.mat[11] + self.mat[11] * other.mat[15],
+                self.mat[12] * other.mat[0] + self.mat[13] * other.mat[4] + self.mat[14] * other.mat[8] + self.mat[15] * other.mat[12],
+                self.mat[12] * other.mat[1] + self.mat[13] * other.mat[5] + self.mat[14] * other.mat[9] + self.mat[15] * other.mat[13],
+                self.mat[12] * other.mat[2] + self.mat[13] * other.mat[6] + self.mat[14] * other.mat[10] + self.mat[15] * other.mat[14],
+                self.mat[12] * other.mat[3] + self.mat[13] * other.mat[7] + self.mat[14] * other.mat[11] + self.mat[15] * other.mat[15],
+            ]
+        }
+    }
+}
+
+impl MulAssign for Mat4 {
+    fn mul_assign(&mut self, other: Self) {
+        let t: Mat4 = self.clone();
+        self.mat[0] = t.mat[0] * other.mat[0] + t.mat[1] * other.mat[4] + t.mat[2] * other.mat[8] + t.mat[3] * other.mat[12];
+        self.mat[1] = t.mat[0] * other.mat[1] + t.mat[1] * other.mat[5] + t.mat[2] * other.mat[9] + t.mat[3] * other.mat[13];
+        self.mat[2] = t.mat[0] * other.mat[2] + t.mat[1] * other.mat[6] + t.mat[2] * other.mat[10] +t.mat[3] * other.mat[14];
+        self.mat[3] = t.mat[0] * other.mat[3] + t.mat[1] * other.mat[7] + t.mat[2] * other.mat[11] +t.mat[3] * other.mat[15];
+
+        self.mat[4] = t.mat[4] * other.mat[0] + t.mat[5] * other.mat[4] + t.mat[6] * other.mat[8] + t.mat[7] * other.mat[12];
+        self.mat[5] = t.mat[4] * other.mat[1] + t.mat[5] * other.mat[5] + t.mat[6] * other.mat[9] + t.mat[7] * other.mat[13];
+        self.mat[6] = t.mat[4] * other.mat[2] + t.mat[5] * other.mat[6] + t.mat[6] * other.mat[10] + t.mat[7] * other.mat[14];
+        self.mat[7] = t.mat[4] * other.mat[3] + t.mat[5] * other.mat[7] + t.mat[6] * other.mat[11] + t.mat[7] * other.mat[15];
+
+        self.mat[8] = t.mat[8] * other.mat[0] + t.mat[9] * other.mat[4] + t.mat[10] * other.mat[8] + t.mat[11] * other.mat[12];
+        self.mat[9] = t.mat[8] * other.mat[1] + t.mat[9] * other.mat[5] + t.mat[10] * other.mat[9] + t.mat[11] * other.mat[13];
+        self.mat[10] = t.mat[8] * other.mat[2] + t.mat[9] * other.mat[6] + t.mat[10] * other.mat[10] + t.mat[11] * other.mat[14];
+        self.mat[11] = t.mat[8] * other.mat[3] + t.mat[9] * other.mat[7] + t.mat[10] * other.mat[11] + t.mat[11] * other.mat[15];
+
+        self.mat[12] = t.mat[12] * other.mat[0] + t.mat[13] * other.mat[4] + t.mat[14] * other.mat[8] + t.mat[15] * other.mat[12];
+        self.mat[13] = t.mat[12] * other.mat[1] + t.mat[13] * other.mat[5] + t.mat[14] * other.mat[9] + t.mat[15] * other.mat[13];
+        self.mat[14] = t.mat[12] * other.mat[2] + t.mat[13] * other.mat[6] + t.mat[14] * other.mat[10] + t.mat[15] * other.mat[14];
+        self.mat[15] = t.mat[12] * other.mat[3] + t.mat[13] * other.mat[7] + t.mat[14] * other.mat[11] + t.mat[15] * other.mat[15];
+    }
+}
+
 impl Mat4{
     #[allow(dead_code)]
     pub fn new() -> Mat4{
         Mat4 { mat: [0.0f32; 16] }
-    }
-    #[allow(dead_code)]
-    pub fn sum(&mut self, mat: Mat4){
-        for i in 0..16 {
-            self.mat[i] += mat.mat[i];
-        }
-    }
-    #[allow(dead_code)]
-    pub fn sub(&mut self, mat: Mat4){
-        for i in 0..16 {
-            self.mat[i] -= mat.mat[i];
-        }
-    }
-    #[allow(dead_code)]
-    pub fn mul(&mut self, mat: &Mat4){
-        let t: Mat4 = self.clone();
-        self.mat[0] = t.mat[0] * mat.mat[0] + t.mat[1] * mat.mat[4] + t.mat[2] * mat.mat[8] + t.mat[3] * mat.mat[12];
-        self.mat[1] = t.mat[0] * mat.mat[1] + t.mat[1] * mat.mat[5] + t.mat[2] * mat.mat[9] + t.mat[3] * mat.mat[13];
-        self.mat[2] = t.mat[0] * mat.mat[2] + t.mat[1] * mat.mat[6] + t.mat[2] * mat.mat[10] +t.mat[3] * mat.mat[14];
-        self.mat[3] = t.mat[0] * mat.mat[3] + t.mat[1] * mat.mat[7] + t.mat[2] * mat.mat[11] +t.mat[3] * mat.mat[15];
-
-        self.mat[4] = t.mat[4] * mat.mat[0] + t.mat[5] * mat.mat[4] + t.mat[6] * mat.mat[8] + t.mat[7] * mat.mat[12];
-        self.mat[5] = t.mat[4] * mat.mat[1] + t.mat[5] * mat.mat[5] + t.mat[6] * mat.mat[9] + t.mat[7] * mat.mat[13];
-        self.mat[6] = t.mat[4] * mat.mat[2] + t.mat[5] * mat.mat[6] + t.mat[6] * mat.mat[10] + t.mat[7] * mat.mat[14];
-        self.mat[7] = t.mat[4] * mat.mat[3] + t.mat[5] * mat.mat[7] + t.mat[6] * mat.mat[11] + t.mat[7] * mat.mat[15];
-
-        self.mat[8] = t.mat[8] * mat.mat[0] + t.mat[9] * mat.mat[4] + t.mat[10] * mat.mat[8] + t.mat[11] * mat.mat[12];
-        self.mat[9] = t.mat[8] * mat.mat[1] + t.mat[9] * mat.mat[5] + t.mat[10] * mat.mat[9] + t.mat[11] * mat.mat[13];
-        self.mat[10] = t.mat[8] * mat.mat[2] + t.mat[9] * mat.mat[6] + t.mat[10] * mat.mat[10] + t.mat[11] * mat.mat[14];
-        self.mat[11] = t.mat[8] * mat.mat[3] + t.mat[9] * mat.mat[7] + t.mat[10] * mat.mat[11] + t.mat[11] * mat.mat[15];
-
-        self.mat[12] = t.mat[12] * mat.mat[0] + t.mat[13] * mat.mat[4] + t.mat[14] * mat.mat[8] + t.mat[15] * mat.mat[12];
-        self.mat[13] = t.mat[12] * mat.mat[1] + t.mat[13] * mat.mat[5] + t.mat[14] * mat.mat[9] + t.mat[15] * mat.mat[13];
-        self.mat[14] = t.mat[12] * mat.mat[2] + t.mat[13] * mat.mat[6] + t.mat[14] * mat.mat[10] + t.mat[15] * mat.mat[14];
-        self.mat[15] = t.mat[12] * mat.mat[3] + t.mat[13] * mat.mat[7] + t.mat[14] * mat.mat[11] + t.mat[15] * mat.mat[15];
     }
     #[allow(dead_code)]
     pub fn vec4mul(&self, vec: Vec4) -> Vec4{

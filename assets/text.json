@@ -1,0 +1,109 @@
+{
+    "lang": {
+        "en": {
+            "abc": 0,
+            "new_line": "|",
+            "letters": [
+                "Experiment No14 of Svitloiarsk national photography institute: black and white film of experimental line at first glance can somehow capture things from reality, just specific objects, marked with a red line, seems interesting, these things remains on film|P.S: after a few more capturing objects it seems like it intererfence other objects too, and humans, furthermore this seem to become uncontrollable.|P.P.S: it seems like it can at random moment switch switches at CHP, so city may remain at random moment with no power and heat, be cautious!",
+                "Experimental colour film No88: this colour film can move holder to position where it was shot, seems to be magical, as you can close a gate and appear behind it, currently may be unstable|P.S: things seem to be much worse when speaking of unstable as people and objects just seem to move it disappear in random moments, this effect seem to affect just the city of svitloiarsk, we are scared that we could evacuate all resident in order to protect them, we might involve army for this",
+                "Evacuation seems to be completed, most of the residents were moved to other cities inside country, trains still would stop at trains station",
+                "Letter No.69 regarding Svitloiarsk incident: it looks like city is finally empty. Whole zone must be placed as contaminated, as fast as possible. We have a resident that takes the train already 3rd time, and each time he is returning back, as far as we can see..."
+            ],
+            "ui": [
+                "Back",
+                "Continue",
+                "New game",
+                "Save",
+                "Load",
+                "Settings",
+                "Quit",
+                "Video",
+                "Audio",
+                "Control",
+                "Game",
+                "Fullscreen: ",
+                "Render resolution: ",
+                "Shadows quality: ",
+                "Show fps: ",
+                "Volume: ",
+                "Invert touch controls: ",
+                "Autosaves: ",
+                "Language: english"
+            ],
+            "tutorials": [
+                "Experemental Black and white film: this film can capture objects marked with red line, to use it, just look at object and press space button on keyboard, right trigger on gamepad, or actual button for touchscreen, it will capture all marked objects withitn its field of view.",
+                "Experemental colour film: this film can move holder to position where it was shot, to use it, just take a photo by pressing space button on keyboard, right trigger on gamepad, or actual button for touchscreen, to store position, and there you can teleport back by pressing E button on keyboard, Y button on gamepad or actual button for touchscreen."
+            ]
+        },
+        "ro": {
+            "abc": 0,
+            "new_line": "|",
+            "letters": [
+                "Experimentul Nr. 14 al Institutului Na/ional de Fotografie din Svitloiarsk: filmul alb-negru de pe linia experimental[, la prima vedere, poate cumva s[ capteze lucruri din realitate, doar obiecte specifice, marcate cu o linie ro}ie, par interesante, aceste lucruri r[m{n pe film|P.S: dup[ ce mai captureaz[ c{teva obiecte, se pare c[ interfereaz[ }i cu alte obiecte, }i cu oamenii, mai mult, acest lucru pare s[ devin[ incontrolabil.|P.P.S: se pare c[, la un moment aleatoriu, poate comuta ]ntrerup[toarele de la CET, astfel ]nc{t ora}ul poate r[m{ne, ]n orice moment, f[r[ curent }i c[ldur[, fi/i precau/i!",
+                "Filmul color experimental Nr. 88: acest film color poate deplasa de/in[torul ]n pozi/ia ]n care a fost realizat[ fotografia, pare a fi magic, ]ntruc{t po/i ]nchide o poart[ }i ap[rea ]n spatele ei, ]n prezent poate fi instabil|P.S: lucrurile par a fi mult mai rele c{nd vorbim despre instabilitate, deoarece oamenii }i obiectele par s[ se deplaseze sau s[ dispar[ ]n momente aleatorii, acest efect pare s[ afecteze doar ora}ul Svitloiarsk, ne este team[ c[ ar trebui s[ evacu[m to/i locuitorii pentru a-i proteja, am putea implica armata pentru asta",
+                "Evacuarea pare s[ fie finalizat[, cei mai mul/i locuitori au fost muta/i ]n alte ora}e din interiorul /[rii, trenurile ]nc[ se vor opri ]n sta/ia de tren",
+                "Scrisoarea Nr. 69 referitoare la incidentul din Svitloiarsk: se pare c[ ora}ul este ]n sf{r}it gol. `ntreaga zon[ trebuie declarat[ contaminat[ c{t mai rapid posibil. Avem un locuitor care a luat trenul deja a treia oar[, }i de fiecare dat[ se ]ntoarce ]napoi, din c{te putem vedea..."
+            ],
+            "ui": [
+                "`napoi",
+                "Continu[",
+                "Joc nou",
+                "Salveaz[",
+                "`ncarc[",
+                "Set[ri",
+                "Ie}ire",
+                "Video",
+                "Audio",
+                "Control",
+                "Joc",
+                "Ecran complet: ",
+                "Rezolu/ia de randare: ",
+                "Calitatea umbrelor: ",
+                "Afi}eaz[ fps: ",
+                "Volum: ",
+                "Inverseaz[ controalele tactile: ",
+                "Salv[ri automate: ",
+                "Limba: rom{n["
+            ],
+            "tutorials": [
+                "Film experimental alb-negru: acest film poate capta obiectele marcate cu o linie ro}ie, pentru a-l folosi, prive}te pur }i simplu obiectul }i apas[ tasta spa/iu pe tastatur[, trigger-ul drept pe gamepad, sau butonul corespunz[tor pe ecranul tactil, acesta va capta toate obiectele marcate aflate ]n c{mpul s[u vizual.",
+                "Film experimental color: acest film poate deplasa de/in[torul ]n pozi/ia ]n care a fost realizat[ fotografia, pentru a-l folosi, f[ o fotografie ap[s{nd tasta spa/iu pe tastatur[, trigger-ul drept pe gamepad, sau butonul corespunz[tor pe ecranul tactil, pentru a salva pozi/ia, iar apoi te po/i teleporta ]napoi ap[s{nd tasta E pe tastatur[, butonul Y pe gamepad sau butonul corespunz[tor pe ecranul tactil."
+            ]
+            },
+            "ru": {
+                "abc": 1,
+                "new_line": "|",
+                "letters": [
+                    "%ksperiment 14 Svitlo'rskogo naxional$nogo instituta fotografii: c]rno-bela' pl]nka ^ksperimental$noy linii, na perv@y vzgl'd, sposobna kakim-to obrazom fiksirovat$ ve*i iz real$nosti, tol$ko opredel]nn@e ob~ekt@, otmecenn@e krasnoy liniey, kajuts' interesn@mi, ^ti ve*i osta(ts' na pl]nke|P.S: posle zahvata e*] neskol$kih ob~ektov kajets', cto ^to vli'et i na drugie ob~ekt@, i na l(dey, bolee togo, ^to, pohoje, stanovits' nekontroliruem@m.|P.P.S: pohoje, v slucayn@y moment ^to mojet perekl(cat$ rubil$niki na T%X, po^tomu gorod mojet v l(boy moment ostat$s' bez ^lektricestva i tepla, bud$te ostorojn@.",
+                    "%ksperimental$na' xvetna' pl]nka 88: ^ta xvetna' pl]nka mojet pereme*at$ vladel$xa v polojenie, gde b@l sdelan snimok, kajets', cto ^to vol}ebstvo, poskol$ku mojno zakr@t$ stvorku i po'vit$s' pozadi ne], v nasto'*ee vrem' mojet b@t$ nestabil$noy|P.S: vs] stanovits' gorazdo huje, kogda rec$ id]t o nestabil$nosti, tak kak l(di i ob~ekt@, kajets', prosto pereme*a(ts' ili isceza(t v slucayn@e moment@, ^tot ^ffekt, pohoje, zatragivaet tol$ko gorod Svitlo'rsk, m@ boims', cto prid]ts' ^vakuirovat$ vseh jiteley, ctob@ za*itit$ ih, vozmojno, dl' ^togo prid]ts' privlec$ armi(",
+                    "%vakuaxi', pohoje, zaver}ena, bol$}instvo jiteley b@li pereveden@ v drugie goroda stran@, poezda vs] e*] budut ostanavlivat$s' na stanxii",
+                    "Pis$mo 69 kasatel$no inxidenta v Svitlo'rske: pohoje, gorod nakonex-to pust. Vs( zonu neobhodimo kak mojno b@stree ob~'vit$ zaraj]nnoy. U nas est$ jitel$, kotor@y sadits' na poezd uje 3-y raz, i kajd@y raz on vozvra*aets' obratno, naskol$ko m@ mojem sudit$..."
+                ],
+                "ui": [
+                    "Nazad",
+                    "Prodoljit$",
+                    "Nova' igra",
+                    "Sohranit$",
+                    "Zagruzit$",
+                    "Nastroyki",
+                    "V@hod",
+                    "Video",
+                    "Audio",
+                    "Upravlenie",
+                    "Igra",
+                    "Polno^krann@y rejim: ",
+                    "Razre}enie renderinga: ",
+                    "Kacestvo teney: ",
+                    "Pokaz@vat$ FPS: ",
+                    "Gromkost$: ",
+                    "Invertirovat$ sensornoe upravlenie: ",
+                    "Avtosohraneni': ",
+                    ")z@k: russkiy"
+                ],
+                "tutorials": [
+                    "%ksperimental$na' c]rno-bela' pl]nka: ^ta pl]nka mojet fiksirovat$ ob~ekt@, pomecenn@e krasnoy liniey, ctob@ ispol$zovat$ e], prosto posmotri na ob~ekt i najmi klavi}u probel na klaviature, prav@y trigger na geympade, ili sootvetstvu(*u( knopku na sensornom ^krane, ona zafiksiruet vse pomecenn@e ob~ekt@ v pole zreni'.",
+                    "%ksperimental$na' xvetna' pl]nka: ^ta pl]nka mojet pereme*at$ vladel$xa v polojenie, gde b@l sdelan snimok, ctob@ ispol$zovat$ e], prosto sdelay foto, najav klavi}u probel na klaviature, prav@y trigger na geympade, ili sootvetstvu(*u( knopku na sensornom ^krane, ctob@ sohranit$ pozixi(, a zatem t@ moje}$ teleportirovat$s' nazad, najav klavi}u E na klaviature, knopku Y na geympade ili sootvetstvu(*u( knopku na sensornom ^krane."
+                ]
+            }
+    }
+}

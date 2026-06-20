@@ -27,7 +27,7 @@ unsafe extern "C"{
     fn gamepad_con(eh: cty::uint32_t) -> cty::uint8_t;
     fn gamepad_axisnm(eh: cty::uint32_t) -> cty::uint8_t;
     fn gamepad_buttonnm(eh: cty::uint32_t) -> cty::uint8_t;
-    fn modifyshadowdata(eh: cty::uint32_t, ncnt: cty::uint32_t, nres: cty::uint32_t);
+    fn modifyshadowdata(eh: cty::uint32_t, ncnt: cty::uint32_t, nres: cty::uint32_t, lcnt: cty::uint32_t);
     fn modifydeffereddata(eh: cty::uint32_t, ncnt: cty::uint32_t, nres: cty::c_float);
     fn modifyshadowuniform(eh: cty::uint32_t, pos: cty::uint32_t, value: cty::c_float);
     fn modifydeffereduniform(eh: cty::uint32_t, pos: cty::uint32_t, value: cty::c_float);
@@ -54,6 +54,7 @@ pub struct Render{
     pub resolution_y: u32,
     pub fullscreen: bool,
     pub frametime: f32,
+    pub lights_count: u32,
     fullscreeno: bool,
 }
 
@@ -72,6 +73,7 @@ impl Render{
             fullscreen: false,
             fullscreeno: false,
             frametime: 0.0,
+            lights_count: 1,
         }
     }
     pub fn continue_loop(&mut self) -> bool{
@@ -85,7 +87,7 @@ impl Render{
                 }
                 self.fullscreeno = self.fullscreen;
             }
-            modifyshadowdata(self.euclid, self.shadow_map_count, self.shadow_map_resolution);
+            modifyshadowdata(self.euclid, self.shadow_map_count, self.shadow_map_resolution, self.lights_count);
             modifydeffereddata(self.euclid, self.camera_count, self.resolution_scale);
             self.frametime = get_frametime(self.euclid)
         };
@@ -100,7 +102,7 @@ impl Render{
     pub fn set_new_resolution(&self, resx: u32, resy: u32){
         unsafe { setresolution(self.euclid, resx, resy); }
     }
-    pub fn set_icon(&mut self, resx: u32, resy: u32, data: Vec<i8>){
+    pub fn set_icon(&mut self, resx: u32, resy: u32, data: Vec<u8>){
         unsafe { seticon(self.euclid, resx, resy, data.as_ptr() as *mut i8) }
     }
     pub fn set_title(&self, title: &str){
@@ -223,7 +225,7 @@ pub struct Texture{
 }
 
 impl Texture {
-    pub fn new(render: Render, xs: u32, ys: u32, texnm: u32, data: Vec<i8>) -> Texture{
+    pub fn new(render: Render, xs: u32, ys: u32, texnm: u32, data: Vec<u8>) -> Texture{
         Texture { 
             texid: unsafe {
                 newtexture(render.euclid, xs, ys, texnm, data.as_ptr() as *mut i8)
