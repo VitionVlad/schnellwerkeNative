@@ -2,7 +2,7 @@
 Schnellwerke was one of my projects that managed to evolve into something more—it was actually used by me in several other projects. Having a solid way to develop games across all platforms is great, but as a true PC gamer, I aim for much more: better graphics, higher performance, and pushing the limits of hardware.  
 This is my current goal. Schnellwerke Native is a port of my graphics engine from Rust (WebAssembly) + JavaScript to Rust + C. This doesn’t mean the web version will be deprecated—on the contrary, the native and web versions will remain compatible with each other. The result will be a powerful and flexible tool that still allows for cross-platform development, while achieving significantly better performance and visuals on PC.  
 # <p align="center"> Structure  </p>
-Version 3.0 introduced a restructured system focused on more efficient resource usage. Now, textures, shaders, and models are no longer bound to individual objects—they can be shared across multiple objects.  
+Version 3.5 introduced a restructured system focused on more efficient resource usage. Now, textures, shaders, and models are no longer bound to individual objects—they can be shared across multiple objects.  
 This is especially useful for textures, as it eliminates unnecessary duplication. Instead of loading the same texture for each object (which leads to increased memory consumption), a single shared texture is used, significantly reducing memory usage.  
 For example, the demo game ZUG runs with a scene containing over 100 objects—many of which reuse the same materials — and it consumes only about 300 MB of RAM.  
 The engine and object structure hasn’t changed much, remaining mostly the same. The only notable difference is the controls, which are now part of the engine structure, as shown in this diagram.  
@@ -139,15 +139,13 @@ pub struct Scene{
     pub camera_number: i8,
 }
 ```
-
+Also it is possible now to load whole scene from a GLTF (or binary GLB) file.  
 # <p align="center"> Render </p>
-Rendering in Schnellwerke 3 Native is based on the Euclid component, which handles all interaction with the Vulkan API, as well as managing input and window operations.  
+Rendering in Schnellwerke 3.5 Native is based on the Euclid component, which handles all interaction with the Vulkan API, as well as managing input and window operations.  
 The Euclid component was named this way due to the original intention of creating a renderer capable of handling non-Euclidean space. While this feature has never been tested, in theory, it should work—mainly because the engine supports multiple cameras in the deferred pass (up to 10) and up to 100 light sources.  
 The main rendering approach is deferred rendering, although you're free to rewrite the shaders yourself and use traditional forward rendering instead.  
-Below is a diagram that represents the entire rendering process.  
-<p align="center"><img width="531" height="1791" alt="Diagramă fără titlu-Pagină-3 drawio" src="https://github.com/user-attachments/assets/6b755df8-e7dc-43e9-949f-8d3db038684d" /> </p>  
-Important note: Since version 3.1, no additional image is used to store texel positions; they are now computed using the matrix inverse. Also, the deferred render framebuffer now uses 16-bit depth color, which slightly improves performance in cases of bandwidth limitation  
-This demo also showcase the rendering of transparent objects, which is significantly more difficult in a deferred rendering approach.  
+Below is a diagram that represents the entire rendering process.
+<p align="center"><img alt="Diagramă fără titlu-Pagină-3 drawio" src="https://github.com/user-attachments/assets/ed5358cb-e9b8-46d2-9428-680e11d96d9e" /> </p>  
 
 # <p align="center"> Physics </p>
 All physics calculations are not directly exposed to the programmer. They are mostly executed at the start of each new frame, as I chose to use a tick-based approach for physics simulation. This means the physics engine runs at a different tick rate than the game itself—it can be higher or lower. This approach ensures frame rate–independent physics.  
@@ -179,3 +177,9 @@ trains.exec(&mut eng);
 ...
 }
 ```
+# <p align="center"> <img width="1536" height="512" alt="35ll" src="https://github.com/user-attachments/assets/c26bdaa2-862b-4082-80cf-1d7f13b89316" /> </p>
+35mm is a demo project written to showcase the capabilities of a new version of the game engine. It is a short game set in a 1980s Soviet city where an unexpected incident has occurred, and your sole goal is to escape—if that is even still possible. As a puzzle game, you should get ready to solve various quests to complete the demo.  
+It is available in three languages: English, Romanian, and Russian. It can be played using a keyboard and mouse, a gamepad, or touch controls. Have fun!  
+<img width="1920" height="1080" alt="Screenshot 2026-06-20 125915" src="https://github.com/user-attachments/assets/edf3691a-5c3f-49e2-84b2-7d0151c76cc0" />
+<img width="1920" height="1080" alt="Screenshot 2026-06-20 130156" src="https://github.com/user-attachments/assets/0b138681-7060-4dd2-a9c1-a72edf8cc3d9" />
+<img width="1920" height="1080" alt="Screenshot 2026-06-20 130303" src="https://github.com/user-attachments/assets/aeb78445-35e0-40c2-aba9-5abee6a28867" />
