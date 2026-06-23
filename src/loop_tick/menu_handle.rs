@@ -165,6 +165,8 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                 }
 
                 state.ruitxt[state.abc][5].signal = true;
+                state.ruitxt[state.abc][5].signal_on_value = 1.0;
+                state.ruitxt[state.abc][5].signal_off_value = 0.0;
                 if state.controlt == 2{
                     if 4 == state.gamepadmenusel as usize{
                         state.ruitxt[state.abc][5].signal_off_value = 1.0;
@@ -172,8 +174,6 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                         state.ruitxt[state.abc][5].signal_off_value = 0.0;
                     }
                 }
-                state.ruitxt[state.abc][5].signal_on_value = 1.0;
-                state.ruitxt[state.abc][5].signal_off_value = 0.0;
                 state.ruitxt[state.abc][5].per_symbol = false;
                 state.ruitxt[state.abc][5].draw = true;
                 state.ruitxt[state.abc][5].size = Vec2{ x: 20f32, y: 40f32};
@@ -279,6 +279,8 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                 }
 
                 state.ruitxt[state.abc][5].signal = true;
+                state.ruitxt[state.abc][5].signal_on_value = 1.0;
+                state.ruitxt[state.abc][5].signal_off_value = 0.0;
                 if state.controlt == 2{
                     if 4 == state.gamepadmenusel as usize{
                         state.ruitxt[state.abc][5].signal_off_value = 1.0;
@@ -286,8 +288,6 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                         state.ruitxt[state.abc][5].signal_off_value = 0.0;
                     }
                 }
-                state.ruitxt[state.abc][5].signal_on_value = 1.0;
-                state.ruitxt[state.abc][5].signal_off_value = 0.0;
                 state.ruitxt[state.abc][5].per_symbol = false;
                 state.ruitxt[state.abc][5].draw = true;
                 state.ruitxt[state.abc][5].size = Vec2{ x: 20f32, y: 40f32};
@@ -326,6 +326,8 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                 let mut lg = state.ruitxt[state.abc][0].size.x*txt.len() as f32;
 
                 state.ruitxt[state.abc][1].signal = true;
+                state.ruitxt[state.abc][1].signal_on_value = 1.0;
+                state.ruitxt[state.abc][1].signal_off_value = 0.0;
                 if state.controlt == 2{
                     if 0 == state.gamepadmenusel as usize{
                         state.ruitxt[state.abc][1].signal_off_value = 1.0;
@@ -334,8 +336,6 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                     }
                 }
                 state.ruitxt[state.abc][1].per_symbol = false;
-                state.ruitxt[state.abc][1].signal_on_value = 1.0;
-                state.ruitxt[state.abc][1].signal_off_value = 0.0;
                 state.ruitxt[state.abc][1].draw = true;
                 state.ruitxt[state.abc][1].size = Vec2{ x: 20f32, y: 40f32};
                 state.ruitxt[state.abc][1].pos = Vec3{ x: 0f32, y: state.ruitxt[state.abc][0].pos.y+state.ruitxt[state.abc][0].size.y+6.0, z: 0.1};
@@ -353,6 +353,8 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                 }
 
                 state.ruitxt[state.abc][2].signal = true;
+                state.ruitxt[state.abc][2].signal_on_value = 1.0;
+                state.ruitxt[state.abc][2].signal_off_value = 0.0;
                 if state.controlt == 2{
                     if 1 == state.gamepadmenusel as usize{
                         state.ruitxt[state.abc][2].signal_off_value = 1.0;
@@ -361,8 +363,6 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                     }
                 }
                 state.ruitxt[state.abc][2].per_symbol = false;
-                state.ruitxt[state.abc][2].signal_on_value = 1.0;
-                state.ruitxt[state.abc][2].signal_off_value = 0.0;
                 state.ruitxt[state.abc][2].draw = true;
                 state.ruitxt[state.abc][2].size = Vec2{ x: 20f32, y: 40f32};
                 state.ruitxt[state.abc][2].pos = Vec3{ x: 0f32, y: state.ruitxt[state.abc][0].pos.y+state.ruitxt[state.abc][0].size.y+6.0+(state.ruitxt[state.abc][2].size.y+6.0), z: 0.1};
@@ -390,6 +390,7 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                 state.bluepan.exec(eng);
             },
             4 => {
+                state.menumasel = 2;
                 state.logo.object.draw = false;
                 state.logo.exec(eng);
 
@@ -404,6 +405,8 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                 let mut lg = state.ruitxt[state.abc][0].size.x*txt.len() as f32;
 
                 state.ruitxt[state.abc][1].signal = true;
+                state.ruitxt[state.abc][1].signal_on_value = 1.0;
+                state.ruitxt[state.abc][1].signal_off_value = 0.0;
                 if state.controlt == 2{
                     if 0 == state.gamepadmenusel as usize{
                         state.ruitxt[state.abc][1].signal_off_value = 1.0;
@@ -412,8 +415,6 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                     }
                 }
                 state.ruitxt[state.abc][1].per_symbol = false;
-                state.ruitxt[state.abc][1].signal_on_value = 1.0;
-                state.ruitxt[state.abc][1].signal_off_value = 0.0;
                 state.ruitxt[state.abc][1].draw = true;
                 state.ruitxt[state.abc][1].size = Vec2{ x: 20f32, y: 40f32};
                 state.ruitxt[state.abc][1].pos = Vec3{ x: 0f32, y: state.ruitxt[state.abc][0].pos.y+state.ruitxt[state.abc][0].size.y+6.0, z: 0.1};
@@ -428,6 +429,8 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                 }
 
                 state.ruitxt[state.abc][2].signal = true;
+                state.ruitxt[state.abc][2].signal_on_value = 1.0;
+                state.ruitxt[state.abc][2].signal_off_value = 0.0;
                 if state.controlt == 2{
                     if 1 == state.gamepadmenusel as usize{
                         state.ruitxt[state.abc][2].signal_off_value = 1.0;
@@ -436,8 +439,6 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                     }
                 }
                 state.ruitxt[state.abc][2].per_symbol = false;
-                state.ruitxt[state.abc][2].signal_on_value = 1.0;
-                state.ruitxt[state.abc][2].signal_off_value = 0.0;
                 state.ruitxt[state.abc][2].draw = true;
                 state.ruitxt[state.abc][2].size = Vec2{ x: 20f32, y: 40f32};
                 state.ruitxt[state.abc][2].pos = Vec3{ x: 0f32, y: state.ruitxt[state.abc][0].pos.y+state.ruitxt[state.abc][0].size.y+6.0+(state.ruitxt[state.abc][2].size.y+6.0), z: 0.1};
@@ -465,6 +466,7 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                 state.bluepan.exec(eng);
             },
             5 => {
+                state.menumasel = 3;
                 state.logo.object.draw = false;
                 state.logo.exec(eng);
 
@@ -530,6 +532,8 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                 }
 
                 state.ruitxt[state.abc][3].signal = true;
+                state.ruitxt[state.abc][3].signal_on_value = 1.0;
+                state.ruitxt[state.abc][3].signal_off_value = 0.0;
                 if state.controlt == 2{
                     if 2 == state.gamepadmenusel as usize{
                         state.ruitxt[state.abc][3].signal_off_value = 1.0;
@@ -538,8 +542,6 @@ pub fn menu_handle(eng: &mut Engine, state: &mut AppState) {
                     }
                 }
                 state.ruitxt[state.abc][3].per_symbol = false;
-                state.ruitxt[state.abc][3].signal_on_value = 1.0;
-                state.ruitxt[state.abc][3].signal_off_value = 0.0;
                 state.ruitxt[state.abc][3].draw = true;
                 state.ruitxt[state.abc][3].size = Vec2{ x: 20f32, y: 40f32};
                 state.ruitxt[state.abc][3].pos = Vec3{ x: 0f32, y: state.ruitxt[state.abc][0].pos.y+state.ruitxt[state.abc][0].size.y+6.0+2.0*(state.ruitxt[state.abc][3].size.y+6.0), z: 0.1};
