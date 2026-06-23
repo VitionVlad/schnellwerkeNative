@@ -442,7 +442,7 @@ pub fn per_select_tick(eng: &mut Engine, state: &mut AppState) {
     }
 
     if state.intram {
-        let max_tram_acc = SPEED * 5.0 * eng.times_to_calculate_physics as f32;
+        let max_tram_acc = SPEED * 5.0 * (eng.times_to_calculate_physics).max(1) as f32;
         state.scn.objects[state.pu].physic_object.solid = false;
         state.scn.objects[state.pu].physic_object.pos = state.scn.objects[state.tramin].physic_object.pos;
         if state.ttm <= 0 {
@@ -454,17 +454,9 @@ pub fn per_select_tick(eng: &mut Engine, state: &mut AppState) {
                 &mut state.scn.objects[state.tramin].physic_object,
                 target_x,
                 30.0,
-                SPEED * 0.1 * eng.times_to_calculate_physics as f32,
+                SPEED * 0.1 * (eng.times_to_calculate_physics).max(1) as f32,
                 max_tram_acc,
             );
-            if state.scn.objects[state.tramin].physic_object.pos.x >= target_x {
-                state.intram = false;
-                state.scn.objects[state.pu].physic_object.pos.x = state.scn.objects[state.stops[(state.cstop - 1) as usize]].physic_object.pos.x;
-                state.scn.objects[state.pu].physic_object.pos.z = state.scn.objects[state.stops[(state.cstop - 1) as usize]].physic_object.pos.z + 2.5;
-                if state.autosaves{
-                    let _ = save_progress("save.json", &state);
-                }
-            }
 
             let tram_acc = state.scn.objects[state.tramin].physic_object.acceleration.x.abs();
             state.sfx[5].volume = (tram_acc / max_tram_acc).clamp(0.0, 1.0);
@@ -482,6 +474,16 @@ pub fn per_select_tick(eng: &mut Engine, state: &mut AppState) {
             } else {
                 0.0
             };
+
+            if state.scn.objects[state.tramin].physic_object.pos.x >= target_x {
+                state.intram = false;
+                state.scn.objects[state.pu].physic_object.pos.x = state.scn.objects[state.stops[(state.cstop - 1) as usize]].physic_object.pos.x;
+                state.scn.objects[state.pu].physic_object.pos.z = state.scn.objects[state.stops[(state.cstop - 1) as usize]].physic_object.pos.z + 2.5;
+                if state.autosaves{
+                    let _ = save_progress("save.json", &state);
+                }
+            }
+
             state.sfx[8].volume = stop_sound_vol;
             state.sfx[8].play = stop_sound_vol > 0.01;
         } else {
