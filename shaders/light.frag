@@ -38,10 +38,20 @@ layout(binding = 7) uniform sampler imageSampler;
 
 layout(binding = 8) uniform sampler attachmentSampler;
 
-void main() {
-  vec2 uv = fuv;
+const float PI = 3.14159265359;
 
-  vec3 albedo = pow(texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb, vec3(2.2));
+void main() {
+  vec2 uv = vec2(fuv.x, 1.0 - fuv.y);
+  float d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
+  //d = LinearizeDepth(d);
+
+  vec3 albedo = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb;
+
+  vec3 rma = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 1)).rgb;
+  vec3 normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
+  vec3 wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]);
+
+  vec4 op = vec4(PBR(normal, albedo, rma.x, rma.y, 1.0, wrldpos), 1.0);
 
   outColor = vec4(albedo, 1.0);
 }
