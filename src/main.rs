@@ -96,6 +96,8 @@ fn main() {
     eng.render.shadow_map_count = 0;
     eng.used_light_count = 0;
 
+    let mut fcnt = 0u32;
+
     while eng.work(){
         eng.cameras[0].physic_object.gravity = false;
         eng.cameras[0].physic_object.solid = false;
@@ -162,11 +164,15 @@ fn main() {
 
         ltviewport.object.physic_object.scale.x = eng.render.resolution_x as f32 * eng.render.resolution_scale;
         ltviewport.object.physic_object.scale.y = eng.render.resolution_y as f32 * eng.render.resolution_scale;
+        ltviewport.object.mesh.ubo[48] = fcnt as f32;
         ltviewport.exec(&mut eng);
 
         viewport.object.physic_object.scale.x = eng.render.resolution_x as f32;
         viewport.object.physic_object.scale.y = eng.render.resolution_y as f32;
+        viewport.object.mesh.ubo[48] = 0.2;
+        viewport.object.mesh.ubo[49] = 1.0;
         viewport.exec(&mut eng);
+        fcnt += 1;
     }
     eng.end();
 }

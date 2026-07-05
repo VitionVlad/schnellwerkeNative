@@ -36,7 +36,6 @@ layout(binding = 3) uniform sampler imageSampler;
 void main() {
     vec2 luv = vec2(uv.x, uv.y);
     outColor = vec4(texture(sampler2DArray(tex, imageSampler), vec3(luv, 0)).rgb, 1.0);
-    outMaterial.r = 1.0;
     outMaterial.r = texture(sampler2DArray(tex, imageSampler), vec3(luv, 1)).r;
     outMaterial.g = texture(sampler2DArray(tex, imageSampler), vec3(luv, 1)).g;
     //mat3 TBN = mat3(ftg, fctg, fnormal);
