@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate::engine::{loader::glscene::Glscene, math::vec3::Vec3};
+use crate::engine::{loader::glscene::Glscene, math::vec3::Vec3, render::render::TextureFormat};
 
 use super::{engine::Engine, image::Image, loader::modelasset::ModelAsset, material::Material, model::Model, object::Object};
 
@@ -80,7 +80,7 @@ impl Scene{
               for j in 0..gltfsc.material_data[i].len(){
                 totdata.extend_from_slice(&gltfsc.material_data[i][j].data);
               }
-              ldmt.push(Image::new(eng, [gltfsc.material_data[i][0].size[0], gltfsc.material_data[i][0].size[1], gltfsc.material_data[i].len() as u32], totdata));
+              ldmt.push(Image::new(eng, [gltfsc.material_data[i][0].size[0], gltfsc.material_data[i][0].size[1], gltfsc.material_data[i].len() as u32], totdata, false, TextureFormat::R8g8b8a8Unorm));
             }
         }else{
             gltfsc = Glscene::read_gltf_json(path);

@@ -39,7 +39,7 @@ unsafe extern "C"{
     fn setmeshbuf(eme: cty::uint32_t, i: cty::uint32_t, val: cty::c_float);
     fn setdrawable(eme: cty::uint32_t, val: cty::uint8_t);
     fn newmesh(eh: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t, te: cty::uint32_t, usage: cty::uint32_t) -> cty::uint32_t;
-    fn newtexture(eh: cty::uint32_t, xsize: cty::uint32_t, ysize: cty::uint32_t, zsize: cty::uint32_t, pixels: *mut cty::c_char) -> cty::uint32_t;
+    fn newtexture(eh: cty::uint32_t, xsize: cty::uint32_t, ysize: cty::uint32_t, zsize: cty::uint32_t, byteperpixel: cty::uint32_t, pixels: *mut cty::c_char, is3d: cty::uint8_t, imageformat: cty::uint32_t) -> cty::uint32_t;
     fn loopcont(eh: cty::uint32_t) -> cty::uint32_t;
 }
 
@@ -219,16 +219,25 @@ impl Vertexes{
     }
 }
 
+pub enum TextureFormat{
+    R8g8b8a8Unorm = 37,
+    R16g16b16a16Sfloat = 97,
+}
+
 #[derive(Copy, Clone)]
 pub struct Texture{
     pub texid: u32,
 }
 
 impl Texture {
-    pub fn new(render: Render, xs: u32, ys: u32, texnm: u32, data: Vec<u8>) -> Texture{
+    pub fn new(render: Render, xs: u32, ys: u32, zs: u32, data: Vec<u8>, is3d: bool, format: TextureFormat) -> Texture{
+        let byteperpixel = match format {
+            TextureFormat::R8g8b8a8Unorm => 4,
+            TextureFormat::R16g16b16a16Sfloat => 8,
+        };
         Texture { 
             texid: unsafe {
-                newtexture(render.euclid, xs, ys, texnm, data.as_ptr() as *mut i8)
+                newtexture(render.euclid, xs, ys, zs, byteperpixel, data.as_ptr() as *mut i8, is3d as u8, format as u32)
             }
         }
     }

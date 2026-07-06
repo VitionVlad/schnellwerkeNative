@@ -38,22 +38,33 @@ layout(binding = 7) uniform sampler imageSampler;
 
 layout(binding = 8) uniform sampler attachmentSampler;
 
-const float SIGMA_COLOR = 0.15;
-
-const float KERNEL[25] = float[25](
-    1.0/256.0,  4.0/256.0,  6.0/256.0,  4.0/256.0, 1.0/256.0,
-    4.0/256.0, 16.0/256.0, 24.0/256.0, 16.0/256.0, 4.0/256.0,
-    6.0/256.0, 24.0/256.0, 36.0/256.0, 24.0/256.0, 6.0/256.0,
-    4.0/256.0, 16.0/256.0, 24.0/256.0, 16.0/256.0, 4.0/256.0,
-    1.0/256.0,  4.0/256.0,  6.0/256.0,  4.0/256.0, 1.0/256.0
-);
-
-float Luminance(vec3 c) {
-    return dot(c, vec3(0.2126, 0.7152, 0.0722));
-}
-
 vec3 SampleRT(vec2 uv) {
     return texture(sampler2D(defferedTexture, attachmentSampler), uv).rgb;
+}
+
+vec3 gauss(vec2 uv){
+  vec2 offset = vec2(1.0 / mi.resolutions.x, 1.0 / mi.resolutions.y);
+  vec2 offsets[9] = vec2[](
+    vec2(-offset.x,  offset.y),
+    vec2( 0.0f,    offset.y),
+    vec2( offset.x,  offset.y),
+    vec2(-offset.x,  0.0f),  
+    vec2( 0.0f,    0.0f),  
+    vec2( offset.x,  0.0f),  
+    vec2(-offset.x, -offset.y),
+    vec2( 0.0f,   -offset.y),
+    vec2( offset.x, -offset.y) 
+  );
+  float kernel[9] = float[]( 
+    1.0 / 16, 2.0 / 16, 1.0 / 16,
+    2.0 / 16, 4.0 / 16, 2.0 / 16,
+    1.0 / 16, 2.0 / 16, 1.0 / 16  
+  );
+  vec3 col = vec3(0.0, 0.0, 0.0);
+  for(int i = 0; i < 9; i+=1){
+    col += SampleRT(uv + offsets[i]) * kernel[i];
+  }
+  return col;
 }
 
 void main() {
@@ -97,5 +108,5 @@ void main() {
 //
     //outColor = vec4(colorAccum / max(weightAccum, 0.0001), 1.0);
 
-    outColor = vec4(SampleRT(uv), 1.0);
+    outColor = vec4(gauss(uv), 1.0);
 }

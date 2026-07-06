@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use crate::engine::render::render::TextureFormat;
+
 use super::{engine::Engine, loader::imageasset::ImageAsset, render::render::Texture};
 
 #[derive(Copy, Clone)]
@@ -9,14 +11,14 @@ pub struct Image{
 }
 
 impl Image{
-    pub fn new(eng: &Engine, size: [u32; 3], data: Vec<u8>) -> Image{
+    pub fn new(eng: &Engine, size: [u32; 3], data: Vec<u8>, is3d: bool, format: TextureFormat) -> Image{
         Image{
-            textures: Texture::new(eng.render, size[0], size[1], size[2], data),
+            textures: Texture::new(eng.render, size[0], size[1], size[2], data, is3d, format),
         }
     }
     pub fn new_color(eng: &Engine, color: [u8; 4]) -> Image{
         Image{
-            textures: Texture::new(eng.render, 1, 1, 1, color.to_vec()),
+            textures: Texture::new(eng.render, 1, 1, 1, color.to_vec(), false, TextureFormat::R8g8b8a8Unorm),
         }
     }
     pub fn new_from_files(eng: &Engine, paths: Vec<String>) -> Image{
@@ -42,7 +44,7 @@ impl Image{
             }
         }
         Image{
-            textures: Texture::new(eng.render, size[0], size[1], size[2], data),
+            textures: Texture::new(eng.render, size[0], size[1], size[2], data, false, TextureFormat::R8g8b8a8Unorm),
         }
     }
 }

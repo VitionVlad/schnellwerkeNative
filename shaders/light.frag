@@ -165,7 +165,7 @@ void main() {
       //vec3 spec = reflect(rayDir, normal);
       vec3 diff = normalize(rand * dot(rand, normal));
       //ro += rayDir * vec3(minIt.x - 0.001);
-      rayDir = mix(rayDir, diff, rma.x);
+      rayDir = mix(rayDir, diff, rma.r);
 
       uv = RayDirToUV(rayDir, camForward, camRight, camUp, mi.resolutions.x / mi.resolutions.y, radians(90.0));
 
