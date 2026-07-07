@@ -1,6 +1,4 @@
-use std::fs;
-
-use crate::engine::{engine::Engine, image::Image, material::Material, math::vec2::Vec2, render::render::TextureFormat, scene::Scene, ui::{UIplane, UItext}};
+use crate::engine::{engine::Engine, image::Image, loader::rw::readfs, material::Material, math::vec2::Vec2, render::render::TextureFormat, scene::Scene, ui::{UIplane, UItext}};
 
 mod engine;
 
@@ -9,14 +7,14 @@ fn main() {
     eng.render.set_title("rttest");
     eng.render.set_new_resolution(1280, 720);
 
-    let vert = fs::read("shaders/vert").unwrap();
-    let frag = fs::read("shaders/frag").unwrap();
-    let dvert = fs::read("shaders/vdeffered").unwrap();
-    let dfrag = fs::read("shaders/fdeffered").unwrap();
-    let lfrag = fs::read("shaders/flight").unwrap();
-    let shadow = fs::read("shaders/shadow").unwrap();
-    let textf = fs::read("shaders/ftext").unwrap();
-    //let imgf = fs::read("shaders/fimg").unwrap();
+    let vert = readfs("shaders/vert");
+    let frag = readfs("shaders/frag");
+    let dvert = readfs("shaders/vdeffered");
+    let dfrag = readfs("shaders/fdeffered");
+    let lfrag = readfs("shaders/flight");
+    let shadow = readfs("shaders/shadow");
+    let textf = readfs("shaders/ftext");
+    //let imgf = readfs("shaders/fimg");
 
     let matt = Material::new(
         &eng,

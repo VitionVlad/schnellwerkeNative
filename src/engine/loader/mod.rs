@@ -1,3 +1,4 @@
+pub mod rw;
 pub mod imageasset;
 pub mod mtlasset;
 pub mod modelasset;

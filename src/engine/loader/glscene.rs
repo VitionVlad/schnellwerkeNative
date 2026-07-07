@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
-use std::fs;
-
-use crate::engine::{loader::{gltf::{GLtypes, Gltf}, imageasset::ImageAsset, jsonparser::JsonF}, math::{vec2::Vec2, vec3::Vec3, vec4::Vec4}};
+use crate::engine::{loader::{gltf::{GLtypes, Gltf}, imageasset::ImageAsset, jsonparser::JsonF, rw::readfs}, math::{vec2::Vec2, vec3::Vec3, vec4::Vec4}};
 
 #[derive(Clone, PartialEq)]
 enum Rdbft{
@@ -314,7 +312,7 @@ impl Glscene{
     }
 
     for i in 0..pgltf.buffers.len(){
-      rwbf.push(fs::read(format!("{}{}", prefix, pgltf.buffers[i].uri.clone())).unwrap());
+      rwbf.push(readfs(&format!("{}{}", prefix, pgltf.buffers[i].uri.clone())));
     }
 
     let mut bfvp = vec![];
@@ -333,7 +331,7 @@ impl Glscene{
     }
   }
   pub fn readglb(path: &str) -> Glscene{
-    let rglb = fs::read(path).unwrap();
+    let rglb = readfs(path);
 
     let mut i = 12usize;
     let mut chunksrd = vec![];
@@ -418,7 +416,7 @@ impl Glscene{
     }
   }
   pub fn is_glb(path: &str) -> bool{
-    let rglb = fs::read(path).unwrap();
+    let rglb = readfs(path);
     if rglb[0] == b'g' && rglb[1] == b'l' && rglb[2] == b'T' && rglb[3] == b'F'{
       return true;
     }
