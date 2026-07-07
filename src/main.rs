@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::engine::{engine::Engine, image::Image, material::Material, math::vec2::Vec2, scene::Scene, ui::{UIplane, UItext}};
+use crate::engine::{engine::Engine, image::Image, material::Material, math::vec2::Vec2, render::render::TextureFormat, scene::Scene, ui::{UIplane, UItext}};
 
 mod engine;
 
@@ -61,11 +61,13 @@ fn main() {
 
     let black = Image::new_color(&eng, [11, 23, 40, u8::MAX]);
 
+    let black3d = Image::new(&eng, [2, 1, 1], vec![11, 23, 40, u8::MAX, u8::MAX, u8::MAX, u8::MAX, u8::MAX], true, TextureFormat::R8g8b8a8Unorm);
+
     let mut viewport = UIplane::new(&mut eng, mat, black, engine::render::render::MeshUsage::PostPass);
     viewport.object.physic_object.pos.z = 1.0;
     viewport.signal = false;
 
-    let mut ltviewport = UIplane::new(&mut eng, lightmat, black, engine::render::render::MeshUsage::LightingPass);
+    let mut ltviewport = UIplane::new(&mut eng, lightmat, black3d, engine::render::render::MeshUsage::LightingPass);
     ltviewport.object.physic_object.pos.z = 1.0;
     ltviewport.signal = false;
 

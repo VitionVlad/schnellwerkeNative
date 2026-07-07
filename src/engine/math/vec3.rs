@@ -13,6 +13,34 @@ impl Vec3{
     pub fn new() -> Vec3{
         Vec3 { x: 0.0f32, y: 0.0f32, z: 0.0f32 }
     }
+    pub fn cross(self, other: Self) -> Vec3 {
+        Vec3 {
+            x: self.y * other.z - self.z * other.y,
+            y: self.z * other.x - self.x * other.z,
+            z: self.x * other.y - self.y * other.x,
+        }
+    }
+    pub fn min(self, other: Self) -> Vec3 {
+        Vec3 {
+            x: self.x.min(other.x),
+            y: self.y.min(other.y),
+            z: self.z.min(other.z),
+        }
+    }
+    pub fn max(self, other: Self) -> Vec3 {
+        Vec3 {
+            x: self.x.max(other.x),
+            y: self.y.max(other.y),
+            z: self.z.max(other.z),
+        }
+    }
+    pub fn abs(self) -> Vec3 {
+        Vec3 {
+            x: self.x.abs(),
+            y: self.y.abs(),
+            z: self.z.abs(),
+        }
+    }
 }
 
 impl Add for Vec3 {

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate::engine::{loader::glscene::Glscene, math::vec3::Vec3, render::render::TextureFormat};
+use crate::engine::{loader::glscene::Glscene, math::vec3::Vec3, render::render::TextureFormat, voxel::VoxelScene};
 
 use super::{engine::Engine, image::Image, loader::modelasset::ModelAsset, material::Material, model::Model, object::Object};
 
@@ -16,6 +16,7 @@ pub struct Scene{
     pub render_all_cameras: bool,
     pub exclude_selected_camera: bool,
     pub camera_number: i8,
+    pub voxel_representation: VoxelScene,
 }
 
 impl Scene{
@@ -30,7 +31,8 @@ impl Scene{
             rot: Vec3::new(), 
             render_all_cameras: true, 
             exclude_selected_camera: false, 
-            camera_number: 0 
+            camera_number: 0,
+            voxel_representation: VoxelScene::new_blank(),
         }
     }
     pub fn load_from_obj(eng: &mut Engine, path: &str, material: Material) -> Scene{
@@ -63,6 +65,7 @@ impl Scene{
             render_all_cameras: true,
             exclude_selected_camera: false,
             camera_number: 0,
+            voxel_representation: VoxelScene::new_blank(),
         }
     }
     pub fn load_from_gltf(eng: &mut Engine, path: &str, material: Material) -> Scene{
@@ -94,14 +97,22 @@ impl Scene{
             }
         }
 
+        //let mut totvrt = vec![];
+
         for i in 0..gltfsc.objs.len(){
-          let tobj = Model::new(eng, gltfsc.objs[i].vertices.clone());
-          scn.objects.push(Object::new(eng, tobj, material, ldmt[gltfsc.objs[i].material], super::render::render::MeshUsage::ShadowAndDefferedPass, true, gltfsc.objs[i].name.clone()));
-          let lobj = scn.objects.len()-1;
-          scn.objects[lobj].physic_object.pos = gltfsc.objs[i].position;
-          scn.objects[lobj].physic_object.scale = gltfsc.objs[i].scale;
-          scn.objects[lobj].physic_object.rot = gltfsc.objs[i].rot;
+            //let reqlen = (gltfsc.objs[i].vertices.len()/8)*3;
+            //totvrt.append(&mut gltfsc.objs[i].vertices[0..reqlen].to_vec());
+            let tobj = Model::new(eng, gltfsc.objs[i].vertices.clone());
+            scn.objects.push(Object::new(eng, tobj, material, ldmt[gltfsc.objs[i].material], super::render::render::MeshUsage::ShadowAndDefferedPass, true, gltfsc.objs[i].name.clone()));
+            let lobj = scn.objects.len()-1;
+            scn.objects[lobj].physic_object.pos = gltfsc.objs[i].position;
+            scn.objects[lobj].physic_object.scale = gltfsc.objs[i].scale;
+            scn.objects[lobj].physic_object.rot = gltfsc.objs[i].rot;
         }
+
+        //let bd = VoxelScene::get_boundaries(totvrt);
+
+        //println!("boundaries: ({}, {}, {}), ({}, {}, {})", bd.0[0], bd.0[1], bd.0[2], bd.1[0], bd.1[1], bd.1[2]);
 
         scn.use_global_values = false;
         scn
