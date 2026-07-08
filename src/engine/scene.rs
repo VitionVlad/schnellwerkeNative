@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate::engine::{loader::glscene::Glscene, math::vec3::Vec3, render::render::TextureFormat, voxel::VoxelScene};
+use crate::engine::{loader::{glscene::Glscene, rw::checkfs}, math::vec3::Vec3, render::render::TextureFormat, voxel::VoxelScene};
 
 use super::{engine::Engine, image::Image, loader::modelasset::ModelAsset, material::Material, model::Model, object::Object};
 
@@ -68,14 +68,20 @@ impl Scene{
             voxel_representation: VoxelScene::new_blank(),
         }
     }
-    pub fn load_from_gltf(eng: &mut Engine, path: &str, material: Material) -> Scene{
+    pub fn load_from_gltf(eng: &mut Engine, path: &str, material: Material, voxelize: bool) -> Scene{
         let mut scn = Scene::new_blank();
 
         let gltfsc;
 
         let mut ldmt = vec![];
+        let mut pakpath = path.to_string();
 
         if Glscene::is_glb(path){
+            let pke = pakpath.len();
+            pakpath.remove(pke-1);
+            pakpath.remove(pke-2);
+            pakpath.remove(pke-3);
+            pakpath.remove(pke-4);
             gltfsc = Glscene::readglb(path);
 
             for i in 0..gltfsc.material_data.len(){
@@ -86,6 +92,12 @@ impl Scene{
               ldmt.push(Image::new(eng, [gltfsc.material_data[i][0].size[0], gltfsc.material_data[i][0].size[1], gltfsc.material_data[i].len() as u32], totdata, false, TextureFormat::R8g8b8a8Unorm));
             }
         }else{
+            let pke = pakpath.len();
+            pakpath.remove(pke-1);
+            pakpath.remove(pke-2);
+            pakpath.remove(pke-3);
+            pakpath.remove(pke-4);
+            pakpath.remove(pke-5);
             gltfsc = Glscene::read_gltf_json(path);
 
             for i in 0..gltfsc.material_uri.len(){
@@ -97,11 +109,18 @@ impl Scene{
             }
         }
 
-        //let mut totvrt = vec![];
+        pakpath += ".pak3";
+        println!("pak path: {}", pakpath);
+        let pak3e = checkfs(&pakpath);
+        println!("pak check result: {}", pak3e);
+
+        let mut totvrt = vec![];
 
         for i in 0..gltfsc.objs.len(){
-            //let reqlen = (gltfsc.objs[i].vertices.len()/8)*3;
-            //totvrt.append(&mut gltfsc.objs[i].vertices[0..reqlen].to_vec());
+            if !pak3e{
+                let reqlen = (gltfsc.objs[i].vertices.len()/8)*3;
+                totvrt.append(&mut gltfsc.objs[i].vertices[0..reqlen].to_vec());
+            }
             let tobj = Model::new(eng, gltfsc.objs[i].vertices.clone());
             scn.objects.push(Object::new(eng, tobj, material, ldmt[gltfsc.objs[i].material], super::render::render::MeshUsage::ShadowAndDefferedPass, true, gltfsc.objs[i].name.clone()));
             let lobj = scn.objects.len()-1;
@@ -111,8 +130,12 @@ impl Scene{
         }
 
         //let bd = VoxelScene::get_boundaries(totvrt);
-
-        //println!("boundaries: ({}, {}, {}), ({}, {}, {})", bd.0[0], bd.0[1], bd.0[2], bd.1[0], bd.1[1], bd.1[2]);
+        if pak3e{
+            scn.voxel_representation = VoxelScene::from_file(&pakpath);
+        }else{
+            scn.voxel_representation = VoxelScene::from_vertices(totvrt, 2.0);
+            scn.voxel_representation.save_file(&pakpath);
+        }
 
         scn.use_global_values = false;
         scn

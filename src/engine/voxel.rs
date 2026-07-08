@@ -1,7 +1,9 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate::engine::math::vec3::Vec3;
+use std::u8;
+
+use crate::engine::{loader::{jsonparser::JsonF, rw::{readfs, writefs}}, math::vec3::Vec3};
 
 pub struct VoxelScene{
     pub data: Vec<u8>,
@@ -124,14 +126,10 @@ impl VoxelScene{
     }
     pub fn set(&mut self, x: u32, y: u32, z: u32) {
         if x < self.size[0] && y < self.size[1] && z < self.size[2] {
-            self.data[(x + y * self.size[0] + z * self.size[0] * self.size[1]) as usize] = 1;
-        }
-    }
-    pub fn get(&self, x: u32, y: u32, z: u32) -> u8 {
-        if x < self.size[0] && y < self.size[1] && z < self.size[2] {
-            self.data[(x + y * self.size[0] + z * self.size[0] * self.size[1]) as usize]
-        } else {
-            0
+            self.data[(x + y * self.size[0] + z * self.size[1] * self.size[0]) as usize] = u8::MAX;
+            self.data[(x + y * self.size[0] + z * self.size[1] * self.size[0]) as usize + 1] = u8::MAX;
+            self.data[(x + y * self.size[0] + z * self.size[1] * self.size[0]) as usize + 2] = u8::MAX;
+            self.data[(x + y * self.size[0] + z * self.size[1] * self.size[0]) as usize + 3] = u8::MAX;
         }
     }
     pub fn voxelize_triangle(&mut self, v0: Vec3, v1: Vec3, v2: Vec3) {
@@ -188,14 +186,56 @@ impl VoxelScene{
             );
         }
     }
-    pub fn new(voxel_representation: Vec<u8>, voxel_size: f32, size: [u32; 3]) -> VoxelScene{
-        VoxelScene { data: voxel_representation, voxel_size: voxel_size, origin: Vec3 { x: 0.0, y: 0.0, z: 0.0 }, size }
+    pub fn new(voxel_representation: Vec<u8>, voxel_size: f32, size: [u32; 3], origin: Vec3) -> VoxelScene{
+        VoxelScene { data: voxel_representation, voxel_size: voxel_size, origin: origin, size }
     }
     pub fn from_vertices(vertices: Vec<f32>, voxel_size: f32) -> VoxelScene{
         let bond = Self::get_boundaries(vertices.clone());
-        let size = [(bond.0[0] - bond.1[0]).abs() as u32, (bond.0[1] - bond.1[1]).abs() as u32, (bond.0[2] - bond.1[2]).abs() as u32];
-        let mut scn = Self::new(vec![], voxel_size, size);
+        let size = [(bond.1[0] - bond.0[0]).abs() as u32, (bond.1[1] - bond.0[1]).abs() as u32, (bond.1[2] - bond.0[2]).abs() as u32];
+        let mut scn = Self::new(vec![], voxel_size, size, Vec3 { x: bond.0[0] as f32, y: bond.0[1] as f32, z: bond.0[2] as f32 });
+        scn.data.resize(((size[0]*size[1]*size[2]*4) as f32/voxel_size) as usize, 0);
         scn.voxelize_triangles(vertices);
         scn
+    }
+    pub fn from_file(path: &str) -> VoxelScene{
+        let cont = readfs(path);
+        let jsonend = u32::from_ne_bytes([cont[0], cont[1], cont[2], cont[3]]);
+        let rjson = cont[4..jsonend as usize].to_vec();
+        let mut size = [0u32, 0u32, 0u32];
+        let mut origin = Vec3{ x: 0.0, y: 0.0, z: 0.0};
+        let mut voxelsize = 1.0f32;
+        let json = JsonF::from_text(&String::from_utf8(rjson).unwrap());
+        for i in 0..json.other_nodes.len() {
+            match json.other_nodes[i].name.as_str() {
+                "voxel_size" => voxelsize = json.other_nodes[i].numeral_val as f32,
+                "size_x" => size[0] = json.other_nodes[i].numeral_val as u32,
+                "size_y" => size[1] = json.other_nodes[i].numeral_val as u32,
+                "size_z" => size[2] = json.other_nodes[i].numeral_val as u32,
+                "origin_x" => origin.x = json.other_nodes[i].numeral_val as f32,
+                "origin_y" => origin.y = json.other_nodes[i].numeral_val as f32,
+                "origin_z" => origin.z = json.other_nodes[i].numeral_val as f32,
+                _ => {}
+            }
+        }
+        let cl = cont.len();
+        let data = cont[(jsonend) as usize..cl].to_vec();
+        VoxelScene::new(data, voxelsize, size, origin)
+    }
+    pub fn save_file(&mut self, path: &str){
+        let mut s = String::new();
+        s.push_str("{\n");
+        s.push_str(&format!("  \"voxel_size\": {},\n", self.voxel_size));
+        s.push_str(&format!("  \"size_x\": {},\n", self.size[0]));
+        s.push_str(&format!("  \"size_y\": {},\n", self.size[1]));
+        s.push_str(&format!("  \"size_z\": {},\n", self.size[2]));
+        s.push_str(&format!("  \"origin_x\": {},\n", self.origin.x));
+        s.push_str(&format!("  \"origin_y\": {},\n", self.origin.y));
+        s.push_str(&format!("  \"origin_z\": {},\n", self.origin.z));
+        s.push_str("}");
+        let beggoff = ((s.len()+4) as u32).to_ne_bytes();
+        let mut rwd = beggoff.clone().to_vec();
+        rwd.append(&mut s.into_bytes());
+        rwd.append(&mut self.data);
+        writefs(path, rwd);
     }
 }
