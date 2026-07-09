@@ -108,5 +108,5 @@ void main() {
 //
     //outColor = vec4(colorAccum / max(weightAccum, 0.0001), 1.0);
 
-    outColor = vec4(gauss(uv), 1.0);
+    outColor = vec4(SampleRT(uv), 1.0);
 }

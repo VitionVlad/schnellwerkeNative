@@ -6,6 +6,7 @@ use image::{EncodableLayout, ImageReader};
 
 use crate::engine::loader::rw::readfs;
 
+#[derive(Clone, PartialEq)]
 pub struct ImageAsset{
     pub data: Vec<u8>,
     pub size: [u32; 2],

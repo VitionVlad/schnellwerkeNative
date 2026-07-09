@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate::engine::{loader::{glscene::Glscene, rw::checkfs}, math::{mat4::Mat4, vec3::Vec3, vec4::Vec4}, render::render::TextureFormat, voxel::VoxelScene};
+use crate::engine::{loader::{glscene::Glscene, imageasset::ImageAsset, rw::checkfs}, math::{mat4::Mat4, vec2::Vec2, vec3::Vec3, vec4::Vec4}, render::render::TextureFormat, voxel::VoxelScene};
 
 use super::{engine::Engine, image::Image, loader::modelasset::ModelAsset, material::Material, model::Model, object::Object};
 
@@ -43,21 +43,68 @@ impl Scene{
         pakpath.remove(pke-3);
         pakpath += "pak3";
 
+        let pak3e = checkfs(&pakpath);
+        let mut totvrt = vec![];
+        let mut texsv = vec![];
+        let mut tricolor = vec![];
+
         let obj = ModelAsset::load_obj(path);
         let mut mdst: Vec<Model> = vec![];
         let mut mdtx: Vec<Image> = vec![];
         for i in 0..obj.mtl.matinfo.len(){
             mdtx.push(Image::new_from_files(&eng, obj.mtl.matinfo[i].clone()));
         }
-
-        let pak3e = checkfs(&pakpath);
-        let mut totvrt = vec![];
+        if voxelize && !pak3e{
+            for i in 0..obj.mtl.matinfo.len(){
+                //mdtx.push(Image::new_from_files(&eng, obj.mtl.matinfo[i].clone()));
+                if i != obj.mtl.matinfo.len()-1 && (obj.mtl.matnam[i] != obj.mtl.matnam[i+1]){
+                    let texdt = ImageAsset::other_load(&obj.mtl.matinfo[i+1][0]);
+                    texsv.push(texdt.clone());
+                }else if i == 0{
+                    let texdt = ImageAsset::other_load(&obj.mtl.matinfo[0][0]);
+                    texsv.push(texdt.clone());
+                }
+            }
+        }
 
         for i in 0..obj.vertices.len(){
             mdst.push(Model::new(&eng, obj.vertices[i].clone()));
             if !pak3e && voxelize{
+                let mut mat = 0usize;
+                for j in 0..mdtx.len(){
+                    if obj.mtl.matnam[j] == obj.matnam[i]{
+                        mat = j;
+                        break;
+                    }
+                }
+
                 let vlen = (obj.vertices[i].len()/8)*3;
                 totvrt.append(&mut obj.vertices[i][0..vlen].to_vec().clone());
+                for j in (0..(vlen/3)*2).step_by(6){
+                    let uvind = j+vlen;
+
+                    let uv1 = Vec2{ x: obj.vertices[i][uvind], y: obj.vertices[i][uvind+1]};
+                    let uv2 = Vec2{ x: obj.vertices[i][uvind+2], y: obj.vertices[i][uvind+3]};
+                    let uv3 = Vec2{ x: obj.vertices[i][uvind+4], y: obj.vertices[i][uvind+5]};
+
+                    let mut meduv = Vec2{ x: (uv1.x+uv2.x+uv3.x)/3.0, y: (uv1.y+uv2.y+uv3.y)/3.0};
+
+                    if meduv.x > 1.0{
+                        meduv.x -= (meduv.x as i32) as f32;
+                    }
+                    if meduv.y > 1.0{
+                        meduv.y -= (meduv.x as i32) as f32;
+                    }
+                    let sz = texsv[mat].size;
+
+                    meduv.x *= sz[0] as f32;
+                    meduv.y *= sz[1] as f32;
+                    
+                    tricolor.push(texsv[mat].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4]);
+                    tricolor.push(texsv[mat].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4+1]);
+                    tricolor.push(texsv[mat].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4+2]);
+                    tricolor.push(texsv[mat].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4+3]);
+                }
             }
         }
 
@@ -67,7 +114,7 @@ impl Scene{
             if pak3e{
                 vrp = VoxelScene::from_file(&pakpath);
             }else{
-                vrp = VoxelScene::from_vertices(totvrt, voxel_size);
+                vrp = VoxelScene::from_vertices(totvrt, voxel_size, tricolor);
                 vrp.save_file(&pakpath);
             }
         }
@@ -103,18 +150,25 @@ impl Scene{
         let mut ldmt = vec![];
         let mut pakpath = path.to_string();
 
+        let mut texsv = vec![];
+
         if Glscene::is_glb(path){
             let pke = pakpath.len();
             pakpath.remove(pke-1);
             pakpath.remove(pke-2);
             pakpath.remove(pke-3);
             pakpath.remove(pke-4);
+            pakpath += ".pak3";
+            let pak3e = checkfs(&pakpath);
             gltfsc = Glscene::readglb(path);
 
             for i in 0..gltfsc.material_data.len(){
               let mut totdata = vec![];
               for j in 0..gltfsc.material_data[i].len(){
                 totdata.extend_from_slice(&gltfsc.material_data[i][j].data);
+              }
+              if voxelize && !pak3e{
+                texsv.push(gltfsc.material_data[i][0].clone());
               }
               ldmt.push(Image::new(eng, [gltfsc.material_data[i][0].size[0], gltfsc.material_data[i][0].size[1], gltfsc.material_data[i].len() as u32], totdata, false, TextureFormat::R8g8b8a8Unorm));
             }
@@ -125,6 +179,8 @@ impl Scene{
             pakpath.remove(pke-3);
             pakpath.remove(pke-4);
             pakpath.remove(pke-5);
+            pakpath += ".pak3";
+            let pak3e = checkfs(&pakpath);
             gltfsc = Glscene::read_gltf_json(path);
 
             for i in 0..gltfsc.material_uri.len(){
@@ -132,16 +188,20 @@ impl Scene{
               for j in 0..gltfsc.material_uri[i].len(){
                 totdata.push(gltfsc.material_uri[i][j].clone());
               }
-              ldmt.push(Image::new_from_files(&eng, totdata));
+              if voxelize && !pak3e{
+                let texdt = ImageAsset::other_load(&gltfsc.material_uri[i][0]);
+                texsv.push(texdt.clone());
+              }
+              ldmt.push(Image::new_from_files(&eng, totdata)); 
             }
         }
 
-        pakpath += ".pak3";
         //println!("pak path: {}", pakpath);
         let pak3e = checkfs(&pakpath);
         //println!("pak check result: {}", pak3e);
 
         let mut totvrt = vec![];
+        let mut tricolor = vec![];
 
         for i in 0..gltfsc.objs.len(){
             let tobj = Model::new(eng, gltfsc.objs[i].vertices.clone());
@@ -182,6 +242,31 @@ impl Scene{
 
                     totvrt.append(&mut vec![res.x, res.y, res.z]);
                 }
+                for j in (0..(reqlen/3)*2).step_by(6){
+                    let uvind = j+reqlen;
+
+                    let uv1 = Vec2{ x: gltfsc.objs[i].vertices[uvind], y: gltfsc.objs[i].vertices[uvind+1]};
+                    let uv2 = Vec2{ x: gltfsc.objs[i].vertices[uvind+2], y: gltfsc.objs[i].vertices[uvind+3]};
+                    let uv3 = Vec2{ x: gltfsc.objs[i].vertices[uvind+4], y: gltfsc.objs[i].vertices[uvind+5]};
+
+                    let mut meduv = Vec2{ x: (uv1.x+uv2.x+uv3.x)/3.0, y: (uv1.y+uv2.y+uv3.y)/3.0};
+
+                    if meduv.x > 1.0{
+                        meduv.x -= (meduv.x as i32) as f32;
+                    }
+                    if meduv.y > 1.0{
+                        meduv.y -= (meduv.x as i32) as f32;
+                    }
+                    let sz = texsv[gltfsc.objs[i].material].size;
+
+                    meduv.x *= sz[0] as f32;
+                    meduv.y *= sz[1] as f32;
+
+                    tricolor.push(texsv[gltfsc.objs[i].material].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4]);
+                    tricolor.push(texsv[gltfsc.objs[i].material].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4+1]);
+                    tricolor.push(texsv[gltfsc.objs[i].material].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4+2]);
+                    tricolor.push(texsv[gltfsc.objs[i].material].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4+3]);
+                }
             }
         }
 
@@ -190,7 +275,7 @@ impl Scene{
             if pak3e{
                 scn.voxel_representation = VoxelScene::from_file(&pakpath);
             }else{
-                scn.voxel_representation = VoxelScene::from_vertices(totvrt, voxel_size);
+                scn.voxel_representation = VoxelScene::from_vertices(totvrt, voxel_size, tricolor);
                 scn.voxel_representation.save_file(&pakpath);
             }
         }

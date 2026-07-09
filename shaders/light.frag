@@ -42,7 +42,7 @@ const float PI = 3.14159265359;
 
 const vec3 EMISSIVE_COLOR = vec3(1.0, 0.85, 0.55) * 6.0;
 
-const int   MAX_STEPS = 512;
+const int   MAX_STEPS = 256;
 const float EPS       = 1e-5;
 
 float rand(vec2 co){
@@ -165,75 +165,73 @@ vec3 SSRT(){
   return hitAlbedo;
 }
 
-vec4 voxelRaycast(vec3 rayOrigin, vec3 rayDir) {
-    float voxelSize = 0.5;
-    vec3 gridMin   = vec3(-56.0, -4.0, -40.0);
-    vec3 gridSize = mi.addinfo.yzw;
-    vec3 gridMax   = gridMin + gridSize.xyz * voxelSize;
-    vec3 invDir = 1.0 / (rayDir + vec3(EPS));
-    vec3 t0     = (gridMin - rayOrigin) * invDir;
-    vec3 t1     = (gridMax - rayOrigin) * invDir;
-    vec3 tMin   = min(t0, t1);
-    vec3 tMax   = max(t0, t1);
+vec4 voxelRaycast(vec3 rayOrigin, vec3 rayD) {
+  vec3 rayDir = vec3(rayD.x, rayD.y, rayD.z);
+  vec3 color = vec3(0.0, 0.0, 0.0);
+  int lastAxis = 0;
+  int stcnt = 0;
 
-    float tEnter = max(max(tMin.x, tMin.y), tMin.z);
-    float tExit  = min(min(tMax.x, tMax.y), tMax.z);
-    if (tEnter > tExit || tExit < 0.0) return vec4(0.0);
-    float t = max(tEnter, 0.0);
-    vec3 entryPos = rayOrigin + rayDir * (t + EPS);
-    vec3 localPos = (entryPos - gridMin) / voxelSize;
+  float voxelSize = 0.5;
+  vec3 gridMin   = vec3(-56.0, -4.0, -40.0);
+  vec3 gridSize = mi.addinfo.yzw;
+  vec3 gridMax   = gridMin + gridSize.xyz * voxelSize;
+  vec3 invDir = 1.0 / (rayDir + vec3(EPS));
+  vec3 t0     = (gridMin - rayOrigin) * invDir;
+  vec3 t1     = (gridMax - rayOrigin) * invDir;
+  vec3 tMin   = min(t0, t1);
+  vec3 tMax   = max(t0, t1);
 
-    ivec3 voxel = ivec3(floor(localPos));
-    voxel = clamp(voxel, ivec3(0), ivec3(gridSize.xyz) - 1);
-    ivec3 step    = ivec3(sign(rayDir));
-    vec3 tDelta = abs(voxelSize / rayDir);
-    vec3 frac    = localPos - floor(localPos);
-    vec3 tMaxV;
-    tMaxV.x = (rayDir.x > 0.0 ? (1.0 - frac.x) : frac.x) * tDelta.x;
-    tMaxV.y = (rayDir.y > 0.0 ? (1.0 - frac.y) : frac.y) * tDelta.y;
-    tMaxV.z = (rayDir.z > 0.0 ? (1.0 - frac.z) : frac.z) * tDelta.z;
-    int lastAxis = 0;
-    for (int i = 0; i < MAX_STEPS; i++) {
-        if (any(lessThan(voxel, ivec3(0))) ||
-            any(greaterThanEqual(voxel, ivec3(gridSize.xyz)))) {
-            break;
-        }
-        vec3 uvw = (vec3(voxel) + 0.5) / gridSize.xyz;
-        float occupancy = texture(sampler3D(texTexture, imageSampler), uvw).r;
+  float tEnter = max(max(tMin.x, tMin.y), tMin.z);
+  float tExit  = min(min(tMax.x, tMax.y), tMax.z);
+  if (tEnter > tExit || tExit < 0.0) return vec4(0.0);
+  float t = max(tEnter, 0.0);
+  vec3 entryPos = rayOrigin + rayDir * (t + EPS);
+  vec3 localPos = (entryPos - gridMin) / voxelSize;
 
-        if (occupancy > 0.5) {
-            vec3 normal;
-            if      (lastAxis == 0) normal = vec3(-float(step.x), 0.0, 0.0);
-            else if (lastAxis == 1) normal = vec3(0.0, -float(step.y), 0.0);
-            else                    normal = vec3(0.0, 0.0, -float(step.z));
-
-            vec3  lightDir = normalize(vec3(0.5, 1.0, 0.3));
-            float diffuse  = max(dot(normal, lightDir), 0.0);
-
-            float ambient  = 0.15;
-            vec3 axisColor;
-            if      (lastAxis == 0) axisColor = vec3(1.0, 0.5, 0.5);
-            else if (lastAxis == 1) axisColor = vec3(0.5, 1.0, 0.5);
-            else                    axisColor = vec3(0.5, 0.5, 1.0);
-
-            vec3 color = axisColor * (diffuse + ambient);
-            return vec4(color, 1.0);
-        }
-        if (tMaxV.x < tMaxV.y && tMaxV.x < tMaxV.z) {
-            tMaxV.x  += tDelta.x;
-            voxel.x  += step.x;
-            lastAxis  = 0;
-        } else if (tMaxV.y < tMaxV.z) {
-            tMaxV.y  += tDelta.y;
-            voxel.y  += step.y;
-            lastAxis  = 1;
-        } else {
-            tMaxV.z  += tDelta.z;
-            voxel.z  += step.z;
-            lastAxis  = 2;
-        }
+  ivec3 voxel = ivec3(floor(localPos));
+  voxel = clamp(voxel, ivec3(0), ivec3(gridSize.xyz) - 1);
+  ivec3 step = ivec3(sign(rayDir));
+  vec3 tDelta = abs(voxelSize / rayDir);
+  vec3 frac    = localPos - floor(localPos);
+  vec3 tMaxV;
+  tMaxV.x = (rayDir.x > 0.0 ? (1.0 - frac.x) : frac.x) * tDelta.x;
+  tMaxV.y = (rayDir.y > 0.0 ? (1.0 - frac.y) : frac.y) * tDelta.y;
+  tMaxV.z = (rayDir.z > 0.0 ? (1.0 - frac.z) : frac.z) * tDelta.z;
+  vec3 normal;
+  for (int i = 0; i < MAX_STEPS; i++) {
+    if (any(lessThan(voxel, ivec3(0))) ||
+      any(greaterThanEqual(voxel, ivec3(gridSize.xyz)))) {
+      break;
     }
-    return vec4(0.05, 0.05, 0.08, 0.0);
+    vec3 uvw = (vec3(voxel) + 0.5) / gridSize.xyz;
+    vec4 cl = texture(sampler3D(texTexture, imageSampler), uvw);
+    stcnt += 1;
+    if (cl.a > 0.5) {
+      if (lastAxis == 0) {
+        normal = vec3(-float(step.x), 0.0, 0.0);
+      }else if (lastAxis == 1) {
+        normal = vec3(0.0, -float(step.y), 0.0);
+      }else{
+        normal = vec3(0.0, 0.0, -float(step.z));
+      }
+      color = cl.rgb;
+      break;
+    }
+    if (tMaxV.x < tMaxV.y && tMaxV.x < tMaxV.z) {
+      tMaxV.x += tDelta.x;
+      voxel.x += step.x;
+      lastAxis = 0;
+    } else if (tMaxV.y < tMaxV.z) {
+      tMaxV.y += tDelta.y;
+      voxel.y += step.y;
+      lastAxis = 1;
+    } else {
+      tMaxV.z += tDelta.z;
+      voxel.z += step.z;
+      lastAxis = 2;
+    }
+  }
+  return vec4(color, 1.0);
 }
 
 void main() {
@@ -242,7 +240,7 @@ void main() {
   //vec4 clipSpacePosition = vec4(uv * 2.0 - 1.0, d, 1.0);
   //d = LinearizeDepth(d);
 
-  //vec3 albedo = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb;
+  vec3 albedo = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb;
 
   //vec3 rma = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 1)).rgb;
   //vec3 normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
@@ -254,7 +252,10 @@ void main() {
 
   vec3 rayDir = get_raydir(uv, 90.0, camForward, camRight, camUp);
 
-  vec4 result = voxelRaycast(dmi.deffpos[0].xyz, rayDir);
+  vec3 result = voxelRaycast(dmi.deffpos[0].xyz, rayDir).rgb;
 
-  outColor = vec4(result.rgb, 1.0);
+  outColor = vec4(result, 1.0);
+  if(uv.x > 0.5){
+    outColor = vec4(albedo, 1.0);
+  }
 }
