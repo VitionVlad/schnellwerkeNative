@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate::engine::{loader::{glscene::Glscene, rw::checkfs}, math::vec3::Vec3, render::render::TextureFormat, voxel::VoxelScene};
+use crate::engine::{loader::{glscene::Glscene, rw::checkfs}, math::{mat4::Mat4, vec3::Vec3, vec4::Vec4}, render::render::TextureFormat, voxel::VoxelScene};
 
 use super::{engine::Engine, image::Image, loader::modelasset::ModelAsset, material::Material, model::Model, object::Object};
 
@@ -110,30 +110,59 @@ impl Scene{
         }
 
         pakpath += ".pak3";
-        println!("pak path: {}", pakpath);
+        //println!("pak path: {}", pakpath);
         let pak3e = checkfs(&pakpath);
-        println!("pak check result: {}", pak3e);
+        //println!("pak check result: {}", pak3e);
 
         let mut totvrt = vec![];
 
         for i in 0..gltfsc.objs.len(){
-            if !pak3e{
-                let reqlen = (gltfsc.objs[i].vertices.len()/8)*3;
-                totvrt.append(&mut gltfsc.objs[i].vertices[0..reqlen].to_vec());
-            }
             let tobj = Model::new(eng, gltfsc.objs[i].vertices.clone());
             scn.objects.push(Object::new(eng, tobj, material, ldmt[gltfsc.objs[i].material], super::render::render::MeshUsage::ShadowAndDefferedPass, true, gltfsc.objs[i].name.clone()));
             let lobj = scn.objects.len()-1;
             scn.objects[lobj].physic_object.pos = gltfsc.objs[i].position;
             scn.objects[lobj].physic_object.scale = gltfsc.objs[i].scale;
             scn.objects[lobj].physic_object.rot = gltfsc.objs[i].rot;
+
+            if !pak3e{
+                let reqlen = (gltfsc.objs[i].vertices.len()/8)*3;
+
+                for j in (0..reqlen).step_by(3){
+                    let v4 = Vec4{ x: gltfsc.objs[i].vertices[j], y: gltfsc.objs[i].vertices[j+1], z: gltfsc.objs[i].vertices[j+2], w: 1.0};
+
+                    let mut lubm;
+                    let mut ubm = Mat4::new();
+                    ubm.trans(scn.objects[lobj].physic_object.pos);
+                    lubm = ubm.clone();
+                
+                    let mut t: Mat4 = Mat4::new();
+                    ubm = Mat4::new();
+                    ubm.xrot(scn.objects[lobj].physic_object.rot.x);
+                    t.yrot(scn.objects[lobj].physic_object.rot.y);
+                    ubm *= t;
+                    t = Mat4::new();
+                    t.zrot(scn.objects[lobj].physic_object.rot.z);
+                    ubm *= t;
+                
+                    lubm *= ubm;
+                
+                    ubm = Mat4::new();
+                    ubm.scale(scn.objects[lobj].physic_object.scale);
+                
+                    lubm *= ubm;
+
+                    let res = lubm.vec4mul(v4);
+
+                    totvrt.append(&mut vec![res.x, res.y, res.z]);
+                }
+            }
         }
 
-        //let bd = VoxelScene::get_boundaries(totvrt);
+        //let bd = VoxelScene::get_boundaries(totvrt.clone());
         if pak3e{
             scn.voxel_representation = VoxelScene::from_file(&pakpath);
         }else{
-            scn.voxel_representation = VoxelScene::from_vertices(totvrt, 2.0);
+            scn.voxel_representation = VoxelScene::from_vertices(totvrt, 1.0);
             scn.voxel_representation.save_file(&pakpath);
         }
 

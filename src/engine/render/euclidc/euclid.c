@@ -4126,9 +4126,10 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     vkDestroyBuffer(euclid.handle[eh].device, stagingBuffer, NULL);
     vkFreeMemory(euclid.handle[eh].device, stagingBufferMemory, NULL);
 
-    generateMipmaps(euclid.textures[te].texture, xsize, ysize, euclid.textures[te].mipLevels, zsize, eh);
     if(is3d == 1){
         generateMipmaps3D(euclid.textures[te].texture, xsize, ysize, zsize, euclid.textures[te].mipLevels, eh);
+    }else{
+        generateMipmaps(euclid.textures[te].texture, xsize, ysize, euclid.textures[te].mipLevels, zsize, eh);
     }
 
     VkImageViewCreateInfo viewInfo = {0};

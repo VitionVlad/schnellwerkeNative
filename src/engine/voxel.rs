@@ -126,10 +126,10 @@ impl VoxelScene{
     }
     pub fn set(&mut self, x: u32, y: u32, z: u32) {
         if x < self.size[0] && y < self.size[1] && z < self.size[2] {
-            self.data[(x + y * self.size[0] + z * self.size[1] * self.size[0]) as usize] = u8::MAX;
-            self.data[(x + y * self.size[0] + z * self.size[1] * self.size[0]) as usize + 1] = u8::MAX;
-            self.data[(x + y * self.size[0] + z * self.size[1] * self.size[0]) as usize + 2] = u8::MAX;
-            self.data[(x + y * self.size[0] + z * self.size[1] * self.size[0]) as usize + 3] = u8::MAX;
+            self.data[((x + y * self.size[0] + z * self.size[1] * self.size[0]) as usize)*4] = u8::MAX;
+            self.data[((x + y * self.size[0] + z * self.size[1] * self.size[0]) as usize)*4 + 1] = u8::MAX;
+            self.data[((x + y * self.size[0] + z * self.size[1] * self.size[0]) as usize)*4 + 2] = u8::MAX;
+            self.data[((x + y * self.size[0] + z * self.size[1] * self.size[0]) as usize)*4 + 3] = u8::MAX;
         }
     }
     pub fn voxelize_triangle(&mut self, v0: Vec3, v1: Vec3, v2: Vec3) {
@@ -235,7 +235,7 @@ impl VoxelScene{
         let beggoff = ((s.len()+4) as u32).to_ne_bytes();
         let mut rwd = beggoff.clone().to_vec();
         rwd.append(&mut s.into_bytes());
-        rwd.append(&mut self.data);
+        rwd.append(&mut self.data.clone());
         writefs(path, rwd);
     }
 }

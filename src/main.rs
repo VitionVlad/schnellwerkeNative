@@ -73,13 +73,25 @@ fn main() {
 
     let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral, true);
 
-    let black3d = Image::new(&eng, scn.voxel_representation.size.clone(), scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm);
+    //let x8scn = vec![
+    //  u8::MAX, u8::MAX, u8::MAX, u8::MAX,
+    //  0, u8::MAX, u8::MAX, u8::MAX,
+    //  u8::MAX, 0, u8::MAX, u8::MAX,
+    //  u8::MAX, u8::MAX, 0, u8::MAX,
+    //  0, u8::MAX, 0, u8::MAX,
+    //  u8::MAX, 0, 0, u8::MAX,
+    //  0, 0, u8::MAX, u8::MAX,
+    //  0, 0, 0, u8::MAX,
+    //];
+    //let black3d = Image::new(&eng, [2, 2, 2],x8scn, true, TextureFormat::R8g8b8a8Unorm);
 
-    scn.voxel_representation.data.resize(0, 0);
+    let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm);
 
     let mut ltviewport = UIplane::new(&mut eng, lightmat, black3d, engine::render::render::MeshUsage::LightingPass);
     ltviewport.object.physic_object.pos.z = 1.0;
     ltviewport.signal = false;
+
+    scn.voxel_representation.data.resize(0, 0);
 
     let mut relpos = Vec2::new();
 
