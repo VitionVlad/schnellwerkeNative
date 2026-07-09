@@ -158,7 +158,7 @@ typedef struct euclidmesh{
     VkDescriptorSet lightingDescriptorSets;
     VkDescriptorSetLayout defferedDescriptorSetLayout;
     VkDescriptorSetLayout lightingDescriptorSetLayout;
-    float lub[60];
+    float lub[64];
     uint8_t drawable;
     uint32_t texid;
     uint32_t usage;
@@ -2364,7 +2364,7 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         VkDescriptorBufferInfo bufferInfo = {0};
         bufferInfo.buffer = euclid.meshes[eme].uniformBuffers[i];
         bufferInfo.offset = 0;
-        bufferInfo.range = 60*sizeof(float);
+        bufferInfo.range = 64*sizeof(float);
 
         VkDescriptorBufferInfo shbufferInfo = {0};
         shbufferInfo.buffer = euclid.handle[eh].shadowUniformBuffer;
@@ -2517,7 +2517,7 @@ void createLightingDescriptorSets(uint32_t eh, uint32_t eme){
     VkDescriptorBufferInfo bufferInfo = {0};
     bufferInfo.buffer = euclid.meshes[eme].uniformBuffers[euclid.handle[eh].currentFrame];
     bufferInfo.offset = 0;
-    bufferInfo.range = 60*sizeof(float);
+    bufferInfo.range = 64*sizeof(float);
 
     VkDescriptorBufferInfo shbufferInfo = {0};
     shbufferInfo.buffer = euclid.handle[eh].shadowUniformBuffer;
@@ -2674,7 +2674,7 @@ void createShadowDescriptorSets(uint32_t eh, uint32_t eme){
 
         bufferInfo[1].buffer = euclid.meshes[eme].uniformBuffers[MAX_FRAMES_IN_FLIGHT];
         bufferInfo[1].offset = 0;
-        bufferInfo[1].range = sizeof(float)*60;
+        bufferInfo[1].range = sizeof(float)*64;
 
         VkWriteDescriptorSet descriptorWrite[2] = {0};
         descriptorWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -2723,7 +2723,7 @@ void createDefferedDescriptorSets(uint32_t eh, uint32_t eme){
 
         bufferInfo[1].buffer = euclid.meshes[eme].uniformBuffers[MAX_FRAMES_IN_FLIGHT];
         bufferInfo[1].offset = 0;
-        bufferInfo[1].range = sizeof(float)*60;
+        bufferInfo[1].range = sizeof(float)*64;
 
         VkDescriptorImageInfo imageInfo = {0};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -3885,7 +3885,96 @@ void generateMipmaps(VkImage image, int32_t texWidth, int32_t texHeight, uint32_
     endSingleTimeCommands(eh, commandBuffer);
 }
 
-uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize, char *pixels){
+void generateMipmaps3D(VkImage image, int32_t texWidth, int32_t texHeight, uint32_t texDepth, uint32_t mipLevels, uint32_t eh) {
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands(eh);
+
+    VkImageMemoryBarrier barrier = {0};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.image = image;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.levelCount = 1;
+
+    int32_t mipWidth = texWidth;
+    int32_t mipHeight = texHeight;
+    int32_t mipDepth = texDepth;
+
+    for (uint32_t i = 1; i < mipLevels; i++) {
+        barrier.subresourceRange.baseMipLevel = i - 1;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+        vkCmdPipelineBarrier(commandBuffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+        0, NULL,
+        0, NULL,
+        1, &barrier);
+
+        VkImageBlit blit = {0};
+        blit.srcOffsets[0].x = 0;
+        blit.srcOffsets[0].y = 0;
+        blit.srcOffsets[0].z = 0;
+        blit.srcOffsets[1].x = mipWidth;
+        blit.srcOffsets[1].y = mipHeight;
+        blit.srcOffsets[1].z = mipDepth;
+        blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.srcSubresource.mipLevel = i - 1;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount = 1;
+        blit.dstOffsets[0].x = 0;
+        blit.dstOffsets[0].y = 0;
+        blit.dstOffsets[0].z = 0;
+        blit.dstOffsets[1].x = mipWidth > 1 ? mipWidth / 2 : 1;
+        blit.dstOffsets[1].y = mipHeight > 1 ? mipHeight / 2 : 1;
+        blit.dstOffsets[1].z = mipDepth > 1 ? mipDepth / 2 : 1;
+        blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.dstSubresource.mipLevel = i;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount = 1;
+
+        vkCmdBlitImage(commandBuffer,
+        image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1, &blit,
+        VK_FILTER_LINEAR);
+
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(commandBuffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+        0, NULL,
+        0, NULL,
+        1, &barrier);
+
+        if (mipWidth > 1) mipWidth /= 2;
+        if (mipHeight > 1) mipHeight /= 2;
+        if (mipDepth > 1) mipDepth /= 2;
+    }
+
+    barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    vkCmdPipelineBarrier(commandBuffer,
+    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+    0, NULL,
+    0, NULL,
+    1, &barrier);
+
+    endSingleTimeCommands(eh, commandBuffer);
+}
+
+uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize, uint32_t byteperpixel, char *pixels, uint8_t is3d, uint32_t imageformat){
     uint32_t te = euclid.tsize;
     if(euclid.tsize != 0){
         euclidh *tmp = malloc(sizeof(euclidtexture)*euclid.tsize);
@@ -3903,7 +3992,7 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
 
-    VkDeviceSize imageSize = xsize * ysize * zsize * 4;
+    VkDeviceSize imageSize = xsize * ysize * zsize * byteperpixel;
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidTEX\e[0;37m: passed image size = %dx%dx%d, total size number = %d\n", xsize, ysize, zsize, imageSize);
 
     VkBufferCreateInfo bufferInfo = {0};
@@ -3929,6 +4018,9 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     vkBindBufferMemory(euclid.handle[eh].device, stagingBuffer, stagingBufferMemory, 0);
 
     euclid.textures[te].mipLevels = floor(log2(fmaxf(xsize, ysize)))+1;
+    if(is3d == 1){
+        euclid.textures[te].mipLevels = floor(log2(fmax(fmax(xsize, ysize), zsize)))+1;
+    }
 
     VkImageCreateInfo imageInfo = {0};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -3938,12 +4030,17 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     imageInfo.extent.depth = 1;
     imageInfo.mipLevels = euclid.textures[te].mipLevels;
     imageInfo.arrayLayers = zsize;
-    imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+    imageInfo.format = imageformat;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.flags = 0;
+    if(is3d == 1){
+        imageInfo.imageType = VK_IMAGE_TYPE_3D;
+        imageInfo.extent.depth = zsize;
+        imageInfo.arrayLayers = 1;
+    }
     result = vkCreateImage(euclid.handle[eh].device, &imageInfo, NULL, &euclid.textures[te].texture);
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidTEX\e[0;37m: Texture created with result = %d\n", result);
 
@@ -3972,6 +4069,9 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     barrier.subresourceRange.levelCount = euclid.textures[te].mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = zsize;
+    if(is3d == 1){
+        barrier.subresourceRange.layerCount = 1;
+    }
     barrier.srcAccessMask = 0;
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
@@ -4005,6 +4105,11 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     region.imageExtent.height = ysize;
     region.imageExtent.depth = 1;
 
+    if(is3d == 1){
+        region.imageSubresource.layerCount = 1;
+        region.imageExtent.depth = zsize;
+    }
+
     commandBuffer = beginSingleTimeCommands(eh);
     
     vkCmdCopyBufferToImage(
@@ -4021,13 +4126,20 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     vkDestroyBuffer(euclid.handle[eh].device, stagingBuffer, NULL);
     vkFreeMemory(euclid.handle[eh].device, stagingBufferMemory, NULL);
 
-    generateMipmaps(euclid.textures[te].texture, xsize, ysize, euclid.textures[te].mipLevels, zsize, eh);
+    if(is3d == 1){
+        generateMipmaps3D(euclid.textures[te].texture, xsize, ysize, zsize, euclid.textures[te].mipLevels, eh);
+    }else{
+        generateMipmaps(euclid.textures[te].texture, xsize, ysize, euclid.textures[te].mipLevels, zsize, eh);
+    }
 
     VkImageViewCreateInfo viewInfo = {0};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = euclid.textures[te].texture;
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    viewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+    if(is3d == 1){
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
+    }
+    viewInfo.format = imageformat;
     viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     viewInfo.subresourceRange.baseMipLevel = 0;
     viewInfo.subresourceRange.levelCount = euclid.textures[te].mipLevels;

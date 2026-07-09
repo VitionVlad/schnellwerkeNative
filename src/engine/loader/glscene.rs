@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
-use std::fs;
-
-use crate::engine::{loader::{gltf::{GLtypes, Gltf}, imageasset::ImageAsset, jsonparser::JsonF}, math::{vec2::Vec2, vec3::Vec3, vec4::Vec4}};
+use crate::engine::{loader::{gltf::{GLtypes, Gltf}, imageasset::ImageAsset, jsonparser::JsonF, rw::readfs}, math::{vec2::Vec2, vec3::Vec3, vec4::Vec4}};
 
 #[derive(Clone, PartialEq)]
 enum Rdbft{
@@ -237,8 +235,13 @@ impl Glscene{
           fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].y);
           fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].z);
 
-          fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].x);
-          fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].y);
+          if pgltf.materials[mesh.material].tex{
+            fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].x);
+            fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].y);
+          }else{
+            fuv.push(0.0);
+            fuv.push(0.0);
+          }
 
           fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].x);
           fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].y);
@@ -264,8 +267,13 @@ impl Glscene{
           fvert.push(sbf[pi].vec3[i].y);
           fvert.push(sbf[pi].vec3[i].z);
 
-          fuv.push(sbf[uvi].vec2[i].x);
-          fuv.push(sbf[uvi].vec2[i].y);
+          if pgltf.materials[mesh.material].tex{
+            fuv.push(sbf[uvi].vec2[i].x);
+            fuv.push(sbf[uvi].vec2[i].y);
+          }else{
+            fuv.push(0.0);
+            fuv.push(0.0);
+          }
 
           fnorm.push(sbf[ni].vec3[i].x);
           fnorm.push(sbf[ni].vec3[i].y);
@@ -314,7 +322,7 @@ impl Glscene{
     }
 
     for i in 0..pgltf.buffers.len(){
-      rwbf.push(fs::read(format!("{}{}", prefix, pgltf.buffers[i].uri.clone())).unwrap());
+      rwbf.push(readfs(&format!("{}{}", prefix, pgltf.buffers[i].uri.clone())));
     }
 
     let mut bfvp = vec![];
@@ -333,7 +341,7 @@ impl Glscene{
     }
   }
   pub fn readglb(path: &str) -> Glscene{
-    let rglb = fs::read(path).unwrap();
+    let rglb = readfs(path);
 
     let mut i = 12usize;
     let mut chunksrd = vec![];
@@ -418,7 +426,7 @@ impl Glscene{
     }
   }
   pub fn is_glb(path: &str) -> bool{
-    let rglb = fs::read(path).unwrap();
+    let rglb = readfs(path);
     if rglb[0] == b'g' && rglb[1] == b'l' && rglb[2] == b'T' && rglb[3] == b'F'{
       return true;
     }

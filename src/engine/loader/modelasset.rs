@@ -1,9 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
-
-use std::{fs::File, io::{BufRead, BufReader}};
-
-use crate::engine::math::{vec2::Vec2, vec3::Vec3, vec4::Vec4};
+use crate::engine::{loader::rw::readfs, math::{vec2::Vec2, vec3::Vec3, vec4::Vec4}};
 
 use super::mtlasset::MtlAsset;
 
@@ -66,8 +63,8 @@ pub struct ModelAsset{
 
 impl ModelAsset{
     pub fn load_obj(path: &str) -> ModelAsset{
-        let file = File::open(path).unwrap();
-        let reader = BufReader::new(file);
+        let file = String::from_utf8(readfs(path)).unwrap();
+        let reader: Vec<&str> = file.split('\n').collect();
         let mut vert: Vec<[f32; 3]> = vec![];
         let mut uv: Vec<[f32; 2]> = vec![];
         let mut norm: Vec<[f32; 3]> = vec![];
@@ -86,9 +83,9 @@ impl ModelAsset{
 
         let mut mtsl: Vec<String> = vec![];
         let mut obn: Vec<String> = vec![];
-        for line in reader.lines() {
-            let va = line.unwrap_or_default();
-            if va.clone().chars().next().unwrap_or_default() == '#' {
+         for i in 0..reader.len() {
+            let va = reader[i];
+            if va.chars().next().unwrap_or_default() == '#' {
                 continue;
             }
             let spl: Vec<&str> = va.split(' ').collect();
@@ -107,31 +104,31 @@ impl ModelAsset{
                 mtsl.push(spl[1].to_owned());
                 continue;
             }
-            if va.clone().as_bytes()[0] == b'o' && va.clone().as_bytes()[1] == b' '{
+            if va.as_bytes()[0] == b'o' && va.as_bytes()[1] == b' '{
                 obn.push(spl[1].to_string());
                 objcnt += 1usize;
                 objbegind.push([ivert.len(), iuv.len(), inorm.len()]);
                 continue;
             }
-            if va.clone().as_bytes()[0] == b'v' && va.clone().as_bytes()[1] == b' '{
+            if va.as_bytes()[0] == b'v' && va.as_bytes()[1] == b' '{
                 let spl: Vec<&str> = va.split(' ').collect();
                 let pos: [f32; 3] = [spl[1].parse::<f32>().unwrap(), spl[2].parse::<f32>().unwrap(), spl[3].parse::<f32>().unwrap()];
                 vert.push(pos);
                 continue;
             }
-            if va.clone().as_bytes()[0] == b'v' && va.clone().as_bytes()[1] == b't'{
+            if va.as_bytes()[0] == b'v' && va.as_bytes()[1] == b't'{
                 let spl: Vec<&str> = va.split(' ').collect();
                 let uvc: [f32; 2] = [spl[1].parse::<f32>().unwrap(), spl[2].parse::<f32>().unwrap()];
                 uv.push(uvc);
                 continue;
             }
-            if va.clone().as_bytes()[0] == b'v' && va.clone().as_bytes()[1] == b'n'{
+            if va.as_bytes()[0] == b'v' && va.as_bytes()[1] == b'n'{
                 let spl: Vec<&str> = va.split(' ').collect();
                 let normal: [f32; 3] = [spl[1].parse::<f32>().unwrap(), spl[2].parse::<f32>().unwrap(), spl[3].parse::<f32>().unwrap()];
                 norm.push(normal);
                 continue;
             }
-            if va.clone().as_bytes()[0] == b'f' && va.clone().as_bytes()[1] == b' '{
+            if va.as_bytes()[0] == b'f' && va.as_bytes()[1] == b' '{
                 let spl: Vec<&str> = va.split(' ').collect();
                 let spl3: [Vec<&str>; 3] = [spl[1].split('/').collect(), spl[2].split('/').collect(), spl[3].split('/').collect()];
                 let posi: [u32; 3] = [spl3[0][0].parse::<u32>().unwrap(), spl3[1][0].parse::<u32>().unwrap(), spl3[2][0].parse::<u32>().unwrap()];

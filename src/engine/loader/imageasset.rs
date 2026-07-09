@@ -1,9 +1,12 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
+use std::io::Cursor;
 
-use std::{fs, io::Cursor, vec};
 use image::{EncodableLayout, ImageReader};
 
+use crate::engine::loader::rw::readfs;
+
+#[derive(Clone, PartialEq)]
 pub struct ImageAsset{
     pub data: Vec<u8>,
     pub size: [u32; 2],
@@ -11,7 +14,7 @@ pub struct ImageAsset{
 
 impl ImageAsset{
     pub fn load_tga(path: &str) -> ImageAsset{
-        let tga = fs::read(path).unwrap();
+        let tga = readfs(path);
         let size16: [u32; 2] = [ ((tga[12] as u32) << 16) | ((tga[13] as u32) << 8) , ((tga[14] as u32) << 16) | ((tga[15] as u32) << 8)];
         let mut data: Vec<u8> = vec![];
         let sz = size16[0] * size16[1] * 3;
@@ -27,7 +30,7 @@ impl ImageAsset{
         }
     }
     pub fn load_tiff(path: &str) -> ImageAsset{
-        let tiff = fs::read(path).unwrap();
+        let tiff = readfs(path);
         let mut size: [u32; 2] = [0, 0];
         let idfoffset: u32 = (tiff[7] as u32) << 24 | (tiff[6] as u32) << 16 | (tiff[5] as u32) << 8 | (tiff[4] as u32);
         let mut begoff = 8u32;
@@ -79,12 +82,6 @@ impl ImageAsset{
         }
     }
     pub fn other_load(path: &str) -> ImageAsset{
-        let img = ImageReader::open(path).unwrap().decode().unwrap().into_rgba8();
-        let size = [img.width(), img.height()];
-        let data = img.as_bytes();
-        ImageAsset { 
-            data: data.to_vec(), 
-            size: size, 
-        }
+        Self::other_parse(readfs(path))
     }
 }

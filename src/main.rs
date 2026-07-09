@@ -1,6 +1,4 @@
-use std::fs;
-
-use crate::engine::{engine::Engine, image::Image, material::Material, math::vec2::Vec2, scene::Scene, ui::{UIplane, UItext}};
+use crate::engine::{engine::Engine, image::Image, loader::rw::readfs, material::Material, math::vec2::Vec2, render::render::TextureFormat, scene::Scene, ui::{UIplane, UItext}};
 
 mod engine;
 
@@ -9,14 +7,14 @@ fn main() {
     eng.render.set_title("rttest");
     eng.render.set_new_resolution(1280, 720);
 
-    let vert = fs::read("shaders/vert").unwrap();
-    let frag = fs::read("shaders/frag").unwrap();
-    let dvert = fs::read("shaders/vdeffered").unwrap();
-    let dfrag = fs::read("shaders/fdeffered").unwrap();
-    let lfrag = fs::read("shaders/flight").unwrap();
-    let shadow = fs::read("shaders/shadow").unwrap();
-    let textf = fs::read("shaders/ftext").unwrap();
-    //let imgf = fs::read("shaders/fimg").unwrap();
+    let vert = readfs("shaders/vert");
+    let frag = readfs("shaders/frag");
+    let dvert = readfs("shaders/vdeffered");
+    let dfrag = readfs("shaders/fdeffered");
+    let lfrag = readfs("shaders/flight");
+    let shadow = readfs("shaders/shadow");
+    let textf = readfs("shaders/ftext");
+    //let imgf = readfs("shaders/fimg");
 
     let matt = Material::new(
         &eng,
@@ -65,10 +63,6 @@ fn main() {
     viewport.object.physic_object.pos.z = 1.0;
     viewport.signal = false;
 
-    let mut ltviewport = UIplane::new(&mut eng, lightmat, black, engine::render::render::MeshUsage::LightingPass);
-    ltviewport.object.physic_object.pos.z = 1.0;
-    ltviewport.signal = false;
-
     let mut fpscnt = UItext::new_from_file(
         &mut eng,
         matt,
@@ -77,7 +71,15 @@ fn main() {
         engine::render::render::MeshUsage::PostPass
     );
 
-    let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral);
+    let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral, true, 0.25f32);
+
+    let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm);
+
+    let mut ltviewport = UIplane::new(&mut eng, lightmat, black3d, engine::render::render::MeshUsage::LightingPass);
+    ltviewport.object.physic_object.pos.z = 1.0;
+    ltviewport.signal = false;
+
+    scn.voxel_representation.data.resize(0, 0);
 
     let mut relpos = Vec2::new();
 
@@ -95,6 +97,8 @@ fn main() {
 
     eng.render.shadow_map_count = 0;
     eng.used_light_count = 0;
+
+    let mut fcnt = 0u32;
 
     while eng.work(){
         eng.cameras[0].physic_object.gravity = false;
@@ -162,11 +166,22 @@ fn main() {
 
         ltviewport.object.physic_object.scale.x = eng.render.resolution_x as f32 * eng.render.resolution_scale;
         ltviewport.object.physic_object.scale.y = eng.render.resolution_y as f32 * eng.render.resolution_scale;
+        ltviewport.object.mesh.ubo[48] = fcnt as f32;
+        ltviewport.object.mesh.ubo[49] = scn.voxel_representation.size[0] as f32;
+        ltviewport.object.mesh.ubo[50] = scn.voxel_representation.size[1] as f32;
+        ltviewport.object.mesh.ubo[51] = scn.voxel_representation.size[2] as f32;
+        ltviewport.object.mesh.ubo[52] = scn.voxel_representation.origin.x as f32;
+        ltviewport.object.mesh.ubo[53] = scn.voxel_representation.origin.y as f32;
+        ltviewport.object.mesh.ubo[54] = scn.voxel_representation.origin.z as f32;
+        ltviewport.object.mesh.ubo[55] = scn.voxel_representation.voxel_size;
         ltviewport.exec(&mut eng);
 
         viewport.object.physic_object.scale.x = eng.render.resolution_x as f32;
         viewport.object.physic_object.scale.y = eng.render.resolution_y as f32;
+        viewport.object.mesh.ubo[48] = 0.2;
+        viewport.object.mesh.ubo[49] = 1.0;
         viewport.exec(&mut eng);
+        fcnt += 1;
     }
     eng.end();
 }

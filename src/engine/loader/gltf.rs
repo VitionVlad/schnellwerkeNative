@@ -161,7 +161,7 @@ impl Gltf {
                 }
             }else if json.other_nodes[i].name == "materials"{
                 for j in 0..json.other_nodes[i].other_nodes.len(){
-                    let mut msg = Gmaterial{ double_sided: false, name: "".to_string(), texture_indices: vec![], basecol: [0.0, 0.0, 0.0, 0.0], rough: 0.0, met: 0.0, tex: true };
+                    let mut msg = Gmaterial{ double_sided: false, name: "".to_string(), texture_indices: vec![], basecol: [0.0, 0.0, 0.0, 0.0], rough: 0.0, met: 0.0, tex: false };
                     for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
                         let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
                         if fname == "doubleSided"{
@@ -175,6 +175,7 @@ impl Gltf {
                                     for p in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes.len(){
                                         if json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].name == "index"{
                                             msg.texture_indices.push(json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].numeral_val as usize);
+                                            msg.tex = true;
                                         }
                                     }
                                 }else if lfname == "baseColorFactor" {
@@ -187,7 +188,7 @@ impl Gltf {
                                     msg.basecol[1] = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[1].numeral_val as f32;
                                     msg.basecol[2] = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[2].numeral_val as f32;
                                     msg.basecol[3] = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[3].numeral_val as f32;
-                                    msg.tex = false;
+                                    //msg.tex = false;
                                 }else if lfname == "metallicFactor" {
                                     //for p in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes.len(){
                                     //    if json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].name == "index"{
@@ -195,7 +196,7 @@ impl Gltf {
                                     //    }
                                     //}
                                     msg.met = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].numeral_val as f32;
-                                    msg.tex = false;
+                                    //msg.tex = false;
                                 }else if lfname == "roughnessFactor" {
                                     //for p in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes.len(){
                                     //    if json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].other_nodes[p].name == "index"{
@@ -203,7 +204,7 @@ impl Gltf {
                                     //    }
                                     //}
                                     msg.rough = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].numeral_val as f32;
-                                    msg.tex = false;
+                                    //msg.tex = false;
                                 }
                             }
                         }

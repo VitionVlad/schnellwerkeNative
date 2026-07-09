@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
-use std::fs;
+use crate::engine::loader::rw::readfs;
 
 #[derive(PartialEq)]
 #[derive(Copy, Clone)]
@@ -241,7 +241,7 @@ impl JsonF {
     }
   }
   pub fn load_from_file(path: &str) -> JsonF{
-    let jsontext = fs::read(path).unwrap();
+    let jsontext = readfs(path);
     JsonF::from_text(&String::from_utf8(jsontext).unwrap())
   }
 }
