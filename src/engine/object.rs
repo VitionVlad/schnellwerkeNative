@@ -45,7 +45,7 @@ impl Object {
     }
     pub fn new_blank() -> Object{
         Object { 
-            mesh: Mesh { meshid: 0, ubo: [0.0; 52], draw: true, draw_shadow: true, keep_shadow: false, render_all_cameras: true, exclude_selected_camera: false, camera_number: 0 },
+            mesh: Mesh { meshid: 0, ubo: [0.0; 56], draw: true, draw_shadow: true, keep_shadow: false, render_all_cameras: true, exclude_selected_camera: false, camera_number: 0 },
             physic_object: PhysicsObject::new(vec![Vec3::new(), Vec3::new()], true),
             usage: MeshUsage::ShadowAndDefferedPass,
             is_looking_at: false,

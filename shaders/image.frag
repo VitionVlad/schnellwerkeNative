@@ -11,6 +11,7 @@ layout(binding = 0) uniform MeshInput {
     mat4 r;
     mat4 s;
     vec4 addinfo;
+    vec4 rtinfo;
 } mi;
 
 layout(binding = 1) uniform ShadowMatricesInput {

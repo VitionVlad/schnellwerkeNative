@@ -256,7 +256,7 @@ pub enum MeshUsage {
 #[derive(Copy, Clone)]
 pub struct Mesh{
     pub meshid: u32,
-    pub ubo: [f32; 52],
+    pub ubo: [f32; 56],
     pub draw: bool,
     pub draw_shadow: bool,
     pub keep_shadow: bool,
@@ -271,7 +271,7 @@ impl Mesh{
             meshid: unsafe{
                 newmesh(ren.euclid, material.materialid, model.modelid, texture.texid,usage as u32)
             },
-            ubo: [1.0; 52],
+            ubo: [1.0; 56],
             draw: true,
             draw_shadow: true,
             keep_shadow: true,

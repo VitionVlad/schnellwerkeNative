@@ -235,8 +235,13 @@ impl Glscene{
           fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].y);
           fvert.push(sbf[pi].vec3[sbf[ii].indices[i] as usize].z);
 
-          fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].x);
-          fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].y);
+          if pgltf.materials[mesh.material].tex{
+            fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].x);
+            fuv.push(sbf[uvi].vec2[sbf[ii].indices[i] as usize].y);
+          }else{
+            fuv.push(0.0);
+            fuv.push(0.0);
+          }
 
           fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].x);
           fnorm.push(sbf[ni].vec3[sbf[ii].indices[i] as usize].y);
@@ -262,8 +267,13 @@ impl Glscene{
           fvert.push(sbf[pi].vec3[i].y);
           fvert.push(sbf[pi].vec3[i].z);
 
-          fuv.push(sbf[uvi].vec2[i].x);
-          fuv.push(sbf[uvi].vec2[i].y);
+          if pgltf.materials[mesh.material].tex{
+            fuv.push(sbf[uvi].vec2[i].x);
+            fuv.push(sbf[uvi].vec2[i].y);
+          }else{
+            fuv.push(0.0);
+            fuv.push(0.0);
+          }
 
           fnorm.push(sbf[ni].vec3[i].x);
           fnorm.push(sbf[ni].vec3[i].y);

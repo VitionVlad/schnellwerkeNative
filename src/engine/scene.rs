@@ -55,13 +55,15 @@ impl Scene{
             mdtx.push(Image::new_from_files(&eng, obj.mtl.matinfo[i].clone()));
         }
         if voxelize && !pak3e{
+            let lastelem= obj.mtl.matinfo.len()-1;
             for i in 0..obj.mtl.matinfo.len(){
                 //mdtx.push(Image::new_from_files(&eng, obj.mtl.matinfo[i].clone()));
+                if i == 0 || lastelem == i{
+                    let texdt = ImageAsset::other_load(&obj.mtl.matinfo[i][0]);
+                    texsv.push(texdt.clone());
+                }
                 if i != obj.mtl.matinfo.len()-1 && (obj.mtl.matnam[i] != obj.mtl.matnam[i+1]){
                     let texdt = ImageAsset::other_load(&obj.mtl.matinfo[i+1][0]);
-                    texsv.push(texdt.clone());
-                }else if i == 0{
-                    let texdt = ImageAsset::other_load(&obj.mtl.matinfo[0][0]);
                     texsv.push(texdt.clone());
                 }
             }
@@ -89,17 +91,17 @@ impl Scene{
 
                     let mut meduv = Vec2{ x: (uv1.x+uv2.x+uv3.x)/3.0, y: (uv1.y+uv2.y+uv3.y)/3.0};
 
-                    if meduv.x > 1.0{
-                        meduv.x -= (meduv.x as i32) as f32;
+                    if meduv.x > 1.0 || meduv.x < 0.0{
+                        meduv.x -= meduv.x.floor() as f32;
                     }
-                    if meduv.y > 1.0{
-                        meduv.y -= (meduv.x as i32) as f32;
+                    if meduv.y > 1.0 || meduv.y < 0.0{
+                        meduv.y -= meduv.y.floor() as f32;
                     }
                     let sz = texsv[mat].size;
 
                     meduv.x *= sz[0] as f32;
                     meduv.y *= sz[1] as f32;
-                    
+
                     tricolor.push(texsv[mat].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4]);
                     tricolor.push(texsv[mat].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4+1]);
                     tricolor.push(texsv[mat].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4+2]);
@@ -251,21 +253,31 @@ impl Scene{
 
                     let mut meduv = Vec2{ x: (uv1.x+uv2.x+uv3.x)/3.0, y: (uv1.y+uv2.y+uv3.y)/3.0};
 
-                    if meduv.x > 1.0{
-                        meduv.x -= (meduv.x as i32) as f32;
+                    if meduv.x > 1.0 || meduv.x < 0.0{
+                        meduv.x -= meduv.x.floor() as f32;
                     }
-                    if meduv.y > 1.0{
-                        meduv.y -= (meduv.x as i32) as f32;
+                    if meduv.y > 1.0 || meduv.y < 0.0{
+                        meduv.y -= meduv.y.floor() as f32;
                     }
                     let sz = texsv[gltfsc.objs[i].material].size;
 
                     meduv.x *= sz[0] as f32;
                     meduv.y *= sz[1] as f32;
 
-                    tricolor.push(texsv[gltfsc.objs[i].material].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4]);
-                    tricolor.push(texsv[gltfsc.objs[i].material].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4+1]);
-                    tricolor.push(texsv[gltfsc.objs[i].material].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4+2]);
-                    tricolor.push(texsv[gltfsc.objs[i].material].data[(meduv.x as usize+meduv.y as usize*sz[0] as usize)*4+3]);
+                    let mut imed = [meduv.x as u32, meduv.y as u32];
+
+                    if imed[0] >= sz[0]{
+                        imed[0] = sz[0] - 1;
+                    }
+
+                    if imed[1] >= sz[1]{
+                        imed[1] = sz[1] - 1;
+                    }
+
+                    tricolor.push(texsv[gltfsc.objs[i].material].data[(imed[0] as usize+imed[1] as usize*sz[0] as usize)*4]);
+                    tricolor.push(texsv[gltfsc.objs[i].material].data[(imed[0] as usize+imed[1] as usize*sz[0] as usize)*4+1]);
+                    tricolor.push(texsv[gltfsc.objs[i].material].data[(imed[0] as usize+imed[1] as usize*sz[0] as usize)*4+2]);
+                    tricolor.push(texsv[gltfsc.objs[i].material].data[(imed[0] as usize+imed[1] as usize*sz[0] as usize)*4+3]);
                 }
             }
         }

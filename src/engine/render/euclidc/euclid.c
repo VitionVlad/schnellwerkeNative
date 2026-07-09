@@ -158,7 +158,7 @@ typedef struct euclidmesh{
     VkDescriptorSet lightingDescriptorSets;
     VkDescriptorSetLayout defferedDescriptorSetLayout;
     VkDescriptorSetLayout lightingDescriptorSetLayout;
-    float lub[60];
+    float lub[64];
     uint8_t drawable;
     uint32_t texid;
     uint32_t usage;
@@ -2364,7 +2364,7 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         VkDescriptorBufferInfo bufferInfo = {0};
         bufferInfo.buffer = euclid.meshes[eme].uniformBuffers[i];
         bufferInfo.offset = 0;
-        bufferInfo.range = 60*sizeof(float);
+        bufferInfo.range = 64*sizeof(float);
 
         VkDescriptorBufferInfo shbufferInfo = {0};
         shbufferInfo.buffer = euclid.handle[eh].shadowUniformBuffer;
@@ -2517,7 +2517,7 @@ void createLightingDescriptorSets(uint32_t eh, uint32_t eme){
     VkDescriptorBufferInfo bufferInfo = {0};
     bufferInfo.buffer = euclid.meshes[eme].uniformBuffers[euclid.handle[eh].currentFrame];
     bufferInfo.offset = 0;
-    bufferInfo.range = 60*sizeof(float);
+    bufferInfo.range = 64*sizeof(float);
 
     VkDescriptorBufferInfo shbufferInfo = {0};
     shbufferInfo.buffer = euclid.handle[eh].shadowUniformBuffer;
@@ -2674,7 +2674,7 @@ void createShadowDescriptorSets(uint32_t eh, uint32_t eme){
 
         bufferInfo[1].buffer = euclid.meshes[eme].uniformBuffers[MAX_FRAMES_IN_FLIGHT];
         bufferInfo[1].offset = 0;
-        bufferInfo[1].range = sizeof(float)*60;
+        bufferInfo[1].range = sizeof(float)*64;
 
         VkWriteDescriptorSet descriptorWrite[2] = {0};
         descriptorWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -2723,7 +2723,7 @@ void createDefferedDescriptorSets(uint32_t eh, uint32_t eme){
 
         bufferInfo[1].buffer = euclid.meshes[eme].uniformBuffers[MAX_FRAMES_IN_FLIGHT];
         bufferInfo[1].offset = 0;
-        bufferInfo[1].range = sizeof(float)*60;
+        bufferInfo[1].range = sizeof(float)*64;
 
         VkDescriptorImageInfo imageInfo = {0};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

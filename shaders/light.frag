@@ -11,6 +11,7 @@ layout(binding = 0) uniform MeshInput {
     mat4 r;
     mat4 s;
     vec4 addinfo;
+    vec4 rtinfo;
 } mi;
 
 layout(binding = 1) uniform ShadowMatricesInput {
@@ -171,8 +172,8 @@ vec4 voxelRaycast(vec3 rayOrigin, vec3 rayD) {
   int lastAxis = 0;
   int stcnt = 0;
 
-  float voxelSize = 0.5;
-  vec3 gridMin   = vec3(-56.0, -4.0, -40.0);
+  float voxelSize = mi.rtinfo.a;
+  vec3 gridMin   = mi.rtinfo.xyz;
   vec3 gridSize = mi.addinfo.yzw;
   vec3 gridMax   = gridMin + gridSize.xyz * voxelSize;
   vec3 invDir = 1.0 / (rayDir + vec3(EPS));
