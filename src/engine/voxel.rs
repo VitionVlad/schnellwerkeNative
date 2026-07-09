@@ -191,9 +191,12 @@ impl VoxelScene{
     }
     pub fn from_vertices(vertices: Vec<f32>, voxel_size: f32) -> VoxelScene{
         let bond = Self::get_boundaries(vertices.clone());
-        let size = [(bond.1[0] - bond.0[0]).abs() as u32, (bond.1[1] - bond.0[1]).abs() as u32, (bond.1[2] - bond.0[2]).abs() as u32];
+        let size = [
+            ((bond.1[0] - bond.0[0]).abs() as f32/voxel_size) as u32, 
+            ((bond.1[1] - bond.0[1]).abs() as f32/voxel_size) as u32, 
+            ((bond.1[2] - bond.0[2]).abs() as f32/voxel_size) as u32];
         let mut scn = Self::new(vec![], voxel_size, size, Vec3 { x: bond.0[0] as f32, y: bond.0[1] as f32, z: bond.0[2] as f32 });
-        scn.data.resize(((size[0]*size[1]*size[2]*4) as f32/voxel_size) as usize, 0);
+        scn.data.resize(((size[0]*size[1]*size[2]*4) as f32/voxel_size.powi(3)) as usize, 0);
         scn.voxelize_triangles(vertices);
         scn
     }

@@ -71,19 +71,9 @@ fn main() {
         engine::render::render::MeshUsage::PostPass
     );
 
-    let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral, true);
+    let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral, true, 0.5f32);
 
-    //let x8scn = vec![
-    //  u8::MAX, u8::MAX, u8::MAX, u8::MAX,
-    //  0, u8::MAX, u8::MAX, u8::MAX,
-    //  u8::MAX, 0, u8::MAX, u8::MAX,
-    //  u8::MAX, u8::MAX, 0, u8::MAX,
-    //  0, u8::MAX, 0, u8::MAX,
-    //  u8::MAX, 0, 0, u8::MAX,
-    //  0, 0, u8::MAX, u8::MAX,
-    //  0, 0, 0, u8::MAX,
-    //];
-    //let black3d = Image::new(&eng, [2, 2, 2],x8scn, true, TextureFormat::R8g8b8a8Unorm);
+    println!("origin: {}, {}, {}", scn.voxel_representation.origin.x, scn.voxel_representation.origin.y, scn.voxel_representation.origin.z);
 
     let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm);
 
@@ -179,6 +169,9 @@ fn main() {
         ltviewport.object.physic_object.scale.x = eng.render.resolution_x as f32 * eng.render.resolution_scale;
         ltviewport.object.physic_object.scale.y = eng.render.resolution_y as f32 * eng.render.resolution_scale;
         ltviewport.object.mesh.ubo[48] = fcnt as f32;
+        ltviewport.object.mesh.ubo[49] = scn.voxel_representation.size[0] as f32;
+        ltviewport.object.mesh.ubo[50] = scn.voxel_representation.size[1] as f32;
+        ltviewport.object.mesh.ubo[51] = scn.voxel_representation.size[2] as f32;
         ltviewport.exec(&mut eng);
 
         viewport.object.physic_object.scale.x = eng.render.resolution_x as f32;

@@ -35,16 +35,43 @@ impl Scene{
             voxel_representation: VoxelScene::new_blank(),
         }
     }
-    pub fn load_from_obj(eng: &mut Engine, path: &str, material: Material) -> Scene{
+    pub fn load_from_obj(eng: &mut Engine, path: &str, material: Material, voxelize: bool, voxel_size: f32) -> Scene{
+        let mut pakpath = path.to_string();
+        let pke = pakpath.len();
+        pakpath.remove(pke-1);
+        pakpath.remove(pke-2);
+        pakpath.remove(pke-3);
+        pakpath += "pak3";
+
         let obj = ModelAsset::load_obj(path);
         let mut mdst: Vec<Model> = vec![];
         let mut mdtx: Vec<Image> = vec![];
         for i in 0..obj.mtl.matinfo.len(){
             mdtx.push(Image::new_from_files(&eng, obj.mtl.matinfo[i].clone()));
         }
+
+        let pak3e = checkfs(&pakpath);
+        let mut totvrt = vec![];
+
         for i in 0..obj.vertices.len(){
             mdst.push(Model::new(&eng, obj.vertices[i].clone()));
+            if !pak3e && voxelize{
+                let vlen = (obj.vertices[i].len()/8)*3;
+                totvrt.append(&mut obj.vertices[i][0..vlen].to_vec().clone());
+            }
         }
+
+        let mut vrp = VoxelScene::new_blank();
+
+        if voxelize{
+            if pak3e{
+                vrp = VoxelScene::from_file(&pakpath);
+            }else{
+                vrp = VoxelScene::from_vertices(totvrt, voxel_size);
+                vrp.save_file(&pakpath);
+            }
+        }
+
         let mut fobj: Vec<Object> = vec![];
         for i in 0..mdst.len(){
             for j in 0..mdtx.len(){
@@ -65,10 +92,10 @@ impl Scene{
             render_all_cameras: true,
             exclude_selected_camera: false,
             camera_number: 0,
-            voxel_representation: VoxelScene::new_blank(),
+            voxel_representation: vrp,
         }
     }
-    pub fn load_from_gltf(eng: &mut Engine, path: &str, material: Material, voxelize: bool) -> Scene{
+    pub fn load_from_gltf(eng: &mut Engine, path: &str, material: Material, voxelize: bool, voxel_size: f32) -> Scene{
         let mut scn = Scene::new_blank();
 
         let gltfsc;
@@ -124,7 +151,7 @@ impl Scene{
             scn.objects[lobj].physic_object.scale = gltfsc.objs[i].scale;
             scn.objects[lobj].physic_object.rot = gltfsc.objs[i].rot;
 
-            if !pak3e{
+            if !pak3e && voxelize{
                 let reqlen = (gltfsc.objs[i].vertices.len()/8)*3;
 
                 for j in (0..reqlen).step_by(3){
@@ -159,11 +186,13 @@ impl Scene{
         }
 
         //let bd = VoxelScene::get_boundaries(totvrt.clone());
-        if pak3e{
-            scn.voxel_representation = VoxelScene::from_file(&pakpath);
-        }else{
-            scn.voxel_representation = VoxelScene::from_vertices(totvrt, 1.0);
-            scn.voxel_representation.save_file(&pakpath);
+        if voxelize{
+            if pak3e{
+                scn.voxel_representation = VoxelScene::from_file(&pakpath);
+            }else{
+                scn.voxel_representation = VoxelScene::from_vertices(totvrt, voxel_size);
+                scn.voxel_representation.save_file(&pakpath);
+            }
         }
 
         scn.use_global_values = false;
