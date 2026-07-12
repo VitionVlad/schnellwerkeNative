@@ -215,7 +215,6 @@ impl Scene{
 
             if !pak3e && voxelize{
                 let reqlen = (gltfsc.objs[i].vertices.len()/8)*3;
-
                 for j in (0..reqlen).step_by(3){
                     let v4 = Vec4{ x: gltfsc.objs[i].vertices[j], y: gltfsc.objs[i].vertices[j+1], z: gltfsc.objs[i].vertices[j+2], w: 1.0};
 

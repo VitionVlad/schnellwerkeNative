@@ -96,7 +96,16 @@ fn main() {
     }
 
     eng.render.shadow_map_count = 0;
-    eng.used_light_count = 0;
+    eng.used_light_count = 1;
+
+    eng.lights[0].shadow = false;
+    eng.lights[0].light_type = engine::light::LightType::Spot;
+    eng.lights[0].pos.x = 0.0f32;
+    eng.lights[0].pos.y = 5.0f32;
+    eng.lights[0].pos.z = 0.0f32;
+    eng.lights[0].color.x = 1.25f32;
+    eng.lights[0].color.y = 1.25f32;
+    eng.lights[0].color.z = 1.25f32;
 
     let mut fcnt = 0u32;
 
@@ -146,6 +155,12 @@ fn main() {
             if eng.control.get_key_state(22){
               eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
               eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
+            }
+
+            if eng.control.mousebtn[2]{
+              eng.lights[0].pos.x = eng.cameras[0].physic_object.pos.x;
+              eng.lights[0].pos.y = eng.cameras[0].physic_object.pos.y;
+              eng.lights[0].pos.z = eng.cameras[0].physic_object.pos.z;
             }
         }
 

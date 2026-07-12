@@ -80,7 +80,7 @@ impl Engine{
             self.render.set_deffered_uniform_data(i*4+360, self.cameras[i as usize].physic_object.rot.x);
             self.render.set_deffered_uniform_data(i*4+361, self.cameras[i as usize].physic_object.rot.y);
             self.render.set_deffered_uniform_data(i*4+362, self.cameras[i as usize].physic_object.rot.z);
-            self.render.set_deffered_uniform_data(i*4+363, 0.0);
+            self.render.set_deffered_uniform_data(i*4+363, self.cameras[i as usize].fov);
         }
         let mut li = 0;
         for i in 0..u32::min(self.used_light_count, 100){

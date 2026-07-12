@@ -39,6 +39,19 @@ layout(binding = 7) uniform sampler imageSampler;
 
 layout(binding = 8) uniform sampler attachmentSampler;
 
+const float SIGMA_COLOR = 0.15;
+const float KERNEL[25] = float[25](
+    1.0/256.0,  4.0/256.0,  6.0/256.0,  4.0/256.0, 1.0/256.0,
+    4.0/256.0, 16.0/256.0, 24.0/256.0, 16.0/256.0, 4.0/256.0,
+    6.0/256.0, 24.0/256.0, 36.0/256.0, 24.0/256.0, 6.0/256.0,
+    4.0/256.0, 16.0/256.0, 24.0/256.0, 16.0/256.0, 4.0/256.0,
+    1.0/256.0,  4.0/256.0,  6.0/256.0,  4.0/256.0, 1.0/256.0
+);
+
+float Luminance(vec3 c) {
+    return dot(c, vec3(0.2126, 0.7152, 0.0722));
+}
+
 vec3 SampleRT(vec2 uv) {
     return texture(sampler2D(defferedTexture, attachmentSampler), uv).rgb;
 }
@@ -72,13 +85,13 @@ void main() {
     vec2 uv = fuv;
 
     //vec2 texelSize = 1.0 / mi.resolutions.xy;
-    //int   passIndex = int(mi.addinfo.y);
+    //int   passIndex = int(4);
     //float stepSize  = float(1 << passIndex);
 //
     //vec3  centerColor = SampleRT(uv);
     //float centerLum   = Luminance(centerColor);
 //
-    //float sigmaLum = max(mi.addinfo.x, 0.01);
+    //float sigmaLum = max(0.2, 0.01);
 //
     //vec3  colorAccum  = vec3(0.0);
     //float weightAccum = 0.0;
@@ -99,14 +112,11 @@ void main() {
     //        vec3  colorDiff = centerColor - sampleColor;
     //        float colorDist = dot(colorDiff, colorDiff);
     //        float wColor    = exp(-colorDist / (2.0 * SIGMA_COLOR * SIGMA_COLOR + 0.0001));
-//
     //        float w = wKernel * wLum * wColor;
-//
     //        colorAccum  += sampleColor * w;
     //        weightAccum += w;
     //    }
     //}
-//
     //outColor = vec4(colorAccum / max(weightAccum, 0.0001), 1.0);
 
     outColor = vec4(SampleRT(uv), 1.0);
