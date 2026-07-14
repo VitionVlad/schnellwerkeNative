@@ -11,14 +11,14 @@ pub struct Image{
 }
 
 impl Image{
-    pub fn new(eng: &Engine, size: [u32; 3], data: Vec<u8>, is3d: bool, format: TextureFormat) -> Image{
+    pub fn new(eng: &Engine, size: [u32; 3], data: Vec<u8>, is3d: bool, format: TextureFormat, gen_mipmaps: bool) -> Image{
         Image{
-            textures: Texture::new(eng.render, size[0], size[1], size[2], data, is3d, format),
+            textures: Texture::new(eng.render, size[0], size[1], size[2], data, is3d, format, gen_mipmaps),
         }
     }
     pub fn new_color(eng: &Engine, color: [u8; 4]) -> Image{
         Image{
-            textures: Texture::new(eng.render, 1, 1, 1, color.to_vec(), false, TextureFormat::R8g8b8a8Unorm),
+            textures: Texture::new(eng.render, 1, 1, 1, color.to_vec(), false, TextureFormat::R8g8b8a8Unorm, false),
         }
     }
     pub fn new_from_files(eng: &Engine, paths: Vec<String>) -> Image{
@@ -44,7 +44,7 @@ impl Image{
             }
         }
         Image{
-            textures: Texture::new(eng.render, size[0], size[1], size[2], data, false, TextureFormat::R8g8b8a8Unorm),
+            textures: Texture::new(eng.render, size[0], size[1], size[2], data, false, TextureFormat::R8g8b8a8Unorm, true),
         }
     }
 }

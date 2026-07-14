@@ -3974,7 +3974,7 @@ void generateMipmaps3D(VkImage image, int32_t texWidth, int32_t texHeight, uint3
     endSingleTimeCommands(eh, commandBuffer);
 }
 
-uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize, uint32_t byteperpixel, char *pixels, uint8_t is3d, uint32_t imageformat){
+uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize, uint32_t byteperpixel, char *pixels, uint8_t is3d, uint32_t imageformat, uint8_t genmips){
     uint32_t te = euclid.tsize;
     if(euclid.tsize != 0){
         euclidh *tmp = malloc(sizeof(euclidtexture)*euclid.tsize);
@@ -4016,10 +4016,13 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     vkUnmapMemory(euclid.handle[eh].device, stagingBufferMemory);
 
     vkBindBufferMemory(euclid.handle[eh].device, stagingBuffer, stagingBufferMemory, 0);
-
-    euclid.textures[te].mipLevels = floor(log2(fmaxf(xsize, ysize)))+1;
-    if(is3d == 1){
-        euclid.textures[te].mipLevels = floor(log2(fmax(fmax(xsize, ysize), zsize)))+1;
+    
+    euclid.textures[te].mipLevels = 1;
+    if(genmips == 1){
+        euclid.textures[te].mipLevels = floor(log2(fmaxf(xsize, ysize)))+1;
+        if(is3d == 1){
+            euclid.textures[te].mipLevels = floor(log2(fmax(fmax(xsize, ysize), zsize)))+1;
+        }
     }
 
     VkImageCreateInfo imageInfo = {0};
@@ -4126,10 +4129,12 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     vkDestroyBuffer(euclid.handle[eh].device, stagingBuffer, NULL);
     vkFreeMemory(euclid.handle[eh].device, stagingBufferMemory, NULL);
 
-    if(is3d == 1){
-        generateMipmaps3D(euclid.textures[te].texture, xsize, ysize, zsize, euclid.textures[te].mipLevels, eh);
-    }else{
-        generateMipmaps(euclid.textures[te].texture, xsize, ysize, euclid.textures[te].mipLevels, zsize, eh);
+    if(genmips == 1){
+        if(is3d == 1){
+            generateMipmaps3D(euclid.textures[te].texture, xsize, ysize, zsize, euclid.textures[te].mipLevels, eh);
+        }else{
+            generateMipmaps(euclid.textures[te].texture, xsize, ysize, euclid.textures[te].mipLevels, zsize, eh);
+        }
     }
 
     VkImageViewCreateInfo viewInfo = {0};

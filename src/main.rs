@@ -73,7 +73,7 @@ fn main() {
 
     let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral, true, 0.25f32);
 
-    let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm);
+    let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm, false);
 
     println!("{}, {}, {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2]);
 

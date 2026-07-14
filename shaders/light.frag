@@ -353,7 +353,7 @@ vec3 voxelplusssrt(){
 
   bool lthit = false;
 
-  for(int j = 1; j <= 2; j++) {
+  for(int j = 1; j <= 1; j++) {
     vec3 ha = vec3(1.0, 1.0, 1.0);
     uv = vec2(fuv.x, 1.0 - fuv.y);
 
