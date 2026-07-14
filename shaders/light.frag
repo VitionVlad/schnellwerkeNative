@@ -372,17 +372,23 @@ vec3 voxelplusssrt(){
     vec3 rayDir = get_raydir(uv, dmi.deffrot[0].w, camForward, camRight, camUp);
     ha *= albedo;
 
-    vec2 blueNoiseUV = fuv + vec2(float(mi.addinfo.x) * GOLDEN_RATIO);
-    vec3 blueNoise = texture(sampler2D(noiseTexture, attachmentSampler), blueNoiseUV).rgb;
-
-    rayDir = reflect(rayDir, normal);
-    //vec3 rand = randomOnSphere(uv * mi.addinfo.x, j);
-    vec3 diff = normalize(blueNoise * dot(blueNoise, normal));
-    rayDir = mix(rayDir, diff, rma.r);
+    vec2  blueNoiseUV = mod(uv*2.0 + float(mi.addinfo.x) * GOLDEN_RATIO, 1.0);
+    vec4  bn = texture(sampler2D(noiseTexture, attachmentSampler), blueNoiseUV);
+    vec2  xi = bn.rg;
+    float phi = 2.0 * PI * xi.x;
+    float cosTheta = sqrt(1.0 - xi.y);
+    float sinTheta = sqrt(xi.y);
+    vec3 localDir = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+    vec3 up = abs(normal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    vec3 right = normalize(cross(up, normal));
+    vec3 fwd = cross(normal, right);
+    vec3 diffuseDir = normalize(right * localDir.x + fwd * localDir.y + normal * localDir.z);
+    vec3 reflectDir = reflect(rayDir, normal);
+    rayDir = normalize(mix(reflectDir, diffuseDir, rma.r));
 
     d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
     wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]).xyz;
-    uv = RayDirToUV(rayDir, camForward, camRight, camUp, mi.resolutions.x / mi.resolutions.y, radians(dmi.deffrot[0].w));
+    uv = RayDirToUV(rayDir, camForward, camRight, camUp, mi.resolutions.x / mi.resolutions.y, radians(90.0));
     normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
 
     if(uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || dot(rayDir, normal) >= 0){
@@ -413,7 +419,7 @@ vec3 voxelplusssrt(){
       }
     }
 
-    hitAlbedo += ha/2.0;
+    hitAlbedo += ha/1.0;
   }
   return hitAlbedo;
 }
