@@ -27,6 +27,8 @@ pub struct Gmaterial{
     pub double_sided: bool,
     pub name: String,
     pub texture_indices: Vec<usize>,
+    pub normal_index: usize,
+    pub normal_en: bool,
     pub basecol: [f32; 4],
     pub rough: f32,
     pub met: f32,
@@ -161,7 +163,7 @@ impl Gltf {
                 }
             }else if json.other_nodes[i].name == "materials"{
                 for j in 0..json.other_nodes[i].other_nodes.len(){
-                    let mut msg = Gmaterial{ double_sided: false, name: "".to_string(), texture_indices: vec![], basecol: [0.0, 0.0, 0.0, 0.0], rough: 0.0, met: 0.0, tex: false };
+                    let mut msg = Gmaterial{ double_sided: false, name: "".to_string(), texture_indices: vec![], normal_index: 0, normal_en: false, basecol: [0.0, 0.0, 0.0, 0.0], rough: 0.0, met: 0.0, tex: false };
                     for l in 0..json.other_nodes[i].other_nodes[j].other_nodes.len(){
                         let fname = json.other_nodes[i].other_nodes[j].other_nodes[l].name.clone();
                         if fname == "doubleSided"{
@@ -207,7 +209,18 @@ impl Gltf {
                                     //msg.tex = false;
                                 }
                             }
+                        }else if fname == "normalTexture"{
+                            for h in 0..json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes.len(){
+                                let hname = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].name.clone();
+                                if hname == "index"{
+                                    msg.normal_index = json.other_nodes[i].other_nodes[j].other_nodes[l].other_nodes[h].numeral_val as usize;
+                                    msg.normal_en = true;
+                                }
+                            }
                         }
+                    }
+                    if msg.normal_en{
+                        msg.texture_indices.push(msg.normal_index);
                     }
                     lgltf.materials.push(msg);
                 }
