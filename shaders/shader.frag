@@ -85,7 +85,7 @@ void main() {
     vec2 uv = fuv;
 
     //vec2 texelSize = 1.0 / mi.resolutions.xy;
-    //int   passIndex = int(4);
+    //int   passIndex = int(2);
     //float stepSize  = float(1 << passIndex);
 //
     //vec3  centerColor = SampleRT(uv);

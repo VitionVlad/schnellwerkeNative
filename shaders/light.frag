@@ -107,49 +107,6 @@ vec2 RayDirToUV(vec3 rayDir, vec3 camForward, vec3 camRight, vec3 camUp, float a
   return vec2(x, y) * 0.5 + 0.5;
 }
 
-float ScreenSpaceShadow(vec3  worldPos, vec3  worldNormal, vec3 lightPos, mat4  mvp, float thickness) {
-    vec3  toLight   = lightPos - worldPos;
-    float lightDist = length(toLight);
-    vec3  lightDir  = toLight / lightDist;
-
-    float NdotL = dot(worldNormal, lightDir);
-    if (NdotL <= 0.0) return 0.0;
-
-    vec3 biasedOrigin = worldPos + worldNormal * 0.05;
-
-    vec3 originScreen = WorldPosToUVDepth(biasedOrigin, mvp);
-    vec3 lightScreen = WorldPosToUVDepth(lightPos, mvp);
-
-    vec2 shadowRay2D = lightScreen.xy - originScreen.xy;
-    float rayLength2D = length(shadowRay2D * mi.resolutions.xy);
-
-    int steps = clamp(int(rayLength2D), 1, 32);
-    vec2 uvStep = shadowRay2D  / float(steps);
-    float depStep = (lightScreen.z - originScreen.z) / float(steps);
-
-    vec2 uv = originScreen.xy + uvStep;
-    float rayDepth = originScreen.z + depStep;
-
-    for (int i = 0; i < steps; i++) {
-      if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 1.0;
-      float sceneDepth = texture(
-        sampler2DArray(defferedDepthTexture, attachmentSampler),
-        vec3(uv, 0)
-      ).r;
-
-      float delta = rayDepth - sceneDepth;
-
-      if (delta > 0.0 && delta < thickness) {
-        float traveled = float(i) / float(steps);
-        return mix(0.0, 0.3, traveled);
-      }
-
-      uv += uvStep;
-      rayDepth += depStep;
-    }
-    return 1.0;
-}
-
 vec3 SSRT(){
   vec2 uv = vec2(fuv.x, 1.0 - fuv.y);
   float d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
@@ -315,12 +272,23 @@ bool VoxelShadowRay(vec3 rayOrigin, vec3 lightPos) {
   float lightDist = length(toLight);
   vec3  rayDir    = toLight / lightDist;
   float voxelSize = mi.rtinfo.a;
+
   vec3 gridMin   = mi.rtinfo.xyz;
   vec3 gridSize = mi.addinfo.yzw;
   vec3  gridMax   = gridMin + gridSize.xyz * voxelSize;
+
+  float solidDepth = 0.0;
+  for (int probe = 0; probe < 4; probe++) {
+    vec3  probePos = rayOrigin + rayDir * voxelSize * float(probe);
+    vec3  probeUVW = (probePos - gridMin) / (voxelSize * vec3(gridSize));
+    float occ = texture(sampler3D(texTexture, attachmentSampler), probeUVW).a;
+    if (occ > 0.5) solidDepth += 1.0;
+  }
+  rayOrigin += rayDir * voxelSize * solidDepth;
+
   vec3  invDir = 1.0 / (rayDir + vec3(1e-6));
-  vec3  t0     = (gridMin - rayOrigin) * invDir;
-  vec3  t1     = (gridMax - rayOrigin) * invDir;
+  vec3  t0 = (gridMin - rayOrigin) * invDir;
+  vec3  t1 = (gridMax - rayOrigin) * invDir;
   vec3  tMin   = min(t0, t1);
   vec3  tMax   = max(t0, t1);
   float tEnter = max(max(tMin.x, tMin.y), tMin.z);
@@ -337,6 +305,7 @@ bool VoxelShadowRay(vec3 rayOrigin, vec3 lightPos) {
   tMaxV.y = (rayDir.y > 0.0 ? 1.0 - frac.y : frac.y) * tDelta.y;
   tMaxV.z = (rayDir.z > 0.0 ? 1.0 - frac.z : frac.z) * tDelta.z;
   int maxSteps = int(lightDist / voxelSize) + 2;
+
   for (int i = 0; i < maxSteps; i++) {
     if (any(lessThan(voxel, ivec3(0))) ||
       any(greaterThanEqual(voxel, ivec3(gridSize.xyz)))) {
@@ -373,7 +342,6 @@ vec3 voxelplusssrt(){
   vec2 uv = vec2(fuv.x, 1.0 - fuv.y);
   float d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
   vec4 clipSpacePosition = vec4(uv * 2.0 - 1.0, d, 1.0);
-  //d = LinearizeDepth(d);
 
   vec3 albedo = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb;
 
@@ -408,25 +376,35 @@ vec3 voxelplusssrt(){
     d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
     wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]).xyz;
     uv = RayDirToUV(rayDir, camForward, camRight, camUp, mi.resolutions.x / mi.resolutions.y, radians(90.0));
+    normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
 
-    if(uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || dot(rayDir, normal) <= 0){
-      ha *= voxelRaycast(wrldpos, rayDir, normal).rgb;
+    if(uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || dot(rayDir, normal) >= 0){
+      if(!VoxelShadowRay(wrldpos, smi.lightpos[0].xyz)){
+        ha *= voxelRaycast(wrldpos, rayDir, normal).rgb;
+        ha *= smi.lightcol[0].xyz;
+      }else{
+        ha *= voxelRaycast(wrldpos, rayDir, normal).rgb;
+        if(!VoxelShadowRay(wrldpos, smi.lightpos[0].xyz)){
+          ha *= smi.lightcol[0].xyz;
+        }else{
+          ha *= 0.0;
+        }
+      }
     }else{
-      normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
       albedo = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb;
       rma = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 1)).rgb;
-      rayDir = reflect(rayDir, normal);
-      vec3 rand = randomOnSphere(uv * mi.addinfo.x, j);
-      vec3 diff = normalize(rand * dot(rand, normal));
-      rayDir = mix(rayDir, diff, rma.r);
-      ha *= albedo;
+      if(!VoxelShadowRay(wrldpos, smi.lightpos[0].xyz)){
+        ha *= albedo;
+        ha *= smi.lightcol[0].xyz;
+      }else{
+        ha *= albedo;
+        if(!VoxelShadowRay(wrldpos, smi.lightpos[0].xyz)){
+          ha *= smi.lightcol[0].xyz;
+        }else{
+          ha *= 0.0;
+        }
+      }
     }
-
-    //if(!VoxelShadowRay(wrldpos, smi.lightpos[0].xyz)){
-    //  ha *= smi.lightcol[0].xyz;
-    //}else{
-    //  ha *= 0.0;
-    //}
 
     hitAlbedo += ha/2.0;
   }
@@ -434,76 +412,10 @@ vec3 voxelplusssrt(){
 }
 
 void main() {
-  vec2 uv = vec2(fuv.x, 1.0 - fuv.y);
-  float d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
-  //vec4 clipSpacePosition = vec4(uv * 2.0 - 1.0, d, 1.0);
-  //d = LinearizeDepth(d);
+  //vec2 uv = vec2(fuv.x, 1.0 - fuv.y);
+  //float d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
 
-  //vec3 albedo = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb;
-
-  vec3 rma = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 1)).rgb;
-  vec3 normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
-  vec3 wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]).xyz;
-
-  vec3 camForward;
-  vec3 camRight;
-  vec3 camUp;
-
-  vec3 rayDir = get_raydir(uv, dmi.deffrot[0].w, camForward, camRight, camUp);
-
-  vec3 rayorig = dmi.deffpos[0].xyz;
-
-  vec3 result = voxelRaycast(rayorig, rayDir, normal).rgb;
-
-  if(!VoxelShadowRay(rayorig, smi.lightpos[0].xyz)){
-    rayDir = reflect(rayDir, normal);
-    vec3 rand = randomOnSphere(uv * mi.addinfo.x, 1);
-    vec3 diff = normalize(rand * dot(rand, normal));
-    rayDir = mix(rayDir, diff, 0.75);
-
-    result *= voxelRaycast(rayorig, rayDir, normal).rgb;
-
-    result *= smi.lightcol[0].xyz;
-  }else{
-    rayDir = reflect(rayDir, normal);
-    vec3 rand = randomOnSphere(uv * mi.addinfo.x, 1);
-    vec3 diff = normalize(rand * dot(rand, normal));
-    rayDir = mix(rayDir, diff, 0.75);
-
-    result *= voxelRaycast(rayorig, rayDir, normal).rgb;
-
-    if(!VoxelShadowRay(rayorig, smi.lightpos[0].xyz)){
-      result *= smi.lightcol[0].xyz;
-    }else{
-      result *= 0.0;
-    }
-  }
-
-  //rayDir = reflect(rayDir, normal);
-  //vec3 rand = randomOnSphere(uv * mi.addinfo.x, 1);
-  //vec3 diff = normalize(rand * dot(rand, normal));
-  //rayDir = mix(rayDir, diff, 0.75);
-
-  //result *= voxelRaycast(rayorig, rayDir, normal).rgb;
-
-  //rayDir = normalize(smi.lightpos[0].xyz-rayorig);
-
-  //vec3 predist = rayorig;
-
-  //vec3 inter = voxelRaycast(rayorig, rayDir, normal).rgb;
-
-  //if(!VoxelShadowRay(rayorig, smi.lightpos[0].xyz)){
-  //  result *= smi.lightcol[0].xyz;
-  //}else{
-  //  result *= 0.0;
-  //}
-
-  //vec3 result = voxelplusssrt().rgb;
-
-  //vec3 result = SSRT().rgb;
+  vec3 result = voxelplusssrt().rgb;
 
   outColor = vec4(result, 1.0);
-  //if(uv.x > 0.5){
-  //  outColor = vec4(albedo, 1.0);
-  //}
 }
