@@ -22,14 +22,18 @@ pub struct Object{
 }
 
 impl Object {
-    pub fn new(engine: &mut Engine, model: Model, material: Material, image: Image, usage: MeshUsage, is_static: bool, name: String) -> Object{
+    pub fn new(engine: &mut Engine, model: Model, material: Material, images: Vec<Image>, usage: MeshUsage, is_static: bool, name: String) -> Object{
         let ph = PhysicsObject::new(model.points.to_vec(), is_static);
         let id = engine.obj_ph.len();
         if usage == MeshUsage::DefferedPass || usage == MeshUsage::ShadowAndDefferedPass || usage == MeshUsage::ShadowPass{
             engine.obj_ph.push(ph);
         }
+        let mut txs = vec![];
+        for i in 0..images.len(){
+            txs.push(images[i].textures);
+        }
         Object { 
-            mesh: Mesh::new(engine.render, model.vertexbuf, material.material_shaders, image.textures, usage),
+            mesh: Mesh::new(engine.render, model.vertexbuf, material.material_shaders, txs, usage),
             physic_object: ph,
             is_looking_at: false,
             draw: true,

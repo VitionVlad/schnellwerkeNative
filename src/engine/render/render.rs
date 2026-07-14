@@ -38,7 +38,7 @@ unsafe extern "C"{
     fn setrendercamera(eme: cty::uint32_t, val: cty::int8_t);
     fn setmeshbuf(eme: cty::uint32_t, i: cty::uint32_t, val: cty::c_float);
     fn setdrawable(eme: cty::uint32_t, val: cty::uint8_t);
-    fn newmesh(eh: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t, te: cty::uint32_t, usage: cty::uint32_t) -> cty::uint32_t;
+    fn newmesh(eh: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t, te: *mut cty::uint32_t, tn: cty::uint32_t, usage: cty::uint32_t) -> cty::uint32_t;
     fn newtexture(eh: cty::uint32_t, xsize: cty::uint32_t, ysize: cty::uint32_t, zsize: cty::uint32_t, byteperpixel: cty::uint32_t, pixels: *mut cty::c_char, is3d: cty::uint8_t, imageformat: cty::uint32_t, genmips: cty::uint8_t) -> cty::uint32_t;
     fn loopcont(eh: cty::uint32_t) -> cty::uint32_t;
 }
@@ -266,10 +266,14 @@ pub struct Mesh{
 }
 
 impl Mesh{
-    pub fn new(ren: Render, model: Vertexes, material: MaterialShaders, texture: Texture, usage: MeshUsage) -> Mesh{
+    pub fn new(ren: Render, model: Vertexes, material: MaterialShaders, textures: Vec<Texture>, usage: MeshUsage) -> Mesh{
+        let mut idv = vec![];
+        for i in 0..textures.len(){
+            idv.push(textures[i].texid);
+        }
         Mesh { 
             meshid: unsafe{
-                newmesh(ren.euclid, material.materialid, model.modelid, texture.texid,usage as u32)
+                newmesh(ren.euclid, material.materialid, model.modelid, idv.as_mut_ptr(), textures.len() as u32, usage as u32)
             },
             ubo: [1.0; 56],
             draw: true,

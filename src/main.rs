@@ -59,7 +59,7 @@ fn main() {
 
     let black = Image::new_color(&eng, [11, 23, 40, u8::MAX]);
 
-    let mut viewport = UIplane::new(&mut eng, mat, black, engine::render::render::MeshUsage::PostPass);
+    let mut viewport = UIplane::new(&mut eng, mat, vec![black], engine::render::render::MeshUsage::PostPass);
     viewport.object.physic_object.pos.z = 1.0;
     viewport.signal = false;
 
@@ -77,7 +77,7 @@ fn main() {
 
     println!("{}, {}, {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2]);
 
-    let mut ltviewport = UIplane::new(&mut eng, lightmat, black3d, engine::render::render::MeshUsage::LightingPass);
+    let mut ltviewport = UIplane::new(&mut eng, lightmat, vec![black3d], engine::render::render::MeshUsage::LightingPass);
     ltviewport.object.physic_object.pos.z = 1.0;
     ltviewport.signal = false;
 

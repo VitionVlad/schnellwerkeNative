@@ -34,7 +34,7 @@ uint32_t newmodel(uint32_t eh, float *vertices, float *uv, float *normals, uint3
 void setrendercamera(uint32_t eme, int8_t val);
 void setmeshbuf(uint32_t eme, uint32_t i, float val);
 void setdrawable(uint32_t eme, uint8_t val);
-uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t te, uint32_t usage);
+uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t *te, uint32_t tn, uint32_t usage);
 uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize, uint32_t byteperpixel, char *pixels, uint8_t is3d, uint32_t imageformat, uint8_t genmips);
 uint32_t loopcont(uint32_t eh);
 
