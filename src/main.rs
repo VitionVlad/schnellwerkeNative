@@ -75,9 +75,11 @@ fn main() {
 
     let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm, false);
 
+    let bluenoise = Image::new_from_files(&eng, vec!["assets/noise.png".to_string()]);
+
     println!("{}, {}, {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2]);
 
-    let mut ltviewport = UIplane::new(&mut eng, lightmat, vec![black3d], engine::render::render::MeshUsage::LightingPass);
+    let mut ltviewport = UIplane::new(&mut eng, lightmat, vec![black3d, bluenoise], engine::render::render::MeshUsage::LightingPass);
     ltviewport.object.physic_object.pos.z = 1.0;
     ltviewport.signal = false;
 

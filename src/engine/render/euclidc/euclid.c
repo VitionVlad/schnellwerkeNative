@@ -2076,13 +2076,13 @@ void createDescriptorSetLayout(uint32_t eh, uint32_t eme) {
         uint32_t samplerBinding = 9 + (2 * (i - 1));
         uint32_t imageBinding = samplerBinding + 1;
         uboLayoutBinding[samplerBinding].binding = samplerBinding;
-        uboLayoutBinding[samplerBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+        uboLayoutBinding[samplerBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         uboLayoutBinding[samplerBinding].descriptorCount = 1;
         uboLayoutBinding[samplerBinding].stageFlags = VK_SHADER_STAGE_ALL;
         uboLayoutBinding[samplerBinding].pImmutableSamplers = NULL;
 
         uboLayoutBinding[imageBinding].binding = imageBinding;
-        uboLayoutBinding[imageBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        uboLayoutBinding[imageBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
         uboLayoutBinding[imageBinding].descriptorCount = 1;
         uboLayoutBinding[imageBinding].stageFlags = VK_SHADER_STAGE_ALL;
         uboLayoutBinding[imageBinding].pImmutableSamplers = NULL;
@@ -2161,13 +2161,13 @@ void createLightingDescriptorSetLayout(uint32_t eh, uint32_t eme) {
         uint32_t samplerBinding = 9 + (2 * (i - 1));
         uint32_t imageBinding = samplerBinding + 1;
         uboLayoutBinding[samplerBinding].binding = samplerBinding;
-        uboLayoutBinding[samplerBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+        uboLayoutBinding[samplerBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         uboLayoutBinding[samplerBinding].descriptorCount = 1;
         uboLayoutBinding[samplerBinding].stageFlags = VK_SHADER_STAGE_ALL;
         uboLayoutBinding[samplerBinding].pImmutableSamplers = NULL;
 
         uboLayoutBinding[imageBinding].binding = imageBinding;
-        uboLayoutBinding[imageBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        uboLayoutBinding[imageBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
         uboLayoutBinding[imageBinding].descriptorCount = 1;
         uboLayoutBinding[imageBinding].stageFlags = VK_SHADER_STAGE_ALL;
         uboLayoutBinding[imageBinding].pImmutableSamplers = NULL;
@@ -2238,13 +2238,13 @@ void createDefferedDescriptorSetLayout(uint32_t eh, uint32_t eme) {
         uint32_t samplerBinding = 4 + (2 * (i - 1));
         uint32_t imageBinding = samplerBinding + 1;
         uboLayoutBinding[samplerBinding].binding = samplerBinding;
-        uboLayoutBinding[samplerBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+        uboLayoutBinding[samplerBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         uboLayoutBinding[samplerBinding].descriptorCount = 1;
         uboLayoutBinding[samplerBinding].stageFlags = VK_SHADER_STAGE_ALL;
         uboLayoutBinding[samplerBinding].pImmutableSamplers = NULL;
 
         uboLayoutBinding[imageBinding].binding = imageBinding;
-        uboLayoutBinding[imageBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        uboLayoutBinding[imageBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
         uboLayoutBinding[imageBinding].descriptorCount = 1;
         uboLayoutBinding[imageBinding].stageFlags = VK_SHADER_STAGE_ALL;
         uboLayoutBinding[imageBinding].pImmutableSamplers = NULL;

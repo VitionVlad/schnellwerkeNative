@@ -39,9 +39,13 @@ layout(binding = 7) uniform sampler imageSampler;
 
 layout(binding = 8) uniform sampler attachmentSampler;
 
+layout(binding = 9) uniform texture2D noiseTexture;
+
+layout(binding = 10) uniform sampler noiseSampler;
+
 const float PI = 3.14159265359;
 
-const vec3 EMISSIVE_COLOR = vec3(1.0, 0.85, 0.55) * 6.0;
+const float GOLDEN_RATIO = 0.61803398875;
 
 const int   MAX_STEPS = 128;
 const float EPS       = 1e-5;
@@ -368,14 +372,17 @@ vec3 voxelplusssrt(){
     vec3 rayDir = get_raydir(uv, dmi.deffrot[0].w, camForward, camRight, camUp);
     ha *= albedo;
 
+    vec2 blueNoiseUV = fuv + vec2(float(mi.addinfo.x) * GOLDEN_RATIO);
+    vec3 blueNoise = texture(sampler2D(noiseTexture, attachmentSampler), blueNoiseUV).rgb;
+
     rayDir = reflect(rayDir, normal);
-    vec3 rand = randomOnSphere(uv * mi.addinfo.x, j);
-    vec3 diff = normalize(rand * dot(rand, normal));
+    //vec3 rand = randomOnSphere(uv * mi.addinfo.x, j);
+    vec3 diff = normalize(blueNoise * dot(blueNoise, normal));
     rayDir = mix(rayDir, diff, rma.r);
 
     d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
     wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]).xyz;
-    uv = RayDirToUV(rayDir, camForward, camRight, camUp, mi.resolutions.x / mi.resolutions.y, radians(90.0));
+    uv = RayDirToUV(rayDir, camForward, camRight, camUp, mi.resolutions.x / mi.resolutions.y, radians(dmi.deffrot[0].w));
     normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
 
     if(uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || dot(rayDir, normal) >= 0){
@@ -412,7 +419,7 @@ vec3 voxelplusssrt(){
 }
 
 void main() {
-  //vec2 uv = vec2(fuv.x, 1.0 - fuv.y);
+  vec2 uv = vec2(fuv.x, 1.0 - fuv.y);
   //float d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
 
   vec3 result = voxelplusssrt().rgb;
