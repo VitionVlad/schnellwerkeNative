@@ -50,22 +50,168 @@ const float GOLDEN_RATIO = 0.61803398875;
 const int   MAX_STEPS = 128;
 const float EPS       = 1e-5;
 
-float rand(vec2 co){
-  return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+vec3 FresnelSchlick(float cosTheta, vec3 F0){
+  return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-vec3 randomOnSphere(vec2 uv, int j) {
-  float seed = fract(sin(dot(uv, vec2(127.1*j, 311.7))) * 43758.5453 + mi.addinfo.x*j);
-	vec3 rand = vec3(rand(vec2(seed * uv.x, -seed * uv.y)), rand(vec2(seed * uv.y, seed * uv.x)), rand(vec2(1.0)-vec2(seed * uv.x, -seed * uv.y)));
-	float theta = rand.x * 2.0 * 3.14159265;
-	float v = rand.y;
-	float phi = acos(2.0 * v - 1.0);
-	float r = pow(rand.z, 1.0 / 3.0);
-	float x = r * sin(phi) * cos(theta);
-	float y = r * sin(phi) * sin(theta);
-	float z = r * cos(phi);
-	return vec3(x, y, z);
+float DistributionGGX(vec3 N, vec3 H, float roughness){
+  float a  = roughness * roughness;
+  float a2 = a * a;
+  float NdotH = max(dot(N, H), 0.0);
+  float denom = NdotH * NdotH * (a2 - 1.0) + 1.0;
+  return a2 / (PI * denom * denom + 1e-6);
 }
+
+float GeometrySchlickGGX(float NdotV, float roughness){
+  float r = roughness + 1.0;
+  float k = (r * r) / 8.0;
+  return NdotV / (NdotV * (1.0 - k) + k);
+}
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness){
+  float ggx1 = GeometrySchlickGGX(max(dot(N, V), 0.0), roughness);
+  float ggx2 = GeometrySchlickGGX(max(dot(N, L), 0.0), roughness);
+  return ggx1 * ggx2;
+}
+
+vec3 CosineHemisphere(vec2 xi){
+  float phi = 2.0 * PI * xi.x;
+  float cosTheta = sqrt(1.0 - xi.y);
+  float sinTheta = sqrt(xi.y);
+  return vec3(
+    cos(phi) * sinTheta,
+    sin(phi) * sinTheta,
+    cosTheta
+  );
+}
+
+vec3 ImportanceSampleGGX(vec2 Xi, float roughness){
+  float a = roughness * roughness;
+  float phi = 2.0 * PI * Xi.x;
+  float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
+  float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+  return vec3(
+    cos(phi) * sinTheta,
+    sin(phi) * sinTheta,
+    cosTheta
+  );
+}
+
+vec3 SampleGGXVNDF(vec3 V, float alpha, vec2 Xi){
+  vec3 Vh = normalize(vec3(alpha * V.x, alpha * V.y, V.z));
+  float lensq = Vh.x*Vh.x + Vh.y*Vh.y;
+  vec3 T1 = lensq > 0.0 ? vec3(-Vh.y, Vh.x, 0.0) / sqrt(lensq) : vec3(1.0,0.0,0.0);
+  vec3 T2 = cross(Vh, T1);
+  float r = sqrt(Xi.x);
+  float phi = 2.0 * PI * Xi.y;
+  float t1 = r * cos(phi);
+  float t2 = r * sin(phi);
+  float s = 0.5 * (1.0 + Vh.z);
+  t2 = mix(sqrt(1.0 - t1*t1), t2, s);
+  vec3 Nh = t1*T1 + t2*T2 + sqrt(max(0.0, 1.0 - t1*t1 - t2*t2))*Vh;
+  return normalize(vec3(alpha*Nh.x, alpha*Nh.y, max(0.0,Nh.z)));
+}
+
+mat3 CreateTBN(vec3 N){
+  vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+  vec3 T = normalize(cross(up, N));
+  vec3 B = cross(N, T);
+  return mat3(T, B, N);
+}
+
+struct BRDFSample{
+  vec3 direction;
+  vec3 weight;
+  float pdf;
+};
+
+//BRDFSample SampleBRDF(vec3 albedo, float roughness, float metallic, vec3 normal, vec3 viewDir, vec2 random){
+//  BRDFSample brdf;
+//  vec3 F0 = mix(vec3(0.04), albedo, metallic);
+//  float specChance = mix(0.04, 1.0, metallic);
+//  if(random.x < specChance){
+//    vec2 xi = vec2(random.y, fract(random.x * 37.17));
+//    //vec3 H = sampleGGXVNDF(viewDir, roughness, xi);
+//    vec3 H = ImportanceSampleGGX(xi, roughness);
+//    vec3 up = abs(normal.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
+//    vec3 tangent = normalize(cross(up, normal));
+//    vec3 bitangent = cross(normal, tangent);
+//    H = normalize(tangent * H.x + bitangent * H.y + normal * H.z);
+//    brdf.direction = reflect(-viewDir, H);
+//    float VoH = max(dot(viewDir, H), 0.0);
+//    brdf.throughput = FresnelSchlick(VoH, F0);
+//  }
+//  else{
+//    vec2 xi = vec2(random.y, fract(random.x * 19.31));
+//    vec3 L = CosineHemisphere(xi);
+//    vec3 up = abs(normal.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
+//    vec3 tangent = normalize(cross(up, normal));
+//    vec3 bitangent = cross(normal, tangent);
+//    brdf.direction = normalize(tangent * L.x + bitangent * L.y + normal * L.z);
+//    brdf.throughput = albedo * (1.0 - metallic);
+//  }
+//  return brdf;
+//}
+
+BRDFSample SampleGGX(vec3 V, vec3 N, vec3 F0, float roughness, vec2 Xi){
+  BRDFSample result;
+  mat3 TBN = CreateTBN(N);
+  vec3 Vlocal = transpose(TBN) * V;
+  float alpha = max(0.001, roughness * roughness);
+  vec3 Vh = normalize(vec3(alpha * Vlocal.x, alpha * Vlocal.y, Vlocal.z));
+  float lensq = Vh.x * Vh.x + Vh.y * Vh.y;
+  vec3 T1 = lensq > 0.0 ? vec3(-Vh.y, Vh.x, 0.0) * inversesqrt(lensq) : vec3(1.0,0.0,0.0);
+  vec3 T2 = cross(Vh, T1);
+  float r = sqrt(Xi.x);
+  float phi = 2.0 * PI * Xi.y;
+  float t1 = r * cos(phi);
+  float t2 = r * sin(phi);
+  float s = 0.5 * (1.0 + Vh.z);
+  t2 = mix(sqrt(max(0.0, 1.0 - t1*t1)), t2, s);
+  vec3 Nh = t1*T1 + t2*T2 + sqrt(max(0.0,1.0-t1*t1-t2*t2))*Vh;
+  vec3 Hlocal = normalize(vec3(alpha * Nh.x, alpha * Nh.y, max(0.0, Nh.z)));
+  vec3 H = normalize(TBN * Hlocal);
+  result.direction = reflect(-V, H);
+  float NdotV = max(dot(N,V),0.0001);
+  float NdotL = max(dot(N,result.direction),0.0001);
+  float NdotH = max(dot(N,H),0.0001);
+  float VdotH = max(dot(V,H),0.0001);
+  vec3 F = FresnelSchlick(VdotH,F0);
+  float D = DistributionGGX(N,H,roughness);
+  float G = GeometrySmith(N, V, result.direction, roughness);
+  result.pdf = max(D * NdotH / (4.0 * VdotH), 1e-5);
+  result.weight = F * G * VdotH / max(NdotV * NdotH, 1e-5);
+  return result;
+}
+
+BRDFSample SampleDiffuse(vec3 albedo, vec3 N, vec2 Xi){
+  BRDFSample result;
+  mat3 TBN = CreateTBN(N);
+  vec3 local = CosineHemisphere(Xi);
+  result.direction = normalize(TBN * local);
+  float NdotL = max(dot(N, result.direction), 0.0);
+  result.pdf = NdotL / PI;
+  result.weight = albedo;
+  return result;
+}
+
+BRDFSample finalSample(vec3 V, vec3 N, vec3 albedo, float roughness, float metallic, vec3 random){
+  vec3 F0 = mix(vec3(0.04), albedo, metallic);
+  vec3 F = FresnelSchlick(max(dot(N,V),0.0), F0);
+  float specProbability = clamp( dot(F, vec3(0.2126,0.7152,0.0722)), 0.05, 0.95);
+
+  BRDFSample brdf;
+
+  if(random.x < specProbability){
+    brdf = SampleGGX(V, N, F0, roughness, random.yz);
+    brdf.weight /= specProbability;
+  }else{
+    brdf = SampleDiffuse(albedo * (1.0 - metallic), N, random.yz);
+    brdf.weight /= (1.0 - specProbability);
+  }
+  return brdf;
+}
+
 
 vec4 WorldPosFromDepth(float depth, vec2 uv, mat4 inversemat){
   vec4 clipSpacePosition = vec4(uv * 2.0 - 1.0, depth, 1.0);
@@ -109,85 +255,6 @@ vec2 RayDirToUV(vec3 rayDir, vec3 camForward, vec3 camRight, vec3 camUp, float a
   float x = dot(rayDir, camRight) / (d * aspect * tanHalfFov);
   float y = dot(rayDir, camUp)    / (d * tanHalfFov);
   return vec2(x, y) * 0.5 + 0.5;
-}
-
-vec3 SSRT(){
-  vec2 uv = vec2(fuv.x, 1.0 - fuv.y);
-  float d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
-  vec4 clipSpacePosition = vec4(uv * 2.0 - 1.0, d, 1.0);
-  //d = LinearizeDepth(d);
-
-  vec3 albedo = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb;
-
-  vec3 rma = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 1)).rgb;
-  vec3 normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
-  vec3 wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]).xyz;
-
-  vec3 hitAlbedo = vec3(0.0, 0.0, 0.0);
-
-  for(int j = 1; j <= 2; j++) {
-    vec3 ha = vec3(1.0, 1.0, 1.0);
-    uv = vec2(fuv.x, 1.0 - fuv.y);
-
-    normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
-    albedo = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb;
-    rma = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 1)).rgb;
-    d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
-
-    vec3 camForward;
-    vec3 camRight;
-    vec3 camUp;
-
-    //bool lt = false;
-
-    //vec3 or = dmi.deffpos[0].xyz;
-    vec3 rayDir = get_raydir(uv, 90.0, camForward, camRight, camUp);
-    
-    ha *= albedo;
-
-    //ha *= ScreenSpaceShadow(wrldpos, normal, smi.lightpos[0].xyz, dmi.defferedMVP[0], 0.3);
-
-    rayDir = reflect(rayDir, normal);
-    vec3 rand = randomOnSphere(uv * mi.addinfo.x, j);
-    vec3 diff = normalize(rand * dot(rand, normal));
-    rayDir = mix(rayDir, diff, rma.r);
-
-    //rayDir = reflect(rayDir, normal);
-    //vec3 rand = randomOnSphere(uv * mi.addinfo.x, j);
-    //vec3 diff = normalize(rand * dot(rand, normal));
-    //rayDir = mix(rayDir, diff, rma.r);
-
-    //uv = RayDirToUV(rayDir, camForward, camRight, camUp, mi.resolutions.x / mi.resolutions.y, radians(90.0));
-
-    //d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
-    //wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]).xyz;
-    //normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
-    //albedo = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb;
-    //rma = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 1)).rgb;
-
-    if(uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || dot(rayDir, normal) <= 0){
-    }else{
-      for(int j = 0; j != 64; j++){
-        wrldpos += rayDir;
-        vec3 uvd = WorldPosToUVDepth(wrldpos, dmi.defferedMVP[0]);
-        d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uvd.xy, 0)).r;
-        float delta = uvd.z - d;
-        if(delta < 0.1){
-          uv = uvd.xy;
-          d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
-          wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]).xyz;
-          normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
-          albedo = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0)).rgb;
-          rma = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 1)).rgb;
-          ha *= albedo;
-          break;
-        }
-      }
-    }
-
-    hitAlbedo += ha/2.0;
-  }
-  return hitAlbedo;
 }
 
 vec4 voxelRaycast(inout vec3 rayOrigin, vec3 rayD, out vec3 outn) {
@@ -353,11 +420,15 @@ vec3 voxelplusssrt(){
   vec3 normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
   vec3 wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]).xyz;
 
+  int rpx = 1;
+
+  //if(rma.x < 0.5){
+  //  rpx = 1;
+  //}
+
   vec3 hitAlbedo = vec3(0.0, 0.0, 0.0);
 
-  bool lthit = false;
-
-  for(int j = 1; j <= 1; j++) {
+  for(int j = 1; j <= rpx; j++) {
     vec3 ha = vec3(1.0, 1.0, 1.0);
     uv = vec2(fuv.x, 1.0 - fuv.y);
 
@@ -372,19 +443,26 @@ vec3 voxelplusssrt(){
     vec3 rayDir = get_raydir(uv, dmi.deffrot[0].w, camForward, camRight, camUp);
     ha *= albedo;
 
-    vec2  blueNoiseUV = mod(uv*2.0 + float(mi.addinfo.x) * GOLDEN_RATIO, 1.0);
+    vec2  blueNoiseUV = mod(uv*2.0 + float(mi.addinfo.x) * GOLDEN_RATIO * j + j, 1.0);
     vec4  bn = texture(sampler2D(noiseTexture, attachmentSampler), blueNoiseUV);
-    vec2  xi = bn.rg;
-    float phi = 2.0 * PI * xi.x;
-    float cosTheta = sqrt(1.0 - xi.y);
-    float sinTheta = sqrt(xi.y);
-    vec3 localDir = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
-    vec3 up = abs(normal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
-    vec3 right = normalize(cross(up, normal));
-    vec3 fwd = cross(normal, right);
-    vec3 diffuseDir = normalize(right * localDir.x + fwd * localDir.y + normal * localDir.z);
-    vec3 reflectDir = reflect(rayDir, normal);
-    rayDir = normalize(mix(reflectDir, diffuseDir, rma.r));
+    //vec2  xi = bn.rg;
+    //float phi = 2.0 * PI * xi.x;
+    //float cosTheta = sqrt(1.0 - xi.y);
+    //float sinTheta = sqrt(xi.y);
+    //vec3 localDir = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+    //vec3 up = abs(normal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    //vec3 right = normalize(cross(up, normal));
+    //vec3 fwd = cross(normal, right);
+    //vec3 diffuseDir = normalize(right * localDir.x + fwd * localDir.y + normal * localDir.z);
+    //vec3 reflectDir = reflect(rayDir, normal);
+    //rayDir = normalize(mix(reflectDir, diffuseDir, rma.r));
+
+    BRDFSample brdf = finalSample(-rayDir, normal, albedo, rma.r, rma.g, bn.xyz);
+    //vec3 brdfd = brdf.direction;
+    //vec3 reflectDir = reflect(rayDir, normal);
+    //rayDir = normalize(mix(reflectDir, brdfd, rma.r));
+    rayDir = brdf.direction;
+    ha *= brdf.weight;
 
     d = texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
     wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]).xyz;
@@ -419,7 +497,7 @@ vec3 voxelplusssrt(){
       }
     }
 
-    hitAlbedo += ha/1.0;
+    hitAlbedo += ha/float(rpx);
   }
   return hitAlbedo;
 }

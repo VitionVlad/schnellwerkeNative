@@ -113,6 +113,8 @@ fn main() {
 
     let mut fcnt = 0u32;
 
+    //eng.render.resolution_scale = 0.5;
+
     while eng.work(){
         eng.cameras[0].physic_object.gravity = false;
         eng.cameras[0].physic_object.solid = false;
