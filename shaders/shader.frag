@@ -29,15 +29,19 @@ layout(binding = 2) uniform DefferedMatricesInput {
 
 layout(binding = 3) uniform texture2DArray texTexture;
 
-layout(binding = 4) uniform texture2DArray defferedTexture;
+layout(binding = 4) uniform texture2DArray lightingTexture;
 
-layout(binding = 5) uniform texture2D defferedDepthTexture;
+layout(binding = 5) uniform texture2DArray lightingDepthTexture;
 
-layout(binding = 6) uniform texture2DArray shadowTexture;
+layout(binding = 6) uniform texture2DArray defferedTexture;
 
-layout(binding = 7) uniform sampler imageSampler;
+layout(binding = 7) uniform texture2DArray defferedDepthTexture;
 
-layout(binding = 8) uniform sampler attachmentSampler;
+layout(binding = 8) uniform texture2DArray shadowTexture;
+
+layout(binding = 9) uniform sampler imageSampler;
+
+layout(binding = 10) uniform sampler attachmentSampler;
 
 const float SIGMA_COLOR = 0.15;
 const float KERNEL[25] = float[25](
@@ -53,10 +57,18 @@ float Luminance(vec3 c) {
 }
 
 vec3 SampleRT(vec2 uv) {
-    return texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, mi.resolutions.a)).rgb;
+    return texture(sampler2DArray(lightingTexture, attachmentSampler), vec3(uv, mi.resolutions.a)).rgb;
 }
 
-vec3 gauss(vec2 uv){
+vec3 SampleRTl(vec3 uv) {
+    return texture(sampler2DArray(lightingTexture, attachmentSampler), uv).rgb;
+}
+
+vec3 SampleRTavg(vec2 uv) {
+    return (SampleRTl(vec3(uv, 0)) + SampleRTl(vec3(uv, 1)))/2.0;
+}
+
+vec3 keffect(vec2 uv){
   vec2 offset = vec2(1.0 / mi.resolutions.x, 1.0 / mi.resolutions.y);
   vec2 offsets[9] = vec2[](
     vec2(-offset.x,  offset.y),
@@ -70,25 +82,25 @@ vec3 gauss(vec2 uv){
     vec2( offset.x, -offset.y) 
   );
   float kernel[9] = float[]( 
-    1.0 / 16, 2.0 / 16, 1.0 / 16,
-    2.0 / 16, 4.0 / 16, 2.0 / 16,
-    1.0 / 16, 2.0 / 16, 1.0 / 16  
+    1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0,
+    1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0,
+    1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0  
   );
   vec3 col = vec3(0.0, 0.0, 0.0);
   for(int i = 0; i < 9; i+=1){
-    col += SampleRT(uv + offsets[i]) * kernel[i];
+    col += SampleRTavg(uv + offsets[i]) * kernel[i];
   }
   return col;
 }
 
 void main() {
     vec2 uv = fuv;
-
+//
     //vec2 texelSize = 1.0 / mi.resolutions.xy;
     //int   passIndex = int(2);
     //float stepSize  = float(1 << passIndex);
 //
-    //vec3  centerColor = SampleRT(uv);
+    //vec3  centerColor = SampleRTavg(uv);
     //float centerLum   = Luminance(centerColor);
 //
     //float sigmaLum = max(0.2, 0.01);
@@ -101,7 +113,7 @@ void main() {
     //        vec2 offset   = vec2(float(col - 2), float(row - 2)) * texelSize * stepSize;
     //        vec2 sampleUV = clamp(uv + offset, vec2(0.0), vec2(1.0));
 //
-    //        vec3  sampleColor = SampleRT(sampleUV);
+    //        vec3  sampleColor = SampleRTavg(sampleUV);
     //        float sampleLum   = Luminance(sampleColor);
 //
     //        float wKernel = KERNEL[row * 5 + col];
@@ -120,4 +132,8 @@ void main() {
     //outColor = vec4(colorAccum / max(weightAccum, 0.0001), 1.0);
 
     outColor = vec4(SampleRT(uv), 1.0);
+
+    if(uv.x > 0.5){
+        outColor = vec4(texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0.0)).rgb, 1.0);
+    }
 }

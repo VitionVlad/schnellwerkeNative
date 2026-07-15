@@ -125,34 +125,6 @@ struct BRDFSample{
   float pdf;
 };
 
-//BRDFSample SampleBRDF(vec3 albedo, float roughness, float metallic, vec3 normal, vec3 viewDir, vec2 random){
-//  BRDFSample brdf;
-//  vec3 F0 = mix(vec3(0.04), albedo, metallic);
-//  float specChance = mix(0.04, 1.0, metallic);
-//  if(random.x < specChance){
-//    vec2 xi = vec2(random.y, fract(random.x * 37.17));
-//    //vec3 H = sampleGGXVNDF(viewDir, roughness, xi);
-//    vec3 H = ImportanceSampleGGX(xi, roughness);
-//    vec3 up = abs(normal.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
-//    vec3 tangent = normalize(cross(up, normal));
-//    vec3 bitangent = cross(normal, tangent);
-//    H = normalize(tangent * H.x + bitangent * H.y + normal * H.z);
-//    brdf.direction = reflect(-viewDir, H);
-//    float VoH = max(dot(viewDir, H), 0.0);
-//    brdf.throughput = FresnelSchlick(VoH, F0);
-//  }
-//  else{
-//    vec2 xi = vec2(random.y, fract(random.x * 19.31));
-//    vec3 L = CosineHemisphere(xi);
-//    vec3 up = abs(normal.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
-//    vec3 tangent = normalize(cross(up, normal));
-//    vec3 bitangent = cross(normal, tangent);
-//    brdf.direction = normalize(tangent * L.x + bitangent * L.y + normal * L.z);
-//    brdf.throughput = albedo * (1.0 - metallic);
-//  }
-//  return brdf;
-//}
-
 BRDFSample SampleGGX(vec3 V, vec3 N, vec3 F0, float roughness, vec2 Xi){
   BRDFSample result;
   mat3 TBN = CreateTBN(N);
@@ -445,22 +417,8 @@ vec3 voxelplusssrt(){
 
     vec2  blueNoiseUV = mod(uv*2.0 + float(mi.addinfo.x) * GOLDEN_RATIO * j + j, 1.0);
     vec4  bn = texture(sampler2D(noiseTexture, attachmentSampler), blueNoiseUV);
-    //vec2  xi = bn.rg;
-    //float phi = 2.0 * PI * xi.x;
-    //float cosTheta = sqrt(1.0 - xi.y);
-    //float sinTheta = sqrt(xi.y);
-    //vec3 localDir = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
-    //vec3 up = abs(normal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
-    //vec3 right = normalize(cross(up, normal));
-    //vec3 fwd = cross(normal, right);
-    //vec3 diffuseDir = normalize(right * localDir.x + fwd * localDir.y + normal * localDir.z);
-    //vec3 reflectDir = reflect(rayDir, normal);
-    //rayDir = normalize(mix(reflectDir, diffuseDir, rma.r));
 
     BRDFSample brdf = finalSample(-rayDir, normal, albedo, rma.r, rma.g, bn.xyz);
-    //vec3 brdfd = brdf.direction;
-    //vec3 reflectDir = reflect(rayDir, normal);
-    //rayDir = normalize(mix(reflectDir, brdfd, rma.r));
     rayDir = brdf.direction;
     ha *= brdf.weight;
 

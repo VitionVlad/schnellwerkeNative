@@ -2059,7 +2059,7 @@ uint32_t newmodel(uint32_t eh, float *vertices, float *uv, float *normals, uint3
 
 void createDescriptorSetLayout(uint32_t eh, uint32_t eme) {
     uint32_t texCount = euclid.meshes[eme].texnm;
-    uint32_t bindingCount = 9 + (texCount > 0 ? 2 * (texCount - 1) : 0);
+    uint32_t bindingCount = 11 + (texCount > 0 ? 2 * (texCount - 1) : 0);
     VkDescriptorSetLayoutBinding *uboLayoutBinding = malloc(sizeof(VkDescriptorSetLayoutBinding) * bindingCount);
     memset(uboLayoutBinding, 0, sizeof(VkDescriptorSetLayoutBinding) * bindingCount);
 
@@ -2106,19 +2106,31 @@ void createDescriptorSetLayout(uint32_t eh, uint32_t eme) {
     uboLayoutBinding[6].pImmutableSamplers = NULL;
 
     uboLayoutBinding[7].binding = 7;
-    uboLayoutBinding[7].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    uboLayoutBinding[7].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     uboLayoutBinding[7].descriptorCount = 1;
     uboLayoutBinding[7].stageFlags = VK_SHADER_STAGE_ALL;
     uboLayoutBinding[7].pImmutableSamplers = NULL;
 
     uboLayoutBinding[8].binding = 8;
-    uboLayoutBinding[8].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    uboLayoutBinding[8].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     uboLayoutBinding[8].descriptorCount = 1;
     uboLayoutBinding[8].stageFlags = VK_SHADER_STAGE_ALL;
     uboLayoutBinding[8].pImmutableSamplers = NULL;
 
+    uboLayoutBinding[9].binding = 9;
+    uboLayoutBinding[9].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    uboLayoutBinding[9].descriptorCount = 1;
+    uboLayoutBinding[9].stageFlags = VK_SHADER_STAGE_ALL;
+    uboLayoutBinding[9].pImmutableSamplers = NULL;
+
+    uboLayoutBinding[10].binding = 10;
+    uboLayoutBinding[10].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    uboLayoutBinding[10].descriptorCount = 1;
+    uboLayoutBinding[10].stageFlags = VK_SHADER_STAGE_ALL;
+    uboLayoutBinding[10].pImmutableSamplers = NULL;
+
     for(uint32_t i = 1; i < texCount; i++){
-        uint32_t samplerBinding = 9 + (2 * (i - 1));
+        uint32_t samplerBinding = 11 + (2 * (i - 1));
         uint32_t imageBinding = samplerBinding + 1;
         uboLayoutBinding[samplerBinding].binding = samplerBinding;
         uboLayoutBinding[samplerBinding].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
@@ -2342,7 +2354,7 @@ void createDescriptorPool(uint32_t eh, uint32_t eme){
     poolSize[0].descriptorCount = MAX_FRAMES_IN_FLIGHT * 3;
 
     poolSize[1].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    poolSize[1].descriptorCount = MAX_FRAMES_IN_FLIGHT * (3 + texCount);
+    poolSize[1].descriptorCount = MAX_FRAMES_IN_FLIGHT * (5 + texCount);
 
     poolSize[2].type = VK_DESCRIPTOR_TYPE_SAMPLER;
     poolSize[2].descriptorCount = MAX_FRAMES_IN_FLIGHT * (2 + texCount);
@@ -2446,7 +2458,7 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Descriptor sets allocated with result = %d\n", result);
 
     uint32_t texCount = euclid.meshes[eme].texnm;
-    uint32_t descriptorWriteCount = 9 + (texCount > 0 ? 2 * (texCount - 1) : 0);
+    uint32_t descriptorWriteCount = 11 + (texCount > 0 ? 2 * (texCount - 1) : 0);
     VkDescriptorImageInfo *textureImageInfos = malloc(sizeof(VkDescriptorImageInfo) * texCount);
     VkDescriptorImageInfo *textureSamplerInfos = malloc(sizeof(VkDescriptorImageInfo) * texCount);
 
@@ -2475,6 +2487,16 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         depthInfo.imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         depthInfo.imageView = euclid.handle[eh].lightingDepthImageViewl;
         depthInfo.sampler = euclid.handle[eh].attachmentSampler;
+
+        VkDescriptorImageInfo deffcolInfo = {0};
+        deffcolInfo.imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        deffcolInfo.imageView = euclid.handle[eh].defferedImageView;
+        deffcolInfo.sampler = euclid.handle[eh].attachmentSampler;
+
+        VkDescriptorImageInfo deffdepthInfo = {0};
+        deffdepthInfo.imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        deffdepthInfo.imageView = euclid.handle[eh].defferedDepthImageView;
+        deffdepthInfo.sampler = euclid.handle[eh].attachmentSampler;
 
         VkDescriptorImageInfo shInfo = {0};
         shInfo.imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -2557,12 +2579,30 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         descriptorWrite[writeIndex].dstArrayElement = 0;
         descriptorWrite[writeIndex].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         descriptorWrite[writeIndex].descriptorCount = 1;
-        descriptorWrite[writeIndex].pImageInfo = &shInfo;
+        descriptorWrite[writeIndex].pImageInfo = &deffcolInfo;
         writeIndex++;
 
         descriptorWrite[writeIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrite[writeIndex].dstSet = euclid.meshes[eme].descriptorSets[i];
         descriptorWrite[writeIndex].dstBinding = 7;
+        descriptorWrite[writeIndex].dstArrayElement = 0;
+        descriptorWrite[writeIndex].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        descriptorWrite[writeIndex].descriptorCount = 1;
+        descriptorWrite[writeIndex].pImageInfo = &deffdepthInfo;
+        writeIndex++;
+
+        descriptorWrite[writeIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite[writeIndex].dstSet = euclid.meshes[eme].descriptorSets[i];
+        descriptorWrite[writeIndex].dstBinding = 8;
+        descriptorWrite[writeIndex].dstArrayElement = 0;
+        descriptorWrite[writeIndex].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        descriptorWrite[writeIndex].descriptorCount = 1;
+        descriptorWrite[writeIndex].pImageInfo = &shInfo;
+        writeIndex++;
+
+        descriptorWrite[writeIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite[writeIndex].dstSet = euclid.meshes[eme].descriptorSets[i];
+        descriptorWrite[writeIndex].dstBinding = 9;
         descriptorWrite[writeIndex].dstArrayElement = 0;
         descriptorWrite[writeIndex].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
         descriptorWrite[writeIndex].descriptorCount = 1;
@@ -2571,7 +2611,7 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
 
         descriptorWrite[writeIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrite[writeIndex].dstSet = euclid.meshes[eme].descriptorSets[i];
-        descriptorWrite[writeIndex].dstBinding = 8;
+        descriptorWrite[writeIndex].dstBinding = 10;
         descriptorWrite[writeIndex].dstArrayElement = 0;
         descriptorWrite[writeIndex].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
         descriptorWrite[writeIndex].descriptorCount = 1;
@@ -2579,7 +2619,7 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
         writeIndex++;
 
         for (uint32_t j = 1; j < texCount; j++) {
-            uint32_t imageBinding = 9 + (2 * (j - 1));
+            uint32_t imageBinding = 11 + (2 * (j - 1));
             uint32_t samplerBinding = imageBinding + 1;
             descriptorWrite[writeIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrite[writeIndex].dstSet = euclid.meshes[eme].descriptorSets[i];
