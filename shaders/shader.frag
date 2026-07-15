@@ -29,7 +29,7 @@ layout(binding = 2) uniform DefferedMatricesInput {
 
 layout(binding = 3) uniform texture2DArray texTexture;
 
-layout(binding = 4) uniform texture2D defferedTexture;
+layout(binding = 4) uniform texture2DArray defferedTexture;
 
 layout(binding = 5) uniform texture2D defferedDepthTexture;
 
@@ -53,7 +53,7 @@ float Luminance(vec3 c) {
 }
 
 vec3 SampleRT(vec2 uv) {
-    return texture(sampler2D(defferedTexture, attachmentSampler), uv).rgb;
+    return texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, mi.resolutions.a)).rgb;
 }
 
 vec3 gauss(vec2 uv){

@@ -86,11 +86,13 @@ typedef struct euclidh{
     VkRenderPass lightingRenderPass;
     VkImage lightingImage;
     VkImage lightingDepthImage;
-    VkImageView lightingImageView;
-    VkImageView lightingDepthImageView;
+    VkImageView lightingImageViews[2];
+    VkImageView lightingDepthImageViews[2];
+    VkImageView lightingImageViewl;
+    VkImageView lightingDepthImageViewl;
     VkDeviceMemory lightingImageMemory;
     VkDeviceMemory lightingDepthImageMemory;
-    VkFramebuffer lightingFramebuffer;
+    VkFramebuffer lightingFramebuffers[2];
     VkSampler attachmentSampler;
     uint8_t key_state[58];
     double xpos;
@@ -106,6 +108,7 @@ typedef struct euclidh{
     unsigned char *btnstats;
     uint8_t gamepaden;
     uint8_t debug;
+    uint8_t lightattn;
 } euclidh;
 
 typedef struct euclidmaterial{
@@ -1261,7 +1264,7 @@ void createLightingData(uint32_t eh){
     {
         VkImageCreateInfo depthCreateInfo = {0};
         depthCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        depthCreateInfo.arrayLayers = 1;
+        depthCreateInfo.arrayLayers = 2;
         depthCreateInfo.format = VK_FORMAT_D32_SFLOAT;
         depthCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         depthCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -1293,7 +1296,7 @@ void createLightingData(uint32_t eh){
     {
         VkImageCreateInfo lightingCreateInfo = {0};
         lightingCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        lightingCreateInfo.arrayLayers = 1;
+        lightingCreateInfo.arrayLayers = 2;
         lightingCreateInfo.format = VK_FORMAT_R16G16B16A16_SFLOAT;
         lightingCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         lightingCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -1335,8 +1338,8 @@ void createLightingData(uint32_t eh){
     depthCreateInfo.subresourceRange.baseMipLevel = 0;
     depthCreateInfo.subresourceRange.levelCount = 1;
     depthCreateInfo.subresourceRange.baseArrayLayer = 0;
-    depthCreateInfo.subresourceRange.layerCount = 1;
-    result = vkCreateImageView(euclid.handle[eh].device, &depthCreateInfo, NULL, &euclid.handle[eh].lightingDepthImageView);
+    depthCreateInfo.subresourceRange.layerCount = 2;
+    result = vkCreateImageView(euclid.handle[eh].device, &depthCreateInfo, NULL, &euclid.handle[eh].lightingDepthImageViewl);
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Lighting depth imageview created with result = %d\n", result);
 
     VkImageViewCreateInfo lightingCreateInfo = {0};
@@ -1352,26 +1355,62 @@ void createLightingData(uint32_t eh){
     lightingCreateInfo.subresourceRange.baseMipLevel = 0;
     lightingCreateInfo.subresourceRange.levelCount = 1;
     lightingCreateInfo.subresourceRange.baseArrayLayer = 0;
-    lightingCreateInfo.subresourceRange.layerCount = 1;
-    result = vkCreateImageView(euclid.handle[eh].device, &lightingCreateInfo, NULL, &euclid.handle[eh].lightingImageView);
+    lightingCreateInfo.subresourceRange.layerCount = 2;
+    result = vkCreateImageView(euclid.handle[eh].device, &lightingCreateInfo, NULL, &euclid.handle[eh].lightingImageViewl);
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Lighting imageview created with result = %d\n", result);
 
-    VkImageView attachments[] = {
-        euclid.handle[eh].lightingImageView,
-        euclid.handle[eh].lightingDepthImageView,
-    };
+    for(uint32_t i = 0; i < 2; i++){
+        VkImageViewCreateInfo depthCreateInfo = {0};
+        depthCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        depthCreateInfo.image = euclid.handle[eh].lightingDepthImage;
+        depthCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        depthCreateInfo.format = VK_FORMAT_D32_SFLOAT;
+        depthCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        depthCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        depthCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        depthCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        depthCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        depthCreateInfo.subresourceRange.baseMipLevel = 0;
+        depthCreateInfo.subresourceRange.levelCount = 1;
+        depthCreateInfo.subresourceRange.baseArrayLayer = i;
+        depthCreateInfo.subresourceRange.layerCount = 1;
+        result = vkCreateImageView(euclid.handle[eh].device, &depthCreateInfo, NULL, &euclid.handle[eh].lightingDepthImageViews[i]);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Lighting depth imageview created with result = %d\n", result);
 
-    VkFramebufferCreateInfo framebufferInfo = {0};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = euclid.handle[eh].lightingRenderPass;
-    framebufferInfo.attachmentCount = 2;
-    framebufferInfo.pAttachments = attachments;
-    framebufferInfo.width = euclid.handle[eh].renderResolutionX;
-    framebufferInfo.height = euclid.handle[eh].renderResolutionY;
-    framebufferInfo.layers = 1;
+        VkImageViewCreateInfo lightingCreateInfo = {0};
+        lightingCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        lightingCreateInfo.image = euclid.handle[eh].lightingImage;
+        lightingCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        lightingCreateInfo.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+        lightingCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        lightingCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        lightingCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        lightingCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        lightingCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        lightingCreateInfo.subresourceRange.baseMipLevel = 0;
+        lightingCreateInfo.subresourceRange.levelCount = 1;
+        lightingCreateInfo.subresourceRange.baseArrayLayer = i;
+        lightingCreateInfo.subresourceRange.layerCount = 1;
+        result = vkCreateImageView(euclid.handle[eh].device, &lightingCreateInfo, NULL, &euclid.handle[eh].lightingImageViews[i]);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Lighting imageview created with result = %d\n", result);
 
-    result = vkCreateFramebuffer(euclid.handle[eh].device, &framebufferInfo, NULL, &euclid.handle[eh].lightingFramebuffer);
-    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Lighting framebuffer created with result = %d\n", result);
+        VkImageView attachments[] = {
+            euclid.handle[eh].lightingImageViews[i],
+            euclid.handle[eh].lightingDepthImageViews[i],
+        };
+
+        VkFramebufferCreateInfo framebufferInfo = {0};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = euclid.handle[eh].lightingRenderPass;
+        framebufferInfo.attachmentCount = 2;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = euclid.handle[eh].renderResolutionX;
+        framebufferInfo.height = euclid.handle[eh].renderResolutionY;
+        framebufferInfo.layers = 1;
+
+        result = vkCreateFramebuffer(euclid.handle[eh].device, &framebufferInfo, NULL, &euclid.handle[eh].lightingFramebuffers[i]);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Lighting framebuffer created with result = %d\n", result);
+    }
 }
 
 void createFrameBuffers(uint32_t eh){
@@ -1551,9 +1590,14 @@ void startrender(uint32_t eh){
         vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImage, NULL);
         vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].defferedDepthImageMemory, NULL);
 
-        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingImageView, NULL);
-        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingDepthImageView, NULL);
-        vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].lightingFramebuffer, NULL);
+        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingImageViews[0], NULL);
+        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingDepthImageViews[0], NULL);
+        vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].lightingFramebuffers[0], NULL);
+        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingImageViews[1], NULL);
+        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingDepthImageViews[1], NULL);
+        vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].lightingFramebuffers[1], NULL);
+        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingImageViewl, NULL);
+        vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingDepthImageViewl, NULL);
         vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].lightingImage, NULL);
         vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].lightingImageMemory, NULL);
         vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].lightingDepthImage, NULL);
@@ -1669,10 +1713,11 @@ void startdefferedrenderpass(uint32_t eh, uint32_t cc){
 }
 
 void startlightingrenderpass(uint32_t eh){
+    euclid.handle[eh].lightattn = (euclid.handle[eh].lightattn+1)%2;
     VkRenderPassBeginInfo renderPassInfo = {0};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = euclid.handle[eh].lightingRenderPass;
-    renderPassInfo.framebuffer = euclid.handle[eh].lightingFramebuffer;
+    renderPassInfo.framebuffer = euclid.handle[eh].lightingFramebuffers[euclid.handle[eh].lightattn];
     renderPassInfo.renderArea.offset.x = 0;
     renderPassInfo.renderArea.offset.y = 0;
     renderPassInfo.renderArea.extent.width = euclid.handle[eh].renderResolutionX;
@@ -2423,12 +2468,12 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
 
         VkDescriptorImageInfo colInfo = {0};
         colInfo.imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        colInfo.imageView = euclid.handle[eh].lightingImageView;
+        colInfo.imageView = euclid.handle[eh].lightingImageViewl;
         colInfo.sampler = euclid.handle[eh].attachmentSampler;
 
         VkDescriptorImageInfo depthInfo = {0};
         depthInfo.imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        depthInfo.imageView = euclid.handle[eh].lightingDepthImageView;
+        depthInfo.imageView = euclid.handle[eh].lightingDepthImageViewl;
         depthInfo.sampler = euclid.handle[eh].attachmentSampler;
 
         VkDescriptorImageInfo shInfo = {0};
@@ -3692,7 +3737,7 @@ void draw(uint32_t eh, uint32_t eme){
     euclid.meshes[eme].lub[0] = (float) euclid.handle[eh].resolutionX;
     euclid.meshes[eme].lub[1] = (float) euclid.handle[eh].resolutionY;
     euclid.meshes[eme].lub[2] = (float) euclid.handle[eh].shadowMapResolution;
-    euclid.meshes[eme].lub[3] = (float) euclid.handle[eh].totalFrames;
+    euclid.meshes[eme].lub[3] = (float) euclid.handle[eh].lightattn;
     euclid.meshes[eme].lub[4] = (float) euclid.handle[eh].shadowMapsCount;
     euclid.meshes[eme].lub[5] = (float) euclid.handle[eh].resolutionScale;
     euclid.meshes[eme].lub[6] = (float) euclid.handle[eh].defferedCount;
@@ -4300,9 +4345,14 @@ void destroy(uint32_t eh){
     vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].defferedUniformBuffersMemory, NULL);
     free(euclid.handle[eh].defferedUniformBuffersMapped);
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed deffered data\n");
-    vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].lightingFramebuffer, NULL);
-    vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingImageView, NULL);
-    vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingDepthImageView, NULL);
+    vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].lightingFramebuffers[0], NULL);
+    vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingImageViews[0], NULL);
+    vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingDepthImageViews[0], NULL);
+    vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].lightingFramebuffers[1], NULL);
+    vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingImageViews[1], NULL);
+    vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingDepthImageViews[1], NULL);
+    vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingImageViewl, NULL);
+    vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].lightingDepthImageViewl, NULL);
     vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].lightingImage, NULL);
     vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].lightingImageMemory, NULL);
     vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].lightingDepthImage, NULL);
