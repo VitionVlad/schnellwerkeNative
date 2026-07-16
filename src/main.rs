@@ -113,7 +113,7 @@ fn main() {
 
     let mut fcnt = 0u32;
 
-    //eng.render.resolution_scale = 0.5;
+    //eng.render.resolution_scale = 0.75;
 
     while eng.work(){
         eng.cameras[0].physic_object.gravity = false;
@@ -199,8 +199,10 @@ fn main() {
 
         viewport.object.physic_object.scale.x = eng.render.resolution_x as f32;
         viewport.object.physic_object.scale.y = eng.render.resolution_y as f32;
-        viewport.object.mesh.ubo[48] = 0.2;
-        viewport.object.mesh.ubo[49] = 1.0;
+        viewport.object.mesh.ubo[48] = fcnt as f32;
+        viewport.object.mesh.ubo[49] = 0.0;
+        viewport.object.mesh.ubo[50] = 0.2;
+        viewport.object.mesh.ubo[51] = 0.18;
         viewport.exec(&mut eng);
         fcnt += 1;
     }

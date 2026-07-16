@@ -392,7 +392,7 @@ vec3 voxelplusssrt(){
   vec3 normal = texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb;
   vec3 wrldpos = WorldPosFromDepth(d, uv, dmi.defferedMVPInverse[0]).xyz;
 
-  int rpx = 1;
+  int spp = 1;
 
   //if(rma.x < 0.5){
   //  rpx = 1;
@@ -400,7 +400,7 @@ vec3 voxelplusssrt(){
 
   vec3 hitAlbedo = vec3(0.0, 0.0, 0.0);
 
-  for(int j = 1; j <= rpx; j++) {
+  for(int j = 1; j <= spp; j++) {
     vec3 ha = vec3(1.0, 1.0, 1.0);
     uv = vec2(fuv.x, 1.0 - fuv.y);
 
@@ -415,7 +415,7 @@ vec3 voxelplusssrt(){
     vec3 rayDir = get_raydir(uv, dmi.deffrot[0].w, camForward, camRight, camUp);
     ha *= albedo;
 
-    vec2  blueNoiseUV = mod(uv*2.0 + float(mi.addinfo.x) * GOLDEN_RATIO * j + j, 1.0);
+    vec2  blueNoiseUV = mod(uv*2.0 + float(mi.addinfo.x + j) * GOLDEN_RATIO, 1.0);
     vec4  bn = texture(sampler2D(noiseTexture, attachmentSampler), blueNoiseUV);
 
     BRDFSample brdf = finalSample(-rayDir, normal, albedo, rma.r, rma.g, bn.xyz);
@@ -455,7 +455,7 @@ vec3 voxelplusssrt(){
       }
     }
 
-    hitAlbedo += ha/float(rpx);
+    hitAlbedo += ha/float(spp);
   }
   return hitAlbedo;
 }

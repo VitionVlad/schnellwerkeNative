@@ -68,6 +68,55 @@ vec3 SampleRTavg(vec2 uv) {
     return (SampleRTl(vec3(uv, 0)) + SampleRTl(vec3(uv, 1)))/2.0;
 }
 
+vec3 SampleNormal(vec2 uv) {
+    return normalize(
+        texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb
+    );
+}
+
+float SampleDepth(vec2 uv) {
+    return texture(sampler2DArray(defferedDepthTexture, attachmentSampler), vec3(uv, 0)).r;
+}
+
+float EstimateVariance(vec2 uv, vec2 texelSize) {
+    float sumL  = 0.0;
+    float sumL2 = 0.0;
+
+    for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+            float lum = Luminance(SampleRT(uv + vec2(dx, dy) * texelSize));
+            sumL  += lum;
+            sumL2 += lum * lum;
+        }
+    }
+
+    float mean     = sumL / 9.0;
+    float variance = max((sumL2 / 9.0) - (mean * mean), 0.0);
+    return variance;
+}
+
+float NormalWeight(vec3 nA, vec3 nB, float sigmaNormal) {
+    float d = max(dot(nA, nB), 0.0);
+    return pow(d, 1.0 / max(sigmaNormal, 0.001));
+}
+
+float DepthWeight(float dA, float dB) {
+    const float SIGMA_DEPTH = 0.02;
+    float diff = abs(dA - dB) / (abs(dA) + 0.001);
+    return exp(-diff / (SIGMA_DEPTH + 0.001));
+}
+
+float LuminanceWeight(float lumA, float lumB, float adaptiveSigma) {
+    float diff = abs(lumA - lumB);
+    return exp(-(diff * diff) / (2.0 * adaptiveSigma * adaptiveSigma + 0.0001));
+}
+
+float ColorWeight(vec3 cA, vec3 cB) {
+    vec3  diff = cA - cB;
+    float dist = dot(diff, diff);
+    return exp(-dist / (2.0 * SIGMA_COLOR * SIGMA_COLOR + 0.0001));
+}
+
 vec3 keffect(vec2 uv){
   vec2 offset = vec2(1.0 / mi.resolutions.x, 1.0 / mi.resolutions.y);
   vec2 offsets[9] = vec2[](
@@ -95,45 +144,46 @@ vec3 keffect(vec2 uv){
 
 void main() {
     vec2 uv = fuv;
-//
-    //vec2 texelSize = 1.0 / mi.resolutions.xy;
-    //int   passIndex = int(2);
-    //float stepSize  = float(1 << passIndex);
-//
-    //vec3  centerColor = SampleRTavg(uv);
-    //float centerLum   = Luminance(centerColor);
-//
-    //float sigmaLum = max(0.2, 0.01);
-//
-    //vec3  colorAccum  = vec3(0.0);
-    //float weightAccum = 0.0;
-//
-    //for (int row = 0; row < 5; row++) {
-    //    for (int col = 0; col < 5; col++) {
-    //        vec2 offset   = vec2(float(col - 2), float(row - 2)) * texelSize * stepSize;
-    //        vec2 sampleUV = clamp(uv + offset, vec2(0.0), vec2(1.0));
-//
-    //        vec3  sampleColor = SampleRTavg(sampleUV);
-    //        float sampleLum   = Luminance(sampleColor);
-//
-    //        float wKernel = KERNEL[row * 5 + col];
-//
-    //        float lumDiff = centerLum - sampleLum;
-    //        float wLum    = exp(-(lumDiff * lumDiff) / (2.0 * sigmaLum * sigmaLum + 0.0001));
-//
-    //        vec3  colorDiff = centerColor - sampleColor;
-    //        float colorDist = dot(colorDiff, colorDiff);
-    //        float wColor    = exp(-colorDist / (2.0 * SIGMA_COLOR * SIGMA_COLOR + 0.0001));
-    //        float w = wKernel * wLum * wColor;
-    //        colorAccum  += sampleColor * w;
-    //        weightAccum += w;
-    //    }
-    //}
-    //outColor = vec4(colorAccum / max(weightAccum, 0.0001), 1.0);
-
-    outColor = vec4(SampleRT(uv), 1.0);
-
-    if(uv.x > 0.5){
-        outColor = vec4(texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 0.0)).rgb, 1.0);
+    vec2 texelSize = 1.0 / mi.resolutions.xy;
+    vec3  centerColor  = SampleRTavg(uv);
+    vec3  centerNormal = SampleNormal(uv);
+    float centerDepth  = SampleDepth(uv);
+    float centerLum    = Luminance(centerColor);
+    if (centerDepth >= 0.9999) {
+        outColor = vec4(centerColor, 1.0);
+        return;
     }
+    int   passIndex  = int(mi.addinfo.y);
+    float sigmaLum   = max(mi.addinfo.z, 0.01);
+    float sigmaNorm  = max(mi.addinfo.w, 0.01);
+    float stepSize = float(1 << passIndex);
+    float variance      = EstimateVariance(uv, texelSize);
+    float adaptiveSigma = sigmaLum * (1.0 + 4.0 * sqrt(variance));
+
+    vec3  colorAccum  = vec3(0.0);
+    float weightAccum = 0.0;
+
+    for (int row = 0; row < 5; row++) {
+        for (int col = 0; col < 5; col++) {
+            vec2  offset    = vec2(float(col - 2), float(row - 2)) * texelSize * stepSize;
+            vec2  sampleUV  = clamp(uv + offset, vec2(0.0), vec2(1.0));
+            vec3  sampleColor  = SampleRTavg(sampleUV);
+            vec3  sampleNormal = SampleNormal(sampleUV);
+            float sampleDepth  = SampleDepth(sampleUV);
+            float sampleLum    = Luminance(sampleColor);
+            if (sampleDepth >= 0.9999) continue;
+            float wKernel = KERNEL[row * 5 + col];
+            float wNormal = NormalWeight(centerNormal, sampleNormal, sigmaNorm);
+            float wDepth = DepthWeight(centerDepth, sampleDepth);
+            float wLum = LuminanceWeight(centerLum, sampleLum, adaptiveSigma);
+            float wColor = ColorWeight(centerColor, sampleColor);
+            float w = wKernel * wNormal * wDepth * wLum * wColor;
+            colorAccum  += sampleColor * w;
+            weightAccum += w;
+        }
+    }
+    vec3 denoised = colorAccum / max(weightAccum, 0.0001);
+
+    outColor = vec4(denoised, 1.0);
+    //outColor = vec4(SampleRT(uv), 1.0);
 }
