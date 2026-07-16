@@ -68,6 +68,10 @@ vec3 SampleRTavg(vec2 uv) {
     return (SampleRTl(vec3(uv, 0)) + SampleRTl(vec3(uv, 1)))/2.0;
 }
 
+vec3 SampleRTsum(vec2 uv) {
+    return SampleRTl(vec3(uv, 0)) + SampleRTl(vec3(uv, 1));
+}
+
 vec3 SampleNormal(vec2 uv) {
     return normalize(
         texture(sampler2DArray(defferedTexture, attachmentSampler), vec3(uv, 2)).rgb
@@ -185,5 +189,5 @@ void main() {
     //vec3 denoised = colorAccum / max(weightAccum, 0.0001);
 //
     //outColor = vec4(denoised, 1.0);
-    outColor = vec4(SampleRT(uv), 1.0);
+    outColor = vec4(SampleRTsum(uv), 1.0);
 }

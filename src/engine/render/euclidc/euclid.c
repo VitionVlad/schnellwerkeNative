@@ -1839,6 +1839,7 @@ uint32_t neweng(uint32_t shadowMapResolution, uint8_t debug){
     euclid.handle[eh].currentFrame = 0;
     euclid.handle[eh].imageIndex = 0;
     euclid.handle[eh].totalFrames = 0;
+    euclid.handle[eh].lightattn = 0;
     euclid.handle[eh].mrec = 0;
     euclid.handle[eh].frametime = 0;
 
@@ -2649,7 +2650,7 @@ void createDescriptorSets(uint32_t eh, uint32_t eme){
 }
 
 void createLightingDescriptorSets(uint32_t eh, uint32_t eme){
-    VkDescriptorSetLayout *ldcs = malloc(sizeof(VkDescriptorSetLayout)*1);
+    VkDescriptorSetLayout *ldcs = malloc(sizeof(VkDescriptorSetLayout)*2);
     ldcs[0] = euclid.meshes[eme].lightingDescriptorSetLayout;
 
     VkDescriptorSetAllocateInfo allocInfo = {0};
@@ -2658,7 +2659,7 @@ void createLightingDescriptorSets(uint32_t eh, uint32_t eme){
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = ldcs;
 
-    euclid.meshes[eme].lightingDescriptorSets = malloc(sizeof(VkDescriptorSet)*1);
+    euclid.meshes[eme].lightingDescriptorSets = malloc(sizeof(VkDescriptorSet)*2);
     VkResult result = vkAllocateDescriptorSets(euclid.handle[eh].device, &allocInfo, &euclid.meshes[eme].lightingDescriptorSets);
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: Descriptor sets allocated with result = %d\n", result);
 
@@ -2668,7 +2669,7 @@ void createLightingDescriptorSets(uint32_t eh, uint32_t eme){
     VkDescriptorImageInfo *textureSamplerInfos = malloc(sizeof(VkDescriptorImageInfo) * texCount);
 
     VkDescriptorBufferInfo bufferInfo = {0};
-    bufferInfo.buffer = euclid.meshes[eme].uniformBuffers[euclid.handle[eh].currentFrame];
+    bufferInfo.buffer = euclid.meshes[eme].uniformBuffers[MAX_FRAMES_IN_FLIGHT];
     bufferInfo.offset = 0;
     bufferInfo.range = 64*sizeof(float);
 
@@ -3824,12 +3825,12 @@ void drawlighting(uint32_t eh, uint32_t eme){
     euclid.meshes[eme].lub[0] = (float) euclid.handle[eh].renderResolutionX;
     euclid.meshes[eme].lub[1] = (float) euclid.handle[eh].renderResolutionY;
     euclid.meshes[eme].lub[2] = (float) euclid.handle[eh].shadowMapResolution;
-    euclid.meshes[eme].lub[3] = (float) euclid.handle[eh].totalFrames;
+    euclid.meshes[eme].lub[3] = (float) euclid.handle[eh].lightattn;
     euclid.meshes[eme].lub[4] = (float) euclid.handle[eh].shadowMapsCount;
     euclid.meshes[eme].lub[5] = (float) euclid.handle[eh].resolutionScale;
     euclid.meshes[eme].lub[6] = (float) euclid.handle[eh].defferedCount;
     euclid.meshes[eme].lub[7] = (float) euclid.handle[eh].lightsCount;
-    memcpy(euclid.meshes[eme].uniformBuffersMapped[euclid.handle[eh].currentFrame], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
+    memcpy(euclid.meshes[eme].uniformBuffersMapped[MAX_FRAMES_IN_FLIGHT], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
     vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].pipelineLayout, 0, 1, &euclid.meshes[eme].lightingDescriptorSets, 0, NULL);
 
     vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);

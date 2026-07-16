@@ -359,10 +359,10 @@ vec3 EvaluateDirectLighting(vec3 pos, vec3 N, vec3 V, vec3 albedo, float roughne
         vec3  F = FresnelSchlick(VdotH, F0);
         float D = DistributionGGX(N, H, roughness);
         float G = GeometrySmith(N, V, L, roughness);
-        vec3  specular  = (D * G * F) / max(4.0 * NdotV * NdotL, 1e-5);
-        vec3  kD        = (1.0 - F) * (1.0 - metallic);
-        vec3  diffuse   = kD * albedo / PI;
-        float atten     = lintens / (1.0 + lightDist * lightDist * 0.05);
+        vec3  specular = (D * G * F) / max(4.0 * NdotV * NdotL, 1e-5);
+        vec3  kD = (1.0 - F) * (1.0 - metallic);
+        vec3  diffuse = kD * albedo / PI;
+        float atten = lintens / (1.0 + lightDist * lightDist * 0.05);
         total += (diffuse + specular) * lcol * atten * NdotL;
     }
 
@@ -489,5 +489,13 @@ vec3 voxelplusssrt() {
 }
 
 void main() {
-    outColor = vec4(voxelplusssrt(), 1.0);
+    float frn = mi.resolutions.a;
+    int fri = int(gl_FragCoord.y+gl_FragCoord.x);
+    if(frn == 0.0 && fuv.x > 0.5){
+        outColor = vec4(voxelplusssrt(), 1.0);
+    }else if(frn == 1.0 && fuv.x <= 0.5){
+        outColor = vec4(voxelplusssrt(), 1.0);
+    }else{
+        outColor = vec4(0.0, 0.0, 0.0, 1.0);
+    }
 }
