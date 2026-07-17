@@ -288,7 +288,6 @@ impl VoxelScene{
                 vec![]
             } else {
                 let count = u64::from_ne_bytes(payload[0..8].try_into().unwrap()) as usize;
-                println!("{}", count);
                 let mut cursor = 8usize;
                 let mut entries = Vec::new();
                 for _ in 0..count {
@@ -309,12 +308,7 @@ impl VoxelScene{
                     cursor += 17;
                 }
                 let tail = payload[cursor..payload.len()].to_vec();
-                let expected_len = if size[0] > 0 && size[1] > 0 && size[2] > 0 {
-                    (size[0] as usize) * (size[1] as usize) * (size[2] as usize) * 4
-                } else {
-                    tail.len() + entries.iter().map(|entry| entry.length as usize).sum::<usize>()
-                };
-                println!("{}, taillen: {}", expected_len, tail.len());
+                let expected_len = (size[0] as usize) * (size[1] as usize) * (size[2] as usize) * 4;
                 Self::decompress_data_impl(&entries, &tail, expected_len)
             }
         } else {
