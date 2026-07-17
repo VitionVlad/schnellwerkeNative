@@ -5,6 +5,13 @@ use std::u8;
 
 use crate::engine::{loader::{jsonparser::JsonF, rw::{readfs, writefs}}, math::vec3::Vec3};
 
+#[derive(Clone, Copy)]
+pub struct Rledata{
+    pub data: u8,
+    pub location: u64,
+    pub length: u64,
+}
+
 pub struct VoxelScene{
     pub data: Vec<u8>,
     pub size: [u32; 3],
@@ -85,6 +92,58 @@ pub fn voxel_overlaps_triangle(voxel_center: Vec3, voxel_size: f32, v0: Vec3, v1
 }
 
 impl VoxelScene{
+    fn compress_data_impl(data: &[u8]) -> (Vec<Rledata>, Vec<u8>) {
+        let mut entries = Vec::new();
+        let mut tail = Vec::new();
+        let mut i = 0usize;
+
+        while i < data.len() {
+            let current = data[i];
+            let mut run_len = 1usize;
+            while i + run_len < data.len() && data[i + run_len] == current {
+                run_len += 1;
+            }
+
+            if run_len > 17 {
+                entries.push(Rledata {
+                    data: current,
+                    location: i as u64,
+                    length: run_len as u64,
+                });
+                i += run_len;
+            } else {
+                tail.extend_from_slice(&data[i..i + run_len]);
+                i += run_len;
+            }
+        }
+
+        (entries, tail)
+    }
+    fn decompress_data_impl(entries: &[Rledata], tail: &[u8], total_len: usize) -> Vec<u8> {
+        let mut result = vec![0u8; total_len];
+        let mut sorted_entries = entries.to_vec();
+        sorted_entries.sort_by_key(|entry| entry.location);
+        let mut raw_index = 0usize;
+        let mut cursor = 0usize;
+        let mut filleddt = false;
+        while cursor < result.len(){
+            for i in 0.. entries.len(){
+                if entries[i].location == cursor as u64{
+                    result[(entries[i].location) as usize..(entries[i].location+entries[i].length) as usize].fill(entries[i].data);
+                    cursor += entries[i].length as usize;
+                    filleddt = true;
+                    break;
+                }
+            }
+            if !filleddt{
+                result[cursor] = tail[raw_index];
+                cursor += 1;
+                raw_index += 1;
+            }
+            filleddt = false;
+        }
+        result
+    }
     pub fn new_blank() -> VoxelScene{
         VoxelScene { data: vec![], voxel_size: 1.0, origin: Vec3 { x: 0.0, y: 0.0, z: 0.0 }, size: [0, 0, 0] }
     }
@@ -208,6 +267,7 @@ impl VoxelScene{
         let mut size = [0u32, 0u32, 0u32];
         let mut origin = Vec3{ x: 0.0, y: 0.0, z: 0.0};
         let mut voxelsize = 1.0f32;
+        let mut compression_active = false;
         let json = JsonF::from_text(&String::from_utf8(rjson).unwrap());
         for i in 0..json.other_nodes.len() {
             match json.other_nodes[i].name.as_str() {
@@ -218,11 +278,48 @@ impl VoxelScene{
                 "origin_x" => origin.x = json.other_nodes[i].numeral_val as f32,
                 "origin_y" => origin.y = json.other_nodes[i].numeral_val as f32,
                 "origin_z" => origin.z = json.other_nodes[i].numeral_val as f32,
+                "compression_active" => compression_active = json.other_nodes[i].bolean,
                 _ => {}
             }
         }
-        let cl = cont.len();
-        let data = cont[(jsonend) as usize..cl].to_vec();
+        let payload = cont[(jsonend) as usize..cont.len()].to_vec();
+        let data = if compression_active {
+            if payload.len() < 8 {
+                vec![]
+            } else {
+                let count = u64::from_ne_bytes(payload[0..8].try_into().unwrap()) as usize;
+                println!("{}", count);
+                let mut cursor = 8usize;
+                let mut entries = Vec::new();
+                for _ in 0..count {
+                    if cursor + 17 > payload.len() {
+                        break;
+                    }
+                    let mut data_byte = [0u8; 1];
+                    data_byte.copy_from_slice(&payload[cursor..cursor + 1]);
+                    let mut location_bytes = [0u8; 8];
+                    location_bytes.copy_from_slice(&payload[cursor + 1..cursor + 9]);
+                    let mut length_bytes = [0u8; 8];
+                    length_bytes.copy_from_slice(&payload[cursor + 9..cursor + 17]);
+                    entries.push(Rledata {
+                        data: data_byte[0],
+                        location: u64::from_ne_bytes(location_bytes),
+                        length: u64::from_ne_bytes(length_bytes),
+                    });
+                    cursor += 17;
+                }
+                let tail = payload[cursor..payload.len()].to_vec();
+                let expected_len = if size[0] > 0 && size[1] > 0 && size[2] > 0 {
+                    (size[0] as usize) * (size[1] as usize) * (size[2] as usize) * 4
+                } else {
+                    tail.len() + entries.iter().map(|entry| entry.length as usize).sum::<usize>()
+                };
+                println!("{}, taillen: {}", expected_len, tail.len());
+                Self::decompress_data_impl(&entries, &tail, expected_len)
+            }
+        } else {
+            payload
+        };
         VoxelScene::new(data, voxelsize, size, origin)
     }
     pub fn save_file(&mut self, path: &str){
@@ -235,11 +332,32 @@ impl VoxelScene{
         s.push_str(&format!("  \"origin_x\": {},\n", self.origin.x));
         s.push_str(&format!("  \"origin_y\": {},\n", self.origin.y));
         s.push_str(&format!("  \"origin_z\": {},\n", self.origin.z));
+        let (entries, tail) = Self::compress_data_impl(&self.data);
+        let compression_active = !entries.is_empty();
+        s.push_str(&format!("  \"compression_active\": {}\n", if compression_active { "true" } else { "false" }));
         s.push_str("}");
         let beggoff = ((s.len()+4) as u32).to_ne_bytes();
         let mut rwd = beggoff.clone().to_vec();
         rwd.append(&mut s.into_bytes());
-        rwd.append(&mut self.data.clone());
+
+        let (entries, tail) = Self::compress_data_impl(&self.data);
+        let compression_active = !entries.is_empty();
+        if compression_active {
+            let mut payload = Vec::new();
+            payload.extend_from_slice(&(entries.len() as u64).to_ne_bytes());
+            for entry in &entries {
+                let mut entry_bytes = [0u8; 17];
+                entry_bytes[0] = entry.data;
+                entry_bytes[1..9].copy_from_slice(&entry.location.to_ne_bytes());
+                entry_bytes[9..17].copy_from_slice(&entry.length.to_ne_bytes());
+                payload.extend_from_slice(&entry_bytes);
+            }
+            payload.extend_from_slice(&tail);
+            rwd.append(&mut payload);
+        } else {
+            rwd.append(&mut self.data.clone());
+        }
+
         writefs(path, rwd);
     }
 }

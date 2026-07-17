@@ -73,11 +73,11 @@ fn main() {
 
     let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral, true, 0.25f32);
 
+    println!("{}, {}, {}, decomp_size: {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2], scn.voxel_representation.data.len());
+
     let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm, false);
 
     let bluenoise = Image::new_from_files(&eng, vec!["assets/noise.png".to_string()]);
-
-    println!("{}, {}, {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2]);
 
     let mut ltviewport = UIplane::new(&mut eng, lightmat, vec![black3d, bluenoise], engine::render::render::MeshUsage::LightingPass);
     ltviewport.object.physic_object.pos.z = 1.0;
@@ -96,7 +96,7 @@ fn main() {
     let mut tm = 0;
 
     for i in 0..scn.objects.len() {
-        scn.objects[i].draw_distance = 500.0;
+      scn.objects[i].draw_distance = 500.0;
     }
 
     eng.render.shadow_map_count = 0;
@@ -113,7 +113,7 @@ fn main() {
 
     let mut fcnt = 0u32;
 
-    //eng.render.resolution_scale = 0.75;
+    eng.render.resolution_scale = 0.75;
 
     while eng.work(){
         eng.cameras[0].physic_object.gravity = false;

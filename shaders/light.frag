@@ -489,13 +489,14 @@ vec3 voxelplusssrt() {
 }
 
 void main() {
-    float frn = mi.resolutions.a;
-    int fri = int(gl_FragCoord.y+gl_FragCoord.x);
-    if(frn == 0.0 && fuv.x > 0.5){
-        outColor = vec4(voxelplusssrt(), 1.0);
-    }else if(frn == 1.0 && fuv.x <= 0.5){
-        outColor = vec4(voxelplusssrt(), 1.0);
-    }else{
-        outColor = vec4(0.0, 0.0, 0.0, 1.0);
-    }
+    //float frn = mi.resolutions.a;
+    //int fri = int(gl_FragCoord.y+gl_FragCoord.x);
+    //if(frn == 0.0 && fri % 2 == 0){
+    //    outColor = vec4(voxelplusssrt(), 1.0);
+    //}else if(frn == 1.0 && fri % 2 == 1){
+    //    outColor = vec4(voxelplusssrt(), 1.0);
+    //}else{
+    //    outColor = vec4(0.0, 0.0, 0.0, 1.0);
+    //}
+    outColor = vec4(voxelplusssrt(), 1.0);
 }

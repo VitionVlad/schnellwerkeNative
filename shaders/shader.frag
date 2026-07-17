@@ -189,5 +189,5 @@ void main() {
     //vec3 denoised = colorAccum / max(weightAccum, 0.0001);
 //
     //outColor = vec4(denoised, 1.0);
-    outColor = vec4(SampleRTsum(uv), 1.0);
+    outColor = vec4(SampleRT(uv), 1.0);
 }
