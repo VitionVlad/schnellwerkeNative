@@ -1,4 +1,5 @@
 #include "euclid.h"
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +41,7 @@ typedef struct euclidh{
     VkDeviceMemory depthImageMemory;
     VkFramebuffer *swapChainFramebuffers;
     VkCommandBuffer *commandBuffers;
-    VkCommandPool commandPool;
+    VkCommandPool commandPool[4];
     VkSemaphore *imageAvailableSemaphores;
     VkSemaphore *renderFinishedSemaphores;
     VkFence *inFlightFences;
@@ -1485,26 +1486,30 @@ void createFrameBuffers(uint32_t eh){
 }
 
 void createCommandPool(uint32_t eh){
-    VkCommandPoolCreateInfo poolInfo = {0};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = euclid.handle[eh].chosenqueuefam;
+    for(int i = 0; i < 4; i++){
+        VkCommandPoolCreateInfo poolInfo = {0};
+        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        poolInfo.queueFamilyIndex = euclid.handle[eh].chosenqueuefam;
 
-    VkResult result = vkCreateCommandPool( euclid.handle[eh].device, &poolInfo, NULL, & euclid.handle[eh].commandPool);
-    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Command pool created with result = %d\n", result);
+        VkResult result = vkCreateCommandPool(euclid.handle[eh].device, &poolInfo, NULL, &euclid.handle[eh].commandPool[i]);
+        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Command pool created with result = %d\n", result);
+    }
 }
 
 void createCommandBuffer(uint32_t eh){
-    euclid.handle[eh].commandBuffers = malloc(sizeof(VkCommandBuffer)*MAX_FRAMES_IN_FLIGHT);
-    for(int i = 0; i != MAX_FRAMES_IN_FLIGHT; i++){
-        VkCommandBufferAllocateInfo allocInfo = {0};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool =  euclid.handle[eh].commandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = 1;
+    euclid.handle[eh].commandBuffers = malloc(sizeof(VkCommandBuffer)*MAX_FRAMES_IN_FLIGHT*4);
+    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
+        for(int j = 0; j < 4; j++){
+            VkCommandBufferAllocateInfo allocInfo = {0};
+            allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            allocInfo.commandPool = euclid.handle[eh].commandPool[j];
+            allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            allocInfo.commandBufferCount = 1;
 
-        VkResult result = vkAllocateCommandBuffers( euclid.handle[eh].device, &allocInfo, & euclid.handle[eh].commandBuffers[i]);
-        if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Command buffer created with result = %d\n", result);
+            VkResult result = vkAllocateCommandBuffers( euclid.handle[eh].device, &allocInfo, &euclid.handle[eh].commandBuffers[j+i*4]);
+            if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Command buffer created with result = %d\n", result);
+        }
     }
 }
 
@@ -1630,7 +1635,10 @@ void startrender(uint32_t eh){
         if (euclid.handle[eh].debug == 1) printf("\e[1;35mEuclidVk\e[0;37m: Recreated shadow data\n");
     }
 
-    vkResetCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0);
+    vkResetCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+0], 0);
+    vkResetCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], 0);
+    vkResetCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+2], 0);
+    vkResetCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+3], 0);
 
     memcpy(euclid.handle[eh].shadowUniformBuffersMapped[0], euclid.handle[eh].shadowMatrices, sizeof(float)*2400);
     memcpy(euclid.handle[eh].defferedUniformBuffersMapped[0], euclid.handle[eh].defferedMatrices, sizeof(float)*400);
@@ -1639,7 +1647,10 @@ void startrender(uint32_t eh){
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0;
     beginInfo.pInheritanceInfo = NULL;
-    vkBeginCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &beginInfo);
+    vkBeginCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+0], &beginInfo);
+    vkBeginCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], &beginInfo);
+    vkBeginCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+2], &beginInfo);
+    vkBeginCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+3], &beginInfo);
 }
 
 void modifyshadowdata(uint32_t eh, uint32_t ncnt, uint32_t nres, uint32_t lcnt){
@@ -1686,7 +1697,7 @@ void startmainrenderpass(uint32_t eh){
     clearValues[1].depthStencil.stencil = 0.0;    
     renderPassInfo.clearValueCount = 2;
     renderPassInfo.pClearValues = clearValues;
-    vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+3], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void startdefferedrenderpass(uint32_t eh, uint32_t cc){
@@ -1709,7 +1720,7 @@ void startdefferedrenderpass(uint32_t eh, uint32_t cc){
     clearValues[3].depthStencil.stencil = 0.0;    
     renderPassInfo.clearValueCount = 4;
     renderPassInfo.pClearValues = clearValues;
-    vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void startlightingrenderpass(uint32_t eh){
@@ -1731,7 +1742,7 @@ void startlightingrenderpass(uint32_t eh){
     clearValues[1].depthStencil.stencil = 0.0;
     renderPassInfo.clearValueCount = 2;
     renderPassInfo.pClearValues = clearValues;
-    vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+2], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void startshadowrenderpass(uint32_t eh, uint32_t nm){
@@ -1748,15 +1759,18 @@ void startshadowrenderpass(uint32_t eh, uint32_t nm){
     clearValue.depthStencil.stencil = 0.0;    
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearValue;
-    vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void endrenderpass(uint32_t eh){
-    vkCmdEndRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame]);
+void endrenderpass(uint32_t eh, int j){
+    vkCmdEndRenderPass(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+j]);
 }
 
 void endrender(uint32_t eh){
-    vkEndCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame]);
+    vkEndCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+0]);
+    vkEndCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1]);
+    vkEndCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+2]);
+    vkEndCommandBuffer(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+3]);
 
     VkSubmitInfo submitInfo = {0};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1766,8 +1780,15 @@ void endrender(uint32_t eh){
     submitInfo.pWaitSemaphores = &euclid.handle[eh].imageAvailableSemaphores[euclid.handle[eh].currentFrame];
     submitInfo.pWaitDstStageMask = waitStages;
 
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame];
+    VkCommandBuffer commandBuffers[] = {
+        euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4],
+        euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1],
+        euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+2],
+        euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+3]
+    };
+
+    submitInfo.commandBufferCount = 4;
+    submitInfo.pCommandBuffers = commandBuffers;
 
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &euclid.handle[eh].renderFinishedSemaphores[euclid.handle[eh].currentFrame];
@@ -3754,10 +3775,10 @@ void draw(uint32_t eh, uint32_t eme){
         euclid.meshes[eme].mrec = euclid.handle[eh].mrec;
     }
 
-    vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].graphicsPipeline);
+    vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+3], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].graphicsPipeline);
 
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &euclid.models[euclid.meshes[eme].modelId].vertexBuffer, offsets);
+    vkCmdBindVertexBuffers(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+3], 0, 1, &euclid.models[euclid.meshes[eme].modelId].vertexBuffer, offsets);
 
     VkViewport viewport = {0};
     viewport.x = 0.0f;
@@ -3766,14 +3787,14 @@ void draw(uint32_t eh, uint32_t eme){
     viewport.height = euclid.handle[eh].resolutionY;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &viewport);
+    vkCmdSetViewport(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+3], 0, 1, &viewport);
 
     VkRect2D scissor = {0};
     scissor.offset.x = 0;
     scissor.offset.y = 0;
     scissor.extent.width = euclid.handle[eh].resolutionX;
     scissor.extent.height = euclid.handle[eh].resolutionY;
-    vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &scissor);
+    vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+3], 0, 1, &scissor);
 
     euclid.meshes[eme].lub[0] = (float) euclid.handle[eh].resolutionX;
     euclid.meshes[eme].lub[1] = (float) euclid.handle[eh].resolutionY;
@@ -3784,9 +3805,9 @@ void draw(uint32_t eh, uint32_t eme){
     euclid.meshes[eme].lub[6] = (float) euclid.handle[eh].defferedCount;
     euclid.meshes[eme].lub[7] = (float) euclid.handle[eh].lightsCount;
     memcpy(euclid.meshes[eme].uniformBuffersMapped[euclid.handle[eh].currentFrame], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
-    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].pipelineLayout, 0, 1, &euclid.meshes[eme].descriptorSets[euclid.handle[eh].currentFrame], 0, NULL);
+    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+3], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].pipelineLayout, 0, 1, &euclid.meshes[eme].descriptorSets[euclid.handle[eh].currentFrame], 0, NULL);
 
-    vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
+    vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+3], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
 }
 
 void drawlighting(uint32_t eh, uint32_t eme){
@@ -3801,10 +3822,10 @@ void drawlighting(uint32_t eh, uint32_t eme){
         euclid.meshes[eme].mrec = euclid.handle[eh].mrec;
     }
 
-    vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].graphicsPipeline);
+    vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+2], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].graphicsPipeline);
 
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &euclid.models[euclid.meshes[eme].modelId].vertexBuffer, offsets);
+    vkCmdBindVertexBuffers(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+2], 0, 1, &euclid.models[euclid.meshes[eme].modelId].vertexBuffer, offsets);
 
     VkViewport viewport = {0};
     viewport.x = 0.0f;
@@ -3813,14 +3834,14 @@ void drawlighting(uint32_t eh, uint32_t eme){
     viewport.height = euclid.handle[eh].renderResolutionY;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &viewport);
+    vkCmdSetViewport(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+2], 0, 1, &viewport);
 
     VkRect2D scissor = {0};
     scissor.offset.x = 0;
     scissor.offset.y = 0;
     scissor.extent.width = euclid.handle[eh].renderResolutionX;
     scissor.extent.height = euclid.handle[eh].renderResolutionY;
-    vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &scissor);
+    vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+2], 0, 1, &scissor);
 
     euclid.meshes[eme].lub[0] = (float) euclid.handle[eh].renderResolutionX;
     euclid.meshes[eme].lub[1] = (float) euclid.handle[eh].renderResolutionY;
@@ -3831,16 +3852,16 @@ void drawlighting(uint32_t eh, uint32_t eme){
     euclid.meshes[eme].lub[6] = (float) euclid.handle[eh].defferedCount;
     euclid.meshes[eme].lub[7] = (float) euclid.handle[eh].lightsCount;
     memcpy(euclid.meshes[eme].uniformBuffersMapped[MAX_FRAMES_IN_FLIGHT], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
-    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].pipelineLayout, 0, 1, &euclid.meshes[eme].lightingDescriptorSets, 0, NULL);
+    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+2], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].pipelineLayout, 0, 1, &euclid.meshes[eme].lightingDescriptorSets, 0, NULL);
 
-    vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
+    vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+2], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
 }
 
 void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
-    vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].shadowPipeline);
+    vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].shadowPipeline);
 
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &euclid.models[euclid.meshes[eme].modelId].vertexBuffer, offsets);
+    vkCmdBindVertexBuffers(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4], 0, 1, &euclid.models[euclid.meshes[eme].modelId].vertexBuffer, offsets);
 
     VkViewport viewport = {0};
     viewport.x = 0.0f;
@@ -3849,14 +3870,14 @@ void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
     viewport.height = euclid.handle[eh].shadowMapResolution;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &viewport);
+    vkCmdSetViewport(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4], 0, 1, &viewport);
 
     VkRect2D scissor = {0};
     scissor.offset.x = 0;
     scissor.offset.y = 0;
     scissor.extent.height = euclid.handle[eh].shadowMapResolution;
     scissor.extent.width = euclid.handle[eh].shadowMapResolution;
-    vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &scissor);
+    vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4], 0, 1, &scissor);
 
     euclid.meshes[eme].lub[0] = (float) euclid.handle[eh].resolutionX;
     euclid.meshes[eme].lub[1] = (float) euclid.handle[eh].resolutionY;
@@ -3867,16 +3888,16 @@ void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
     euclid.meshes[eme].lub[6] = (float) euclid.handle[eh].renderResolutionY;
     euclid.meshes[eme].lub[7] = (float) euclid.handle[eh].lightsCount;
     memcpy(euclid.meshes[eme].uniformBuffersMapped[MAX_FRAMES_IN_FLIGHT], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
-    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].shadowPipelineLayout, 0, 1, &euclid.meshes[eme].shadowDescriptorSets[cs], 0, NULL);
+    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].shadowPipelineLayout, 0, 1, &euclid.meshes[eme].shadowDescriptorSets[cs], 0, NULL);
 
-    vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
+    vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
 }
 
 void drawdeffered(uint32_t eh, uint32_t eme, uint32_t cs){
-    vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].defferedPipeline);
+    vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].defferedPipeline);
 
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &euclid.models[euclid.meshes[eme].modelId].vertexBuffer, offsets);
+    vkCmdBindVertexBuffers(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], 0, 1, &euclid.models[euclid.meshes[eme].modelId].vertexBuffer, offsets);
 
     VkViewport viewport = {0};
     viewport.x = 0.0f;
@@ -3885,14 +3906,14 @@ void drawdeffered(uint32_t eh, uint32_t eme, uint32_t cs){
     viewport.height = (float) euclid.handle[eh].renderResolutionY;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &viewport);
+    vkCmdSetViewport(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], 0, 1, &viewport);
 
     VkRect2D scissor = {0};
     scissor.offset.x = 0;
     scissor.offset.y = 0;
     scissor.extent.width = euclid.handle[eh].renderResolutionX;
     scissor.extent.height = euclid.handle[eh].renderResolutionY;
-    vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], 0, 1, &scissor);
+    vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], 0, 1, &scissor);
 
     euclid.meshes[eme].lub[0] = (float) euclid.handle[eh].resolutionX;
     euclid.meshes[eme].lub[1] = (float) euclid.handle[eh].resolutionY;
@@ -3903,9 +3924,9 @@ void drawdeffered(uint32_t eh, uint32_t eme, uint32_t cs){
     euclid.meshes[eme].lub[6] = (float) euclid.handle[eh].renderResolutionY;
     euclid.meshes[eme].lub[7] = (float) euclid.handle[eh].lightsCount;
     memcpy(euclid.meshes[eme].uniformBuffersMapped[MAX_FRAMES_IN_FLIGHT], euclid.meshes[eme].lub, sizeof(euclid.meshes[eme].lub));
-    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].defferedPipelineLayout, 0, 1, &euclid.meshes[eme].defferedDescriptorSets[cs], 0, NULL);
+    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].defferedPipelineLayout, 0, 1, &euclid.meshes[eme].defferedDescriptorSets[cs], 0, NULL);
 
-    vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
+    vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
 }
 
 uint32_t loopcont(uint32_t eh){
@@ -3923,7 +3944,7 @@ uint32_t loopcont(uint32_t eh){
                 }
             }
         }
-        endrenderpass(eh);
+        endrenderpass(eh, 0);
     }
     for(uint32_t i = 0; i != euclid.handle[eh].defferedCount; i++){
         startdefferedrenderpass(eh, i);
@@ -3932,7 +3953,7 @@ uint32_t loopcont(uint32_t eh){
                 drawdeffered(eh, j, i);
             }
         }
-        endrenderpass(eh);
+        endrenderpass(eh, 1);
     }
     startlightingrenderpass(eh);
     for(uint32_t i = 0; i != euclid.mesize; i++){
@@ -3940,14 +3961,14 @@ uint32_t loopcont(uint32_t eh){
             drawlighting(eh, i);
         }
     }
-    endrenderpass(eh);
+    endrenderpass(eh, 2);
     startmainrenderpass(eh);
     for(uint32_t i = 0; i != euclid.mesize; i++){
         if(euclid.meshes[i].euclidid == eh && euclid.meshes[i].drawable == 1 && euclid.meshes[i].usage == 0){
             draw(eh, i);
         }
     }
-    endrenderpass(eh);
+    endrenderpass(eh, 3);
     endrender(eh);
     glfwPollEvents();
     return !glfwWindowShouldClose(euclid.handle[eh].window);
@@ -3957,7 +3978,7 @@ VkCommandBuffer beginSingleTimeCommands(uint32_t eh) {
     VkCommandBufferAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = euclid.handle[eh].commandPool;
+    allocInfo.commandPool = euclid.handle[eh].commandPool[0];
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
@@ -3983,7 +4004,7 @@ void endSingleTimeCommands(uint32_t eh, VkCommandBuffer commandBuffer) {
     vkQueueSubmit(euclid.handle[eh].graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(euclid.handle[eh].graphicsQueue);
 
-    vkFreeCommandBuffers(euclid.handle[eh].device, euclid.handle[eh].commandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(euclid.handle[eh].device, euclid.handle[eh].commandPool[0], 1, &commandBuffer);
 }
 
 void generateMipmaps(VkImage image, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, uint32_t layercnt, uint32_t eh) {
@@ -4478,8 +4499,12 @@ void destroy(uint32_t eh){
         vkDestroyFence(euclid.handle[eh].device, euclid.handle[eh].inFlightFences[i], NULL);
     }
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed sync objects\n");
-    vkFreeCommandBuffers(euclid.handle[eh].device, euclid.handle[eh].commandPool, MAX_FRAMES_IN_FLIGHT, euclid.handle[eh].commandBuffers);
-    vkDestroyCommandPool(euclid.handle[eh].device, euclid.handle[eh].commandPool, NULL);
+    for(int i = 0; i < 4; i++){
+        for(int j = 0; j < MAX_FRAMES_IN_FLIGHT; j++){
+            vkFreeCommandBuffers(euclid.handle[eh].device, euclid.handle[eh].commandPool[i], 1, &euclid.handle[eh].commandBuffers[j*4+i]);
+        }
+        vkDestroyCommandPool(euclid.handle[eh].device, euclid.handle[eh].commandPool[i], NULL);
+    }
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed command pool and buffer\n");
     for(int i = 0; i != euclid.handle[eh].swapChainImageCount; i++){
         vkDestroyFramebuffer(euclid.handle[eh].device, euclid.handle[eh].swapChainFramebuffers[i], NULL);
