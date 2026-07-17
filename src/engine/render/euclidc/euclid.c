@@ -110,6 +110,7 @@ typedef struct euclidh{
     uint8_t gamepaden;
     uint8_t debug;
     uint8_t lightattn;
+    pthread_t threads[4];
 } euclidh;
 
 typedef struct euclidmaterial{
@@ -3929,12 +3930,9 @@ void drawdeffered(uint32_t eh, uint32_t eme, uint32_t cs){
     vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
 }
 
-uint32_t loopcont(uint32_t eh){
-    euclid.handle[eh].frametime = glfwGetTime();
-    glfwSetTime(0);
-    keywork(eh);
-    glfwGetFramebufferSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
-    startrender(eh);
+void* shadowpassrender(void *arg){
+    uint32_t *deh = (uint32_t*) arg;
+    uint32_t eh = deh[0];
     if(euclid.handle[eh].enableShadowMaps){
         for(uint32_t i = 0; i != euclid.handle[eh].shadowMapsCount; i++){
             startshadowrenderpass(eh, i);
@@ -3946,6 +3944,12 @@ uint32_t loopcont(uint32_t eh){
         }
         endrenderpass(eh, 0);
     }
+    return NULL;
+}
+
+void* deffredpassrender(void *arg){
+    uint32_t *deh = (uint32_t*) arg;
+    uint32_t eh = deh[0];
     for(uint32_t i = 0; i != euclid.handle[eh].defferedCount; i++){
         startdefferedrenderpass(eh, i);
         for(uint32_t j = 0; j != euclid.mesize; j++){
@@ -3955,6 +3959,12 @@ uint32_t loopcont(uint32_t eh){
         }
         endrenderpass(eh, 1);
     }
+    return NULL;
+}
+
+void* lightingpassrender(void *arg){
+    uint32_t *deh = (uint32_t*) arg;
+    uint32_t eh = deh[0];
     startlightingrenderpass(eh);
     for(uint32_t i = 0; i != euclid.mesize; i++){
         if(euclid.meshes[i].euclidid == eh && euclid.meshes[i].drawable == 1 && euclid.meshes[i].usage == 4){
@@ -3962,6 +3972,18 @@ uint32_t loopcont(uint32_t eh){
         }
     }
     endrenderpass(eh, 2);
+    return NULL;
+}
+
+uint32_t loopcont(uint32_t eh){
+    euclid.handle[eh].frametime = glfwGetTime();
+    glfwSetTime(0);
+    keywork(eh);
+    glfwGetFramebufferSize(euclid.handle[eh].window, &euclid.handle[eh].resolutionX, &euclid.handle[eh].resolutionY);
+    startrender(eh);
+    pthread_create(&euclid.handle[eh].threads[0], NULL, shadowpassrender, &eh);
+    pthread_create(&euclid.handle[eh].threads[1], NULL, deffredpassrender, &eh);
+    pthread_create(&euclid.handle[eh].threads[2], NULL, lightingpassrender, &eh);
     startmainrenderpass(eh);
     for(uint32_t i = 0; i != euclid.mesize; i++){
         if(euclid.meshes[i].euclidid == eh && euclid.meshes[i].drawable == 1 && euclid.meshes[i].usage == 0){
@@ -3969,6 +3991,9 @@ uint32_t loopcont(uint32_t eh){
         }
     }
     endrenderpass(eh, 3);
+    pthread_join(euclid.handle[eh].threads[0], NULL);
+    pthread_join(euclid.handle[eh].threads[1], NULL);
+    pthread_join(euclid.handle[eh].threads[2], NULL);
     endrender(eh);
     glfwPollEvents();
     return !glfwWindowShouldClose(euclid.handle[eh].window);

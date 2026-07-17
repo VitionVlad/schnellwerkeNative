@@ -99,10 +99,10 @@ fn main() {
       scn.objects[i].draw_distance = 500.0;
     }
 
-    eng.render.shadow_map_count = 0;
+    eng.render.shadow_map_count = 1;
     eng.used_light_count = 1;
 
-    eng.lights[0].shadow = false;
+    eng.lights[0].shadow = true;
     eng.lights[0].light_type = engine::light::LightType::Spot;
     eng.lights[0].pos.x = 0.0f32;
     eng.lights[0].pos.y = 5.0f32;
@@ -114,6 +114,8 @@ fn main() {
     let mut fcnt = 0u32;
 
     eng.render.resolution_scale = 0.75;
+
+    println!("shadowmapresolution(ignore if shadowmaps are off): {}", eng.render.shadow_map_resolution);
 
     while eng.work(){
         eng.cameras[0].physic_object.gravity = false;
