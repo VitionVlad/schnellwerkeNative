@@ -3,7 +3,7 @@ use crate::engine::{engine::Engine, image::Image, loader::rw::readfs, material::
 mod engine;
 
 fn main() {
-    let mut eng = Engine::new(false);
+    let mut eng = Engine::new(true);
     eng.render.set_title("rttest");
     eng.render.set_new_resolution(1280, 720);
 
@@ -99,10 +99,10 @@ fn main() {
       scn.objects[i].draw_distance = 500.0;
     }
 
-    eng.render.shadow_map_count = 1;
+    eng.render.shadow_map_count = 0;
     eng.used_light_count = 1;
 
-    eng.lights[0].shadow = true;
+    eng.lights[0].shadow = false;
     eng.lights[0].light_type = engine::light::LightType::Spot;
     eng.lights[0].pos.x = 0.0f32;
     eng.lights[0].pos.y = 5.0f32;
@@ -207,6 +207,9 @@ fn main() {
         viewport.object.mesh.ubo[51] = 0.18;
         viewport.exec(&mut eng);
         fcnt += 1;
+        if fcnt > 100000{
+          fcnt = 0;
+        }
     }
     eng.end();
 }
