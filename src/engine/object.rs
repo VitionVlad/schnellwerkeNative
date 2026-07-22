@@ -209,7 +209,7 @@ impl Object {
                 if Self::in_range(lsg.x, lbg.x, 0.0) && Self::in_range(lsg.y, lbg.y, 0.0) && !behind && fdst <= self.view_reaction_distance{
                     self.is_looking_at = true;
                 }
-            }else if self.usage == MeshUsage::LightingPass{
+            }else if self.usage == MeshUsage::LightingPass || self.usage == MeshUsage::PostPass{
                 self.mesh.draw = self.draw;
                 self.mesh.keep_shadow = false;
                 self.mesh.draw_shadow = true;

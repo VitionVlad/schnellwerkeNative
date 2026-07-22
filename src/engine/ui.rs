@@ -225,10 +225,10 @@ impl UItext {
                     self.planes.push(Object::new(eng, self.plane, self.material, self.font.clone(), self.usage, true, "".to_string()));
                 }
             }
-            for i in  0..self.planes.len(){
-                self.planes[i].mesh.draw = false;
-                self.planes[i].mesh.exec();
-            }
+            //for i in  0..self.planes.len(){
+            //    self.planes[i].mesh.draw = false;
+            //    self.planes[i].mesh.exec();
+            //}
             let mut posy: f32 = self.pos.y;
             let mut bp: usize = 0;
             let mut bp2 = 0;
@@ -280,6 +280,12 @@ impl UItext {
                             bp2 = 0;
                         }
                     }
+                }
+            }
+            if bt.len() == self.planes.len(){
+            for i in bt.len()..self.planes.len(){
+                    self.planes[i].draw = false;
+                    self.planes[i].exec(eng);
                 }
             }
             return btst;

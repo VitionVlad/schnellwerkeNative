@@ -91,7 +91,7 @@ fn main() {
 
     let mut relposx = 0.0;
 
-    const SPEED: f32 = 0.0025f32;
+    const SPEED: f32 = 0.000125f32;
 
     let mut tm = 0;
 
@@ -113,7 +113,7 @@ fn main() {
 
     let mut fcnt = 0u32;
 
-    eng.render.resolution_scale = 0.75;
+    //eng.render.resolution_scale = 0.5;
 
     println!("shadowmapresolution(ignore if shadowmaps are off): {}", eng.render.shadow_map_resolution);
 
@@ -132,84 +132,82 @@ fn main() {
         }
 
         if eng.control.mouse_lock{
+          eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
+          eng.cameras[0].physic_object.rot.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - relpos.y;
+          savpos.x = eng.cameras[0].physic_object.rot.x;
+          savpos.y = eng.cameras[0].physic_object.rot.y;
+          if eng.cameras[0].physic_object.rot.x < -1.5 {
+            relposx = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x + 1.5;
             eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
-            eng.cameras[0].physic_object.rot.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - relpos.y;
-            savpos.x = eng.cameras[0].physic_object.rot.x;
-            savpos.y = eng.cameras[0].physic_object.rot.y;
+          }
+          if eng.cameras[0].physic_object.rot.x > 1.5 {
+            relposx = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - 1.5;
+            eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
+          }
+          if eng.control.get_key_state(40){
+            eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED;
+            eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED;
+            eng.cameras[0].physic_object.acceleration.y += f32::sin(eng.cameras[0].physic_object.rot.x) * SPEED;
+          }
+          if eng.control.get_key_state(44){
+            eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED;
+            eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED;
+            eng.cameras[0].physic_object.acceleration.y += f32::sin(eng.cameras[0].physic_object.rot.x) * -SPEED;
+          }
+          if eng.control.get_key_state(25){
+            eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED;
+            eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED;
+          }
+          if eng.control.get_key_state(22){
+            eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED;
+            eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED;
+          }
+          if eng.control.mousebtn[2]{
+            eng.lights[0].pos.x = eng.cameras[0].physic_object.pos.x;
+            eng.lights[0].pos.y = eng.cameras[0].physic_object.pos.y;
+            eng.lights[0].pos.z = eng.cameras[0].physic_object.pos.z;
+          }
+      }
+      if eng.control.get_key_state(49) && tm <= 0{
+        eng.control.mouse_lock = !eng.control.mouse_lock;
+        tm = 1500;
+      }
 
-            if eng.cameras[0].physic_object.rot.x < -1.5 {
-              relposx = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x + 1.5;
-              eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
-            }
-            if eng.cameras[0].physic_object.rot.x > 1.5 {
-              relposx = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - 1.5;
-              eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
-            }
+      let fpstxt = format!("fps:{}", eng.fps);
+      fpscnt.size.x = 15_f32;
+      fpscnt.size.y = 30_f32;
+      fpscnt.pos.x = eng.render.resolution_x as f32 - fpstxt.len() as f32*fpscnt.size.x;
+      fpscnt.pos.y = 0.0;
+      fpscnt.pos.z = 0.1;
+      fpscnt.draw = true;
+      fpscnt.exec(&mut eng, &fpstxt);
 
-            if eng.control.get_key_state(40){
-              eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-              eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-              eng.cameras[0].physic_object.acceleration.y += f32::sin(eng.cameras[0].physic_object.rot.x) * SPEED * eng.times_to_calculate_physics as f32;
-            }
-            if eng.control.get_key_state(44){
-              eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-              eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-              eng.cameras[0].physic_object.acceleration.y += f32::sin(eng.cameras[0].physic_object.rot.x) * -SPEED * eng.times_to_calculate_physics as f32;
-            }
-            if eng.control.get_key_state(25){
-              eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-              eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED * eng.times_to_calculate_physics as f32;
-            }
-            if eng.control.get_key_state(22){
-              eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-              eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED * eng.times_to_calculate_physics as f32;
-            }
+      scn.exec(&mut eng);
+      ltviewport.object.physic_object.scale.x = eng.render.resolution_x as f32 * eng.render.resolution_scale;
+      ltviewport.object.physic_object.scale.y = eng.render.resolution_y as f32 * eng.render.resolution_scale;
+      ltviewport.object.physic_object.pos.z = 0.9;
+      ltviewport.object.mesh.ubo[48] = fcnt as f32;
+      ltviewport.object.mesh.ubo[49] = scn.voxel_representation.size[0] as f32;
+      ltviewport.object.mesh.ubo[50] = scn.voxel_representation.size[1] as f32;
+      ltviewport.object.mesh.ubo[51] = scn.voxel_representation.size[2] as f32;
+      ltviewport.object.mesh.ubo[52] = scn.voxel_representation.origin.x as f32;
+      ltviewport.object.mesh.ubo[53] = scn.voxel_representation.origin.y as f32;
+      ltviewport.object.mesh.ubo[54] = scn.voxel_representation.origin.z as f32;
+      ltviewport.object.mesh.ubo[55] = scn.voxel_representation.voxel_size;
+      ltviewport.exec(&mut eng);
 
-            if eng.control.mousebtn[2]{
-              eng.lights[0].pos.x = eng.cameras[0].physic_object.pos.x;
-              eng.lights[0].pos.y = eng.cameras[0].physic_object.pos.y;
-              eng.lights[0].pos.z = eng.cameras[0].physic_object.pos.z;
-            }
-        }
-
-        if eng.control.get_key_state(49) && tm <= 0{
-          eng.control.mouse_lock = !eng.control.mouse_lock;
-          tm = 100;
-        }
-
-        let fpstxt = format!("fps:{}", eng.fps);
-        fpscnt.size.x = 15_f32;
-        fpscnt.size.y = 30_f32;
-        fpscnt.pos.x = eng.render.resolution_x as f32 - fpstxt.len() as f32*fpscnt.size.x;
-        fpscnt.pos.y = 0.0;
-        fpscnt.draw = true;
-        fpscnt.exec(&mut eng, &fpstxt);
-
-        scn.exec(&mut eng);
-
-        ltviewport.object.physic_object.scale.x = eng.render.resolution_x as f32 * eng.render.resolution_scale;
-        ltviewport.object.physic_object.scale.y = eng.render.resolution_y as f32 * eng.render.resolution_scale;
-        ltviewport.object.mesh.ubo[48] = fcnt as f32;
-        ltviewport.object.mesh.ubo[49] = scn.voxel_representation.size[0] as f32;
-        ltviewport.object.mesh.ubo[50] = scn.voxel_representation.size[1] as f32;
-        ltviewport.object.mesh.ubo[51] = scn.voxel_representation.size[2] as f32;
-        ltviewport.object.mesh.ubo[52] = scn.voxel_representation.origin.x as f32;
-        ltviewport.object.mesh.ubo[53] = scn.voxel_representation.origin.y as f32;
-        ltviewport.object.mesh.ubo[54] = scn.voxel_representation.origin.z as f32;
-        ltviewport.object.mesh.ubo[55] = scn.voxel_representation.voxel_size;
-        ltviewport.exec(&mut eng);
-
-        viewport.object.physic_object.scale.x = eng.render.resolution_x as f32;
-        viewport.object.physic_object.scale.y = eng.render.resolution_y as f32;
-        viewport.object.mesh.ubo[48] = fcnt as f32;
-        viewport.object.mesh.ubo[49] = 0.0;
-        viewport.object.mesh.ubo[50] = 0.2;
-        viewport.object.mesh.ubo[51] = 0.18;
-        viewport.exec(&mut eng);
-        fcnt += 1;
-        if fcnt > 100000{
-          fcnt = 0;
-        }
+      viewport.object.physic_object.scale.x = eng.render.resolution_x as f32;
+      viewport.object.physic_object.scale.y = eng.render.resolution_y as f32;
+      viewport.object.mesh.ubo[48] = fcnt as f32;
+      viewport.object.mesh.ubo[49] = 0.0;
+      viewport.object.mesh.ubo[50] = 0.2;
+      viewport.object.mesh.ubo[51] = 0.18;
+      viewport.exec(&mut eng);
+      
+      fcnt += 1;
+      if fcnt > 100000{
+        fcnt = 0;
+      }
     }
     eng.end();
 }

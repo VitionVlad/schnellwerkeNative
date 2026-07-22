@@ -108,6 +108,7 @@ impl Engine{
             self.render.set_shadow_uniform_data(i*4+2002, self.lights[i as usize].color.z);
             self.render.set_shadow_uniform_data(i*4+2003, if self.lights[i as usize].shadow { 1.0f32 } else { 0.0f32 });
         }
+        //if self.used_light_count
         self.control.get_mouse_pos();
         for _ in 0..self.times_to_calculate_physics{
             for i in 0..u32::min(self.used_camera_count, 10){
