@@ -1,6 +1,7 @@
 #include "euclid.h"
 #include <pthread.h>
 #include <stdatomic.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -151,7 +152,7 @@ typedef struct euclidh{
     unsigned char *btnstats;
     uint8_t gamepaden;
     uint8_t debug;
-    uint8_t lightattn;
+    _Atomic uint8_t lightattn;
     pthread_t threads[4];
     _Atomic uint32_t lpcont;
     _Atomic uint8_t halt_render;
@@ -1640,7 +1641,7 @@ void startrender(uint32_t eh){
     if(euclid.handle[eh].resolutionY[0] <= 0){
         if (euclid.handle[eh].debug == 1) printf("\e[1;35mEuclidVK\e[0;37m: ResolutionY lower than 1, %i\n", euclid.handle[eh].resolutionY[0]);
         euclid.handle[eh].resolutionY[0] = 1;
-        euclid.handle[eh].resolutionX[1] = 1;
+        euclid.handle[eh].resolutionY[1] = 1;
     }
     euclid.handle[eh].defferedCount[0] = euclid.handle[eh].defferedCount[1];
     euclid.handle[eh].resolutionScale[0] = euclid.handle[eh].resolutionScale[1];
@@ -4402,16 +4403,10 @@ void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
     scissor.extent.width = euclid.handle[eh].shadowMapResolution[0];
     vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4], 0, 1, &scissor);
 
-    uint8_t usedslot = (euclid.meshes[eme].uniformslot+1)%2;
-    euclid.meshes[eme].lub[usedslot][0] = (float) euclid.handle[eh].resolutionX[0];
-    euclid.meshes[eme].lub[usedslot][1] = (float) euclid.handle[eh].resolutionY[0];
-    euclid.meshes[eme].lub[usedslot][2] = (float) euclid.handle[eh].shadowMapResolution[0];
-    euclid.meshes[eme].lub[usedslot][3] = (float) euclid.handle[eh].totalFrames;
-    euclid.meshes[eme].lub[usedslot][4] = (float) euclid.handle[eh].shadowMapsCount[0];
-    euclid.meshes[eme].lub[usedslot][5] = (float) euclid.handle[eh].renderResolutionX;
-    euclid.meshes[eme].lub[usedslot][6] = (float) euclid.handle[eh].renderResolutionY;
-    euclid.meshes[eme].lub[usedslot][7] = (float) euclid.handle[eh].lightsCount;
-    memcpy(euclid.meshes[eme].uniformBuffersMapped[MAX_FRAMES_IN_FLIGHT], euclid.meshes[eme].lub[usedslot], sizeof(euclid.meshes[eme].lub[usedslot]));
+    // NOTE: the shared usage==3 globals UBO (uniformBuffersMapped[MAX_FRAMES_IN_FLIGHT]) is now
+    // written once per mesh by updatePassGlobalsUniform() on the coordinator thread, before the
+    // shadow/deferred passes are spawned, to avoid two threads racing to write identical data
+    // into the same host-mapped memory (see renderarbeite()).
     vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].shadowPipelineLayout, 0, 1, &euclid.meshes[eme].shadowDescriptorSets[cs], 0, NULL);
 
     vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
@@ -4439,19 +4434,28 @@ void drawdeffered(uint32_t eh, uint32_t eme, uint32_t cs){
     scissor.extent.height = euclid.handle[eh].renderResolutionY;
     vkCmdSetScissor(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], 0, 1, &scissor);
 
+    // NOTE: see drawshadow() — the shared usage==3 globals UBO write was hoisted out of here too.
+    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].defferedPipelineLayout, 0, 1, &euclid.meshes[eme].defferedDescriptorSets[cs], 0, NULL);
+
+    vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
+}
+
+// Writes the per-mesh "globals" uniform block (resolution, shadow map info, light count, etc.)
+// used by the shadow and deferred passes. For usage==3 meshes both passes run on separate
+// threads (shadowpassrender / deffredpassrender) but need this identical data, so it must be
+// written exactly once here, by the coordinator thread, before those threads are created —
+// pthread_create()'s happens-before guarantee makes the write visible to both without a race.
+static void updatePassGlobalsUniform(uint32_t eh, uint32_t eme){
     uint8_t usedslot = (euclid.meshes[eme].uniformslot+1)%2;
     euclid.meshes[eme].lub[usedslot][0] = (float) euclid.handle[eh].resolutionX[0];
     euclid.meshes[eme].lub[usedslot][1] = (float) euclid.handle[eh].resolutionY[0];
-    euclid.meshes[eme].lub[usedslot][2] = (float) euclid.handle[eh].shadowMapResolution[0];  
+    euclid.meshes[eme].lub[usedslot][2] = (float) euclid.handle[eh].shadowMapResolution[0];
     euclid.meshes[eme].lub[usedslot][3] = (float) euclid.handle[eh].totalFrames;
     euclid.meshes[eme].lub[usedslot][4] = (float) euclid.handle[eh].shadowMapsCount[0];
     euclid.meshes[eme].lub[usedslot][5] = (float) euclid.handle[eh].renderResolutionX;
     euclid.meshes[eme].lub[usedslot][6] = (float) euclid.handle[eh].renderResolutionY;
     euclid.meshes[eme].lub[usedslot][7] = (float) euclid.handle[eh].lightsCount;
     memcpy(euclid.meshes[eme].uniformBuffersMapped[MAX_FRAMES_IN_FLIGHT], euclid.meshes[eme].lub[usedslot], sizeof(euclid.meshes[eme].lub[usedslot]));
-    vkCmdBindDescriptorSets(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.meshes[eme].defferedPipelineLayout, 0, 1, &euclid.meshes[eme].defferedDescriptorSets[cs], 0, NULL);
-
-    vkCmdDraw(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], euclid.models[euclid.meshes[eme].modelId].vertnum, 1, 0, 0);
 }
 
 void* shadowpassrender(void *arg){
@@ -4505,6 +4509,16 @@ void* renderarbeite(void *arg){
     while(euclid.handle[eh].lpcont != 0){
         if(euclid.handle[eh].halt_render == 0){
             startrender(eh);
+            for(uint32_t i = 0; i != euclid.mesize; i++){
+                if(euclid.meshes[i].euclidid != eh || euclid.meshes[i].usage == 0 || euclid.meshes[i].usage == 4){
+                    continue;
+                }
+                uint8_t shadoweligible = euclid.handle[eh].enableShadowMaps && (euclid.meshes[i].drawable == 1 || euclid.meshes[i].drawable == 2) && (euclid.meshes[i].usage == 2 || euclid.meshes[i].usage == 3);
+                uint8_t defferedeligible = (euclid.meshes[i].drawable == 1 || euclid.meshes[i].drawable == 3) && (euclid.meshes[i].usage == 1 || euclid.meshes[i].usage == 3);
+                if(shadoweligible || defferedeligible){
+                    updatePassGlobalsUniform(eh, i);
+                }
+            }
             pthread_create(&euclid.handle[eh].threads[0], NULL, shadowpassrender, arg);
             pthread_create(&euclid.handle[eh].threads[1], NULL, deffredpassrender, arg);
             pthread_create(&euclid.handle[eh].threads[2], NULL, lightingpassrender, arg);
@@ -4527,6 +4541,11 @@ void* renderarbeite(void *arg){
         }else if(euclid.handle[eh].halt_render == 1){
             if (euclid.handle[eh].debug == 1) printf("\e[1;35mEuclidVK\e[0;37m: Rendering paused\n");
             euclid.handle[eh].halt_render = 2;
+        }else{
+            // halt_render == 2: waiting for the main thread's loopcont() to drain the creation
+            // queue and reset halt_render to 0. Sleep briefly instead of busy-spinning a full core.
+            struct timespec ts = {0, 500000L}; // 0.5ms
+            nanosleep(&ts, NULL);
         }
     }
     return NULL;
@@ -4534,18 +4553,17 @@ void* renderarbeite(void *arg){
 
 uint32_t neweng(uint32_t shadowMapResolution, uint8_t debug){
     uint32_t eh = euclid.size;
-    if(euclid.size != 0){
-        euclidh *tmp = malloc(sizeof(euclidh)*euclid.size);
-        memcpy(tmp, euclid.handle, sizeof(euclidh)*euclid.size);
-        free(euclid.handle);
-        euclid.size++;
-        euclid.handle = malloc(sizeof(euclidh)*euclid.size);
-        memcpy(euclid.handle, tmp, sizeof(euclidh)*(euclid.size-1));
-        free(tmp);
-    }else{
-        euclid.size++;
-        euclid.handle = malloc(sizeof(euclidh)*euclid.size);
+    euclid.size++;
+    euclidh *grown = realloc(euclid.handle, sizeof(euclidh)*euclid.size);
+    if(grown == NULL){
+        if(debug == 1) printf("\e[1;31mError\e[0;37m: Failed to allocate engine handle table\n");
+        exit(-1);
     }
+    euclid.handle = grown;
+    // NOTE: growing this table still isn't safe to call concurrently with another handle's
+    // render thread (renderarbeite) dereferencing euclid.handle[...] — realloc can move the
+    // whole array. Only call neweng() for additional handles when no other handle's render
+    // thread is running, or add external synchronization around this table if that's needed.
     euclid.handle[eh].chosenDevice = -1;
     euclid.handle[eh].usedPresentMode = 0;
     euclid.handle[eh].debug = debug;
@@ -4744,7 +4762,11 @@ void destroy(uint32_t eh){
     free(euclid.handle[eh].shadowUniformBuffersMapped);
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidVK\e[0;37m: Destroyed shadow data\n");
     for(uint32_t i = 0; i != euclid.mesize; i++){
-        //fix
+        if(euclid.meshes[i].euclidid != eh){
+            // This mesh belongs to a different, still-live engine handle — its Vulkan
+            // objects were created against a different VkDevice, so skip it entirely here.
+            continue;
+        }
         if(euclid.meshes[i].usage == 0){
             vkDestroyPipeline(euclid.handle[eh].device, euclid.meshes[i].graphicsPipeline, NULL);
             vkDestroyDescriptorSetLayout(euclid.handle[eh].device, euclid.meshes[i].descriptorSetLayout, NULL);
