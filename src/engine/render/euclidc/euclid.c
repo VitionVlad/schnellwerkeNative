@@ -1690,6 +1690,12 @@ void startrender(uint32_t eh){
         euclid.handle[eh].mrec++;
         if (euclid.handle[eh].debug == 1) printf("\e[1;35mEuclidVK\e[0;37m: Recreated swapchain and deffered data\n");
     }
+    if(euclid.handle[eh].shadowMapResolution[0] < 1 || euclid.handle[eh].shadowMapsCount[0] < 1){
+        euclid.handle[eh].shadowMapResolution[0] = 1;
+        euclid.handle[eh].shadowMapsCount[0] = 1;
+        euclid.handle[eh].shadowMapResolution[1] = 1;
+        euclid.handle[eh].shadowMapsCount[1] = 1;
+    }
     if(euclid.handle[eh].shadowMapResolution[0] != euclid.handle[eh].oldshadowMapResolution || euclid.handle[eh].shadowMapsCount[0] != euclid.handle[eh].oldshadowMapsCount){
         if (euclid.handle[eh].debug == 1) printf("\e[1;35mEuclidVK\e[0;37m: Shadow map resolution changed from %i to %i, shadow count changed from %i to %i\n", euclid.handle[eh].oldshadowMapsCount, euclid.handle[eh].shadowMapResolution[0], euclid.handle[eh].shadowMapsCount[0], euclid.handle[eh].oldshadowMapsCount);
         vkDeviceWaitIdle(euclid.handle[eh].device);
@@ -1728,14 +1734,14 @@ void startrender(uint32_t eh){
 }
 
 void modifyshadowdata(uint32_t eh, uint32_t ncnt, uint32_t nres, uint32_t lcnt){
-    euclid.handle[eh].shadowMapResolution[1] = nres;
-    euclid.handle[eh].shadowMapsCount[1] = ncnt;
     euclid.handle[eh].lightsCount = lcnt;
     if(ncnt == 0){
         euclid.handle[eh].enableShadowMaps = 0;
         euclid.handle[eh].shadowMapsCount[1] = 1;
         euclid.handle[eh].shadowMapResolution[1] = 1;
     } else {
+        euclid.handle[eh].shadowMapResolution[1] = nres;
+        euclid.handle[eh].shadowMapsCount[1] = ncnt;
         euclid.handle[eh].enableShadowMaps = 1;
     }
 }
