@@ -282,11 +282,9 @@ impl UItext {
                     }
                 }
             }
-            if bt.len() == self.planes.len(){
             for i in bt.len()..self.planes.len(){
-                    self.planes[i].draw = false;
-                    self.planes[i].exec(eng);
-                }
+                self.planes[i].draw = false;
+                self.planes[i].exec(eng);
             }
             return btst;
         }

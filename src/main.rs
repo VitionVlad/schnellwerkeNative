@@ -1,3 +1,5 @@
+use std::println;
+
 use crate::engine::{engine::Engine, image::Image, loader::rw::readfs, material::Material, math::vec2::Vec2, render::render::TextureFormat, scene::Scene, ui::{UIplane, UItext}};
 
 mod engine;
@@ -70,6 +72,7 @@ fn main() {
         "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_[]{}/*`~$% ",
         engine::render::render::MeshUsage::PostPass
     );
+    fpscnt.new_line_symbol = b'|';
 
     let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral, true, 0.25f32);
 
@@ -173,10 +176,10 @@ fn main() {
         tm = 1500;
       }
 
-      let fpstxt = format!("fps:{}", eng.fps);
+      let fpstxt = format!("CPU_fps:{}|GPU_fps:{}", eng.cpu_fps, eng.gpu_fps);
       fpscnt.size.x = 15_f32;
       fpscnt.size.y = 30_f32;
-      fpscnt.pos.x = eng.render.resolution_x as f32 - fpstxt.len() as f32*fpscnt.size.x;
+      fpscnt.pos.x = 0.0;
       fpscnt.pos.y = 0.0;
       fpscnt.pos.z = 0.1;
       fpscnt.draw = true;

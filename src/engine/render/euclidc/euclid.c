@@ -142,7 +142,12 @@ typedef struct euclidh{
     double xpos;
     double ypos;
     uint32_t mrec;
-    float frametime;
+    float CPUframetime;
+    float lasttime;
+    float GPUframetime;
+    uint32_t gpufps;
+    uint32_t gpucumfps;
+    float cumtm;
     uint8_t right;
     uint8_t left;
     uint8_t middle;
@@ -223,7 +228,7 @@ typedef struct euclidmesh{
 } euclidmesh;
 
 struct euclidVK{
-    euclidh *handle;
+    euclidh handle[100];
     uint32_t size;
     euclidmaterial *materials;
     uint32_t msize;
@@ -240,7 +245,15 @@ struct euclidVK{
 } euclid;
 
 float get_frametime(uint32_t eh){
-    return euclid.handle[eh].frametime * 1000;
+    return euclid.handle[eh].CPUframetime * 1000;
+}
+
+float get_gpuframetime(uint32_t eh){
+    return euclid.handle[eh].GPUframetime * 1000;
+}
+
+uint32_t get_gpufps(uint32_t eh){
+    return euclid.handle[eh].gpufps;
 }
 
 uint32_t get_resx(uint32_t eh){
@@ -4513,6 +4526,7 @@ void* renderarbeite(void *arg){
     uint32_t *deh = (uint32_t*) arg;
     uint32_t eh = deh[0];
     while(euclid.handle[eh].lpcont != 0){
+        float t1 = glfwGetTime();
         if(euclid.handle[eh].halt_render == 0){
             startrender(eh);
             for(uint32_t i = 0; i != euclid.mesize; i++){
@@ -4548,10 +4562,16 @@ void* renderarbeite(void *arg){
             if (euclid.handle[eh].debug == 1) printf("\e[1;35mEuclidVK\e[0;37m: Rendering paused\n");
             euclid.handle[eh].halt_render = 2;
         }else{
-            // halt_render == 2: waiting for the main thread's loopcont() to drain the creation
-            // queue and reset halt_render to 0. Sleep briefly instead of busy-spinning a full core.
-            struct timespec ts = {0, 500000L}; // 0.5ms
+            struct timespec ts = {0, 500000L};
             nanosleep(&ts, NULL);
+        }
+        euclid.handle[eh].GPUframetime = glfwGetTime() - t1;
+        euclid.handle[eh].cumtm += euclid.handle[eh].GPUframetime;
+        euclid.handle[eh].gpucumfps += 1;
+        if(euclid.handle[eh].cumtm >= 1){
+            euclid.handle[eh].gpufps = euclid.handle[eh].gpucumfps;
+            euclid.handle[eh].cumtm = 0;
+            euclid.handle[eh].gpucumfps = 0;
         }
     }
     return NULL;
@@ -4560,12 +4580,15 @@ void* renderarbeite(void *arg){
 uint32_t neweng(uint32_t shadowMapResolution, uint8_t debug){
     uint32_t eh = euclid.size;
     euclid.size++;
-    euclidh *grown = realloc(euclid.handle, sizeof(euclidh)*euclid.size);
-    if(grown == NULL){
-        if(debug == 1) printf("\e[1;31mError\e[0;37m: Failed to allocate engine handle table\n");
-        exit(-1);
+    if(euclid.size >= 100){
+        euclid.size = 0;
     }
-    euclid.handle = grown;
+    //euclidh *grown = realloc(euclid.handle, sizeof(euclidh)*euclid.size);
+    //if(grown == NULL){
+    //    if(debug == 1) printf("\e[1;31mError\e[0;37m: Failed to allocate engine handle table\n");
+    //    exit(-1);
+    //}
+    //euclid.handle = grown;
     // NOTE: growing this table still isn't safe to call concurrently with another handle's
     // render thread (renderarbeite) dereferencing euclid.handle[...] — realloc can move the
     // whole array. Only call neweng() for additional handles when no other handle's render
@@ -4595,7 +4618,12 @@ uint32_t neweng(uint32_t shadowMapResolution, uint8_t debug){
     euclid.handle[eh].totalFrames = 0;
     euclid.handle[eh].lightattn = 0;
     euclid.handle[eh].mrec = 0;
-    euclid.handle[eh].frametime = 0;
+    euclid.handle[eh].CPUframetime = 0;
+    euclid.handle[eh].lasttime = 0;
+    euclid.handle[eh].GPUframetime = 0;
+    euclid.handle[eh].gpufps = 0;
+    euclid.handle[eh].gpucumfps = 0;
+    euclid.handle[eh].cumtm = 0;
     euclid.handle[eh].defferedslot = 0;
     euclid.handle[eh].shadowslot = 0;
 
@@ -4707,9 +4735,11 @@ uint32_t neweng(uint32_t shadowMapResolution, uint8_t debug){
 }
 
 uint32_t loopcont(uint32_t eh){
+    euclid.handle[eh].CPUframetime = glfwGetTime() - euclid.handle[eh].lasttime;
+    euclid.handle[eh].lasttime = glfwGetTime();
     glfwPollEvents();
-    euclid.handle[eh].frametime = glfwGetTime();
-    glfwSetTime(0);
+    //euclid.handle[eh].CPUframetime = glfwGetTime();
+    //glfwSetTime(0);
     keywork(eh);
     uint32_t tsx, tsy;
     glfwGetFramebufferSize(euclid.handle[eh].window, &tsx, &tsy);

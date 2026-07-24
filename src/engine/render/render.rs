@@ -1,12 +1,14 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::ffi::CString;
+use std::{ffi::CString};
 
 use cty::{uint8_t, uint32_t};
 
 unsafe extern "C"{
     fn get_frametime(eh: cty::uint32_t) -> cty::c_float;
+    fn get_gpuframetime(eh: cty::uint32_t) -> cty::c_float;
+    fn get_gpufps(eh: cty::uint32_t) -> cty::uint32_t;
     fn get_resx(eh: cty::uint32_t) -> cty::uint32_t;
     fn get_resy(eh: cty::uint32_t) -> cty::uint32_t;
     fn setresolution(eh: cty::uint32_t, xs: cty::uint32_t, ys: cty::uint32_t);
@@ -53,7 +55,9 @@ pub struct Render{
     pub resolution_x: u32,
     pub resolution_y: u32,
     pub fullscreen: bool,
-    pub frametime: f32,
+    pub cpu_frametime: f32,
+    pub gpu_frametime: f32,
+    pub gpu_fps: u32,
     pub lights_count: u32,
     fullscreeno: bool,
 }
@@ -72,7 +76,9 @@ impl Render{
             resolution_y: 600,
             fullscreen: false,
             fullscreeno: false,
-            frametime: 0.0,
+            cpu_frametime: 0.0,
+            gpu_frametime: 0.0,
+            gpu_fps: 0,
             lights_count: 1,
         }
     }
@@ -89,7 +95,9 @@ impl Render{
             }
             modifyshadowdata(self.euclid, self.shadow_map_count, self.shadow_map_resolution, self.lights_count);
             modifydeffereddata(self.euclid, self.camera_count, self.resolution_scale);
-            self.frametime = get_frametime(self.euclid)
+            self.cpu_frametime = get_frametime(self.euclid);
+            self.gpu_frametime = get_gpuframetime(self.euclid);
+            self.gpu_fps = get_gpufps(self.euclid);
         };
         return unsafe { loopcont(self.euclid) } == 1;
     }
