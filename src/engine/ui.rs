@@ -225,10 +225,9 @@ impl UItext {
                     self.planes.push(Object::new(eng, self.plane, self.material, self.font.clone(), self.usage, true, "".to_string()));
                 }
             }
-            //for i in  0..self.planes.len(){
-            //    self.planes[i].mesh.draw = false;
-            //    self.planes[i].mesh.exec();
-            //}
+            for i in  0..self.planes.len(){
+                self.planes[i].draw = false;
+            }
             let mut posy: f32 = self.pos.y;
             let mut bp: usize = 0;
             let mut bp2 = 0;
@@ -237,7 +236,7 @@ impl UItext {
                     bp2+=1;
                     for j in 0..self.symbols.len(){
                         if bt[i] == self.symbols[j] {
-                            self.planes[i].mesh.draw = true;
+                            self.planes[i].draw = true;
                             self.planes[i].mesh.ubo[self.ubo_index] = self.symbol_number as f32;
                             self.planes[i].mesh.ubo[self.ubo_index+1] = j as f32;
                             self.planes[i].physic_object.scale.x = self.size.x;
@@ -264,8 +263,6 @@ impl UItext {
                             }else{
                                 self.planes[i].mesh.ubo[self.ubo_index+2] = self.signal_off_value;
                             }
-
-                            self.planes[i].exec(eng);
                             break;
                         }
                         if bt[i] == self.new_line_symbol{
@@ -282,8 +279,7 @@ impl UItext {
                     }
                 }
             }
-            for i in bt.len()..self.planes.len(){
-                self.planes[i].draw = false;
+            for i in 0..self.planes.len(){
                 self.planes[i].exec(eng);
             }
             return btst;
