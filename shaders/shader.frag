@@ -148,46 +148,46 @@ vec3 keffect(vec2 uv){
 
 void main() {
     vec2 uv = fuv;
-    //vec2 texelSize = 1.0 / mi.resolutions.xy;
-    //vec3  centerColor  = SampleRTavg(uv);
-    //vec3  centerNormal = SampleNormal(uv);
-    //float centerDepth  = SampleDepth(uv);
-    //float centerLum    = Luminance(centerColor);
-    //if (centerDepth >= 0.9999) {
-    //    outColor = vec4(centerColor, 1.0);
-    //    return;
-    //}
-    //int   passIndex  = int(mi.addinfo.y);
-    //float sigmaLum   = max(mi.addinfo.z, 0.01);
-    //float sigmaNorm  = max(mi.addinfo.w, 0.01);
-    //float stepSize = float(1 << passIndex);
-    //float variance      = EstimateVariance(uv, texelSize);
-    //float adaptiveSigma = sigmaLum * (1.0 + 4.0 * sqrt(variance));
-//
-    //vec3  colorAccum  = vec3(0.0);
-    //float weightAccum = 0.0;
-//
-    //for (int row = 0; row < 5; row++) {
-    //    for (int col = 0; col < 5; col++) {
-    //        vec2  offset    = vec2(float(col - 2), float(row - 2)) * texelSize * stepSize;
-    //        vec2  sampleUV  = clamp(uv + offset, vec2(0.0), vec2(1.0));
-    //        vec3  sampleColor  = SampleRTavg(sampleUV);
-    //        vec3  sampleNormal = SampleNormal(sampleUV);
-    //        float sampleDepth  = SampleDepth(sampleUV);
-    //        float sampleLum    = Luminance(sampleColor);
-    //        if (sampleDepth >= 0.9999) continue;
-    //        float wKernel = KERNEL[row * 5 + col];
-    //        float wNormal = NormalWeight(centerNormal, sampleNormal, sigmaNorm);
-    //        float wDepth = DepthWeight(centerDepth, sampleDepth);
-    //        float wLum = LuminanceWeight(centerLum, sampleLum, adaptiveSigma);
-    //        float wColor = ColorWeight(centerColor, sampleColor);
-    //        float w = wKernel * wNormal * wDepth * wLum * wColor;
-    //        colorAccum  += sampleColor * w;
-    //        weightAccum += w;
-    //    }
-    //}
-    //vec3 denoised = colorAccum / max(weightAccum, 0.0001);
-//
-    //outColor = vec4(denoised, 1.0);
-    outColor = vec4(SampleRT(uv), 1.0);
+    vec2 texelSize = 1.0 / mi.resolutions.xy;
+    vec3  centerColor  = SampleRT(uv);
+    vec3  centerNormal = SampleNormal(uv);
+    float centerDepth  = SampleDepth(uv);
+    float centerLum    = Luminance(centerColor);
+    if (centerDepth >= 0.9999) {
+        outColor = vec4(centerColor, 1.0);
+        return;
+    }
+    int   passIndex  = int(mi.addinfo.y);
+    float sigmaLum   = max(mi.addinfo.z, 0.01);
+    float sigmaNorm  = max(mi.addinfo.w, 0.01);
+    float stepSize = float(1 << passIndex);
+    float variance      = EstimateVariance(uv, texelSize);
+    float adaptiveSigma = sigmaLum * (1.0 + 4.0 * sqrt(variance));
+
+    vec3  colorAccum  = vec3(0.0);
+    float weightAccum = 0.0;
+
+    for (int row = 0; row < 5; row++) {
+        for (int col = 0; col < 5; col++) {
+            vec2  offset    = vec2(float(col - 2), float(row - 2)) * texelSize * stepSize;
+            vec2  sampleUV  = clamp(uv + offset, vec2(0.0), vec2(1.0));
+            vec3  sampleColor  = SampleRT(sampleUV);
+            vec3  sampleNormal = SampleNormal(sampleUV);
+            float sampleDepth  = SampleDepth(sampleUV);
+            float sampleLum    = Luminance(sampleColor);
+            if (sampleDepth >= 0.9999) continue;
+            float wKernel = KERNEL[row * 5 + col];
+            float wNormal = NormalWeight(centerNormal, sampleNormal, sigmaNorm);
+            float wDepth = DepthWeight(centerDepth, sampleDepth);
+            float wLum = LuminanceWeight(centerLum, sampleLum, adaptiveSigma);
+            float wColor = ColorWeight(centerColor, sampleColor);
+            float w = wKernel * wNormal * wDepth * wLum * wColor;
+            colorAccum  += sampleColor * w;
+            weightAccum += w;
+        }
+    }
+    vec3 denoised = colorAccum / max(weightAccum, 0.0001);
+
+    outColor = vec4(denoised, 1.0);
+    //outColor = vec4(SampleRT(uv), 1.0);
 }

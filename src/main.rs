@@ -13,7 +13,7 @@ fn main() {
     let frag = readfs("shaders/frag");
     let dvert = readfs("shaders/vdeffered");
     let dfrag = readfs("shaders/fdeffered");
-    let lfrag = readfs("shaders/flight");
+    let lfrag = readfs("shaders/fslight");
     let shadow = readfs("shaders/shadow");
     let textf = readfs("shaders/ftext");
     //let imgf = readfs("shaders/fimg");
@@ -116,7 +116,7 @@ fn main() {
 
     let mut fcnt = 0u32;
 
-    //eng.render.resolution_scale = 0.5;
+    eng.render.resolution_scale = 0.75;
 
     println!("shadowmapresolution(ignore if shadowmaps are off): {}", eng.render.shadow_map_resolution);
 
@@ -173,7 +173,7 @@ fn main() {
       }
       if eng.control.get_key_state(49) && tm <= 0{
         eng.control.mouse_lock = !eng.control.mouse_lock;
-        tm = 1500;
+        tm = eng.cpu_fps as i32/5;
       }
 
       let fpstxt = format!("CPU_fps:{}|GPU_fps:{}", eng.cpu_fps, eng.gpu_fps);
