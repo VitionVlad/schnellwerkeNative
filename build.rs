@@ -1,14 +1,14 @@
 use std::process::Command;
 use std::env;
 
-//use winresource::WindowsResource;
+use winresource::WindowsResource;
 
 fn main(){
-    //if env::var_os("CARGO_CFG_WINDOWS").is_some() {
-    //    let _ = WindowsResource::new()
-    //        .set_icon("assets/icon.ico")
-    //        .compile();
-    //}
+    if env::var_os("CARGO_CFG_WINDOWS").is_some() {
+        let _ = WindowsResource::new()
+            .set_icon("assets/ui/icon.ico")
+            .compile();
+    }
 
     let out_dir = env::var("OUT_DIR").unwrap();
     
@@ -29,6 +29,7 @@ fn main(){
     println!("cargo::rustc-link-lib=static=mozart");
     println!("cargo::rustc-link-lib=vulkan-1");
     println!("cargo::rustc-link-lib=glfw3");
+    println!("cargo::rustc-link-lib=pthread");
     println!("cargo::rerun-if-changed=src/engine/render/euclidc/euclid.c");
     println!("cargo::rerun-if-changed=src/engine/audio/mozartc/mozart.c");
 }
