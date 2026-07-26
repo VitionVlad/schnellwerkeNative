@@ -218,7 +218,7 @@ impl Object {
                 self.mesh.keep_shadow = self.draw;
                 self.mesh.draw_shadow = self.draw;
             }
-            self.mesh.exec();
+            self.mesh.exec(eng.render);
         }
     }
 }

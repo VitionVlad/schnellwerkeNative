@@ -37,9 +37,9 @@ unsafe extern "C"{
     fn destroy(eh: cty::uint32_t);
     fn newmaterial(eh: cty::uint32_t, vert: *mut cty::uint32_t, frag: *mut cty::uint32_t, shadow: *mut cty::uint32_t, svert: cty::uint32_t, sfrag: cty::uint32_t, sshadow: cty::uint32_t, cullmode: cty::uint32_t, scullmode: cty::uint32_t) -> cty::uint32_t;
     fn newmodel(eh: cty::uint32_t, vert: *mut cty::c_float, uv: *mut cty::c_float, normals: *mut cty::c_float, size: cty::uint32_t) -> cty::uint32_t;
-    fn setrendercamera(eme: cty::uint32_t, val: cty::int8_t);
-    fn setmeshbuf(eme: cty::uint32_t, i: cty::uint32_t, val: cty::c_float);
-    fn setdrawable(eme: cty::uint32_t, val: cty::uint8_t);
+    fn setrendercamera(eh: cty::uint32_t, eme: cty::uint32_t, val: cty::int8_t);
+    fn setmeshbuf(eh: cty::uint32_t, eme: cty::uint32_t, i: cty::uint32_t, val: cty::c_float);
+    fn setdrawable(eh: cty::uint32_t, eme: cty::uint32_t, val: cty::uint8_t);
     fn newmesh(eh: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t, te: *mut cty::uint32_t, tn: cty::uint32_t, usage: cty::uint32_t) -> cty::uint32_t;
     fn newtexture(eh: cty::uint32_t, xsize: cty::uint32_t, ysize: cty::uint32_t, zsize: cty::uint32_t, byteperpixel: cty::uint32_t, pixels: *mut cty::c_char, is3d: cty::uint8_t, imageformat: cty::uint32_t, genmips: cty::uint8_t) -> cty::uint32_t;
     fn loopcont(eh: cty::uint32_t) -> cty::uint32_t;
@@ -293,14 +293,14 @@ impl Mesh{
         }
     }
 
-    pub fn exec(&self){
+    pub fn exec(&self, ren: Render){
         for i in 0..self.ubo.len(){
             unsafe {
-                setmeshbuf(self.meshid, i as u32, self.ubo[i]);
+                setmeshbuf(ren.euclid, self.meshid, i as u32, self.ubo[i]);
             };
         }
         unsafe {
-            setdrawable(self.meshid, match self.draw {
+            setdrawable(ren.euclid, self.meshid, match self.draw {
                 true => match self.draw_shadow {
                     true => 1,
                     false => 3,
@@ -310,7 +310,7 @@ impl Mesh{
                     false => 0,
                 },
             });
-            setrendercamera(self.meshid, match self.render_all_cameras{
+            setrendercamera(ren.euclid, self.meshid, match self.render_all_cameras{
                 true => -1,
                 false => {
                     if self.exclude_selected_camera {
