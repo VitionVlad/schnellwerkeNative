@@ -16,7 +16,11 @@ enum {
     EUCLID_QUEUE_TYPE_MATERIAL = 0,
     EUCLID_QUEUE_TYPE_MODEL = 1,
     EUCLID_QUEUE_TYPE_MESH = 2,
-    EUCLID_QUEUE_TYPE_TEXTURE = 3
+    EUCLID_QUEUE_TYPE_TEXTURE = 3,
+    EUCLID_QUEUE_TYPE_MATERIAL_DEINIT = 10,
+    EUCLID_QUEUE_TYPE_MODEL_DEINIT = 11,
+    EUCLID_QUEUE_TYPE_MESH_DEINIT = 12,
+    EUCLID_QUEUE_TYPE_TEXTURE_DEINIT = 13
 };
 
 typedef struct euclidCreationQueue{
@@ -47,6 +51,7 @@ typedef struct euclidCreationQueue{
     uint32_t *te;
     uint32_t tn;
     uint32_t usage;
+    uint8_t reset_rec;
 } euclidCreationQueue;
 
 typedef struct euclidmaterial{
@@ -57,6 +62,7 @@ typedef struct euclidmaterial{
     uint32_t shcullMode;
     uint32_t polygonMode;
     float lineWidth;
+    uint8_t matrec;
 } euclidmaterial;
 
 typedef struct euclidmodel{
@@ -71,6 +77,7 @@ typedef struct euclidtexture{
     VkImageView textureImageView;
     VkSampler sampler;
     uint32_t mipLevels;
+    uint8_t trec;
 } euclidtexture;
 
 typedef struct euclidmesh{
@@ -107,7 +114,10 @@ typedef struct euclidmesh{
     uint8_t paramslot;
     uint32_t savpapparam[2];
     uint32_t *savedtex;
+    uint8_t *trec;
     uint32_t texnm;
+    uint8_t matrec;
+    uint32_t matid;
 } euclidmesh;
 
 typedef struct euclidh{
@@ -203,11 +213,11 @@ typedef struct euclidh{
     double xpos;
     double ypos;
     uint32_t mrec;
-    float CPUframetime;
-    float lasttime;
-    float GPUframetime;
-    uint32_t gpufps;
-    uint32_t gpucumfps;
+    _Atomic float CPUframetime;
+    _Atomic float lasttime;
+    _Atomic float GPUframetime;
+    _Atomic uint32_t gpufps;
+    _Atomic uint32_t gpucumfps;
     float cumtm;
     uint8_t right;
     uint8_t left;
@@ -1960,6 +1970,9 @@ static void process_creation_queue(uint32_t eh){
         if (euclid.handle[eh].debug == 1) printf("\e[1;35mEuclidVK\e[0;37m: Creating item at index = %i, type = %i\n", i, euclid.handle[eh].eq[i].type);
         switch(euclid.handle[eh].eq[i].type){
             case EUCLID_QUEUE_TYPE_MATERIAL:
+                if(euclid.handle[eh].eq[i].reset_rec){
+                    euclid.handle[eh].materials[euclid.handle[eh].eq[i].em].matrec = 0;
+                }
                 newmaterial_real(eh, euclid.handle[eh].eq[i].em, &euclid.handle[eh].eq[i]);
                 break;
             case EUCLID_QUEUE_TYPE_MODEL:
@@ -1969,6 +1982,9 @@ static void process_creation_queue(uint32_t eh){
                 newmesh_real(eh, euclid.handle[eh].eq[i].meshid, &euclid.handle[eh].eq[i]);
                 break;
             case EUCLID_QUEUE_TYPE_TEXTURE:
+                if(euclid.handle[eh].eq[i].reset_rec){
+                    euclid.handle[eh].textures[euclid.handle[eh].eq[i].em].trec = 0;
+                }
                 newtexture_real(eh, euclid.handle[eh].eq[i].em, &euclid.handle[eh].eq[i]);
                 break;
             default:
@@ -2010,6 +2026,7 @@ static uint32_t newmaterial_real(uint32_t eh, uint32_t em, euclidCreationQueue *
     euclid.handle[eh].materials[em].shcullMode = item->scullmode;
     euclid.handle[eh].materials[em].polygonMode = VK_POLYGON_MODE_FILL;
     euclid.handle[eh].materials[em].lineWidth = 1.0;
+    euclid.handle[eh].materials[em].matrec = (euclid.handle[eh].materials[em].matrec+1)%255;
 
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMT\e[0;37m: Shader module created by id = %d\n", em);
     return em;
@@ -2029,6 +2046,7 @@ uint32_t newmaterial(uint32_t eh, uint32_t *vert, uint32_t *frag, uint32_t *shad
     item.sshadow = sshadow;
     item.cullmode = cullmode;
     item.scullmode = scullmode;
+    item.reset_rec = 1;
     if(svert > 0){
         item.vert = malloc(svert);
         memcpy(item.vert, vert, svert);
@@ -3780,11 +3798,13 @@ static uint32_t newmesh_real(uint32_t eh, uint32_t eme, euclidCreationQueue *ite
     euclid.handle[eh].meshes[eme].paramslot = 0;
     euclid.handle[eh].meshes[eme].usage = item->usage;
     euclid.handle[eh].meshes[eme].mrec = euclid.handle[eh].mrec;
+    euclid.handle[eh].meshes[eme].matid = item->es;
 
     euclid.handle[eh].meshes[eme].savpapparam[0] = item->es;
     euclid.handle[eh].meshes[eme].savpapparam[1] = item->em;
 
     euclid.handle[eh].meshes[eme].savedtex = malloc(sizeof(uint32_t) * item->tn);
+    euclid.handle[eh].meshes[eme].trec = malloc(sizeof(uint8_t) * item->tn);
     euclid.handle[eh].meshes[eme].texnm = item->tn;
     if (item->tn > 0) {
         memcpy(euclid.handle[eh].meshes[eme].savedtex, item->te, sizeof(uint32_t) * item->tn);
@@ -4083,6 +4103,8 @@ void generateMipmaps3D(VkImage image, int32_t texWidth, int32_t texHeight, uint3
 static uint32_t newtexture_real(uint32_t eh, uint32_t te, euclidCreationQueue *item){
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
+    
+    euclid.handle[eh].textures[te].trec = (euclid.handle[eh].textures[te].trec+1)%255;
 
     VkDeviceSize imageSize = item->xsize * item->ysize * item->zsize * item->byteperpixel;
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidTEX\e[0;37m: passed image size = %dx%dx%d, total size number = %d\n", item->xsize, item->ysize, item->zsize, imageSize);
@@ -4289,6 +4311,7 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     item.is3d = is3d;
     item.imageformat = imageformat;
     item.genmips = genmips;
+    item.reset_rec = 1;
     if(xsize > 0 && ysize > 0 && zsize > 0 && byteperpixel > 0){
         uint32_t pixelSize = xsize * ysize * zsize * byteperpixel;
         item.pixels = malloc(pixelSize);
@@ -4303,7 +4326,14 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
 }
 
 void draw(uint32_t eh, uint32_t eme){
-    if(euclid.handle[eh].mrec != euclid.handle[eh].meshes[eme].mrec && euclid.handle[eh].meshes[eme].usage == 0){
+    uint8_t rst = 0;
+    for(int i = 0; i < euclid.handle[eh].meshes[eme].texnm; i++){
+        if(euclid.handle[eh].meshes[eme].trec[i] != euclid.handle[eh].textures[i].trec){
+            euclid.handle[eh].meshes[eme].trec[i] = euclid.handle[eh].textures[i].trec;
+            rst = 1;
+        }
+    }
+    if((euclid.handle[eh].mrec != euclid.handle[eh].meshes[eme].mrec && euclid.handle[eh].meshes[eme].usage == 0) || rst == 1 || euclid.handle[eh].meshes[eme].matrec != euclid.handle[eh].materials[euclid.handle[eh].meshes[eme].matid].matrec){
         vkFreeDescriptorSets(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].descriptorPool, MAX_FRAMES_IN_FLIGHT, euclid.handle[eh].meshes[eme].descriptorSets);
         vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].descriptorPool, NULL);
         free(euclid.handle[eh].meshes[eme].descriptorSets);
@@ -4312,6 +4342,7 @@ void draw(uint32_t eh, uint32_t eme){
         vkDestroyPipeline(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].graphicsPipeline, NULL);
         createPipeline(eh, eme, euclid.handle[eh].meshes[eme].savpapparam[0], euclid.handle[eh].meshes[eme].savpapparam[1]);
         euclid.handle[eh].meshes[eme].mrec = euclid.handle[eh].mrec;
+        euclid.handle[eh].meshes[eme].matrec = euclid.handle[eh].materials[euclid.handle[eh].meshes[eme].matid].matrec;
     }
 
     vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+3], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.handle[eh].meshes[eme].graphicsPipeline);
@@ -4351,7 +4382,14 @@ void draw(uint32_t eh, uint32_t eme){
 }
 
 void drawlighting(uint32_t eh, uint32_t eme){
-    if(euclid.handle[eh].mrec != euclid.handle[eh].meshes[eme].mrec && euclid.handle[eh].meshes[eme].usage == 4){
+    uint8_t rst = 0;
+    for(int i = 0; i < euclid.handle[eh].meshes[eme].texnm; i++){
+        if(euclid.handle[eh].meshes[eme].trec[i] != euclid.handle[eh].textures[i].trec){
+            euclid.handle[eh].meshes[eme].trec[i] = euclid.handle[eh].textures[i].trec;
+            rst = 1;
+        }
+    }
+    if((euclid.handle[eh].mrec != euclid.handle[eh].meshes[eme].mrec && euclid.handle[eh].meshes[eme].usage == 4) || rst == 1 || euclid.handle[eh].meshes[eme].matrec != euclid.handle[eh].materials[euclid.handle[eh].meshes[eme].matid].matrec){
         vkFreeDescriptorSets(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].lightingDescriptorPool, 1, &euclid.handle[eh].meshes[eme].lightingDescriptorSets);
         vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].lightingDescriptorPool, NULL);
         //free(euclid.meshes[eme].lightingDescriptorSets);
@@ -4360,6 +4398,7 @@ void drawlighting(uint32_t eh, uint32_t eme){
         vkDestroyPipeline(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].graphicsPipeline, NULL);
         createLightingPipeline(eh, eme, euclid.handle[eh].meshes[eme].savpapparam[0], euclid.handle[eh].meshes[eme].savpapparam[1]);
         euclid.handle[eh].meshes[eme].mrec = euclid.handle[eh].mrec;
+        euclid.handle[eh].meshes[eme].matrec = euclid.handle[eh].materials[euclid.handle[eh].meshes[eme].matid].matrec;
     }
 
     vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+2], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.handle[eh].meshes[eme].graphicsPipeline);
@@ -4399,6 +4438,16 @@ void drawlighting(uint32_t eh, uint32_t eme){
 }
 
 void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
+    if(euclid.handle[eh].meshes[eme].matrec != euclid.handle[eh].materials[euclid.handle[eh].meshes[eme].matid].matrec){
+        vkFreeDescriptorSets(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].shadowDescriptorPool, 100, euclid.handle[eh].meshes[eme].shadowDescriptorSets);
+        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].shadowDescriptorPool, NULL);
+        //free(euclid.meshes[eme].lightingDescriptorSets);
+        createShadowDescriptorPool(eh, eme);
+        createShadowDescriptorSets(eh, eme);
+        vkDestroyPipeline(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].shadowPipeline, NULL);
+        createshadowPipeline(eh, eme, euclid.handle[eh].meshes[eme].savpapparam[0], euclid.handle[eh].meshes[eme].savpapparam[1]);
+        euclid.handle[eh].meshes[eme].matrec = euclid.handle[eh].materials[euclid.handle[eh].meshes[eme].matid].matrec;
+    }
     vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.handle[eh].meshes[eme].shadowPipeline);
 
     VkDeviceSize offsets[] = {0};
@@ -4430,6 +4479,23 @@ void drawshadow(uint32_t eh, uint32_t eme, uint32_t cs){
 }
 
 void drawdeffered(uint32_t eh, uint32_t eme, uint32_t cs){
+    uint8_t rst = 0;
+    for(int i = 0; i < euclid.handle[eh].meshes[eme].texnm; i++){
+        if(euclid.handle[eh].meshes[eme].trec[i] != euclid.handle[eh].textures[i].trec){
+            euclid.handle[eh].meshes[eme].trec[i] = euclid.handle[eh].textures[i].trec;
+            rst = 1;
+        }
+    }
+    if(rst == 1 || euclid.handle[eh].meshes[eme].matrec != euclid.handle[eh].materials[euclid.handle[eh].meshes[eme].matid].matrec){
+        vkFreeDescriptorSets(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].defferedDescriptorPool, 10, euclid.handle[eh].meshes[eme].defferedDescriptorSets);
+        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].defferedDescriptorPool, NULL);
+        //free(euclid.meshes[eme].lightingDescriptorSets);
+        createDeferredDescriptorPool(eh, eme);
+        createDefferedDescriptorSets(eh, eme);
+        vkDestroyPipeline(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].defferedPipeline, NULL);
+        createdefferedPipeline(eh, eme, euclid.handle[eh].meshes[eme].savpapparam[0], euclid.handle[eh].meshes[eme].savpapparam[1]);
+        euclid.handle[eh].meshes[eme].matrec = euclid.handle[eh].materials[euclid.handle[eh].meshes[eme].matid].matrec;
+    }
     vkCmdBindPipeline(euclid.handle[eh].commandBuffers[euclid.handle[eh].currentFrame*4+1], VK_PIPELINE_BIND_POINT_GRAPHICS, euclid.handle[eh].meshes[eme].defferedPipeline);
 
     VkDeviceSize offsets[] = {0};
@@ -4519,8 +4585,8 @@ void* renderarbeite(void *arg){
     uint32_t *deh = (uint32_t*) arg;
     uint32_t eh = deh[0];
     while(euclid.handle[eh].lpcont != 0){
-        float t1 = glfwGetTime();
         if(euclid.handle[eh].halt_render == 0){
+            float t1 = glfwGetTime();
             startrender(eh);
             for(uint32_t i = 0; i != euclid.handle[eh].mesize; i++){
                 if(euclid.handle[eh].meshes[i].usage == 0 || euclid.handle[eh].meshes[i].usage == 4){
@@ -4551,20 +4617,20 @@ void* renderarbeite(void *arg){
             }
             euclid.handle[eh].defferedslot = (euclid.handle[eh].defferedslot+1)%2;
             euclid.handle[eh].shadowslot = (euclid.handle[eh].shadowslot+1)%2;
+            euclid.handle[eh].GPUframetime = glfwGetTime() - t1;
+            euclid.handle[eh].cumtm += euclid.handle[eh].GPUframetime;
+            euclid.handle[eh].gpucumfps += 1;
+            if(euclid.handle[eh].cumtm >= 1){
+                euclid.handle[eh].gpufps = euclid.handle[eh].gpucumfps;
+                euclid.handle[eh].cumtm = 0;
+                euclid.handle[eh].gpucumfps = 0;
+            }
         }else if(euclid.handle[eh].halt_render == 1){
             if (euclid.handle[eh].debug == 1) printf("\e[1;35mEuclidVK\e[0;37m: Rendering paused\n");
             euclid.handle[eh].halt_render = 2;
         }else{
             struct timespec ts = {0, 500000L};
             nanosleep(&ts, NULL);
-        }
-        euclid.handle[eh].GPUframetime = glfwGetTime() - t1;
-        euclid.handle[eh].cumtm += euclid.handle[eh].GPUframetime;
-        euclid.handle[eh].gpucumfps += 1;
-        if(euclid.handle[eh].cumtm >= 1){
-            euclid.handle[eh].gpufps = euclid.handle[eh].gpucumfps;
-            euclid.handle[eh].cumtm = 0;
-            euclid.handle[eh].gpucumfps = 0;
         }
     }
     return NULL;
@@ -4728,8 +4794,9 @@ uint32_t neweng(uint32_t shadowMapResolution, uint8_t debug){
 }
 
 uint32_t loopcont(uint32_t eh){
-    euclid.handle[eh].CPUframetime = glfwGetTime() - euclid.handle[eh].lasttime;
-    euclid.handle[eh].lasttime = glfwGetTime();
+    float ctm = glfwGetTime();
+    euclid.handle[eh].CPUframetime = ctm - euclid.handle[eh].lasttime;
+    euclid.handle[eh].lasttime = ctm;
     glfwPollEvents();
     //euclid.handle[eh].CPUframetime = glfwGetTime();
     //glfwSetTime(0);
