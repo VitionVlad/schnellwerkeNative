@@ -43,6 +43,14 @@ unsafe extern "C"{
     fn newmesh(eh: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t, te: *mut cty::uint32_t, tn: cty::uint32_t, usage: cty::uint32_t) -> cty::uint32_t;
     fn newtexture(eh: cty::uint32_t, xsize: cty::uint32_t, ysize: cty::uint32_t, zsize: cty::uint32_t, byteperpixel: cty::uint32_t, pixels: *mut cty::c_char, is3d: cty::uint8_t, imageformat: cty::uint32_t, genmips: cty::uint8_t) -> cty::uint32_t;
     fn loopcont(eh: cty::uint32_t) -> cty::uint32_t;
+    fn destroy_material(eh: cty::uint32_t, em: cty::uint32_t);
+    fn destroy_model(eh: cty::uint32_t, em: cty::uint32_t);
+    fn destroy_texture(eh: cty::uint32_t, te: cty::uint32_t);
+    fn destroy_mesh(eh: cty::uint32_t, em: cty::uint32_t);
+    fn recmaterial(eh: cty::uint32_t, em: cty::uint32_t, vert: *mut cty::uint32_t, frag: *mut cty::uint32_t, shadow: *mut cty::uint32_t, svert: cty::uint32_t, sfrag: cty::uint32_t, sshadow: cty::uint32_t, cullmode: cty::uint32_t, scullmode: cty::uint32_t);
+    fn recmodel(eh: cty::uint32_t, em: cty::uint32_t, vert: *mut cty::c_float, uv: *mut cty::c_float, normals: *mut cty::c_float, size: cty::uint32_t);
+    fn recmesh(eh: cty::uint32_t, em: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t, te: *mut cty::uint32_t, tn: cty::uint32_t, usage: cty::uint32_t);
+    fn rectexture(eh: cty::uint32_t, te: cty::uint32_t, xsize: cty::uint32_t, ysize: cty::uint32_t, zsize: cty::uint32_t, byteperpixel: cty::uint32_t, pixels: *mut cty::c_char, is3d: cty::uint8_t, imageformat: cty::uint32_t, genmips: cty::uint8_t);
 }
 
 #[derive(Copy, Clone)]
@@ -187,6 +195,7 @@ pub enum CullMode {
 #[derive(Copy, Clone)]
 pub struct MaterialShaders{
     pub materialid: u32,
+    pub destroyed: bool,
 }
 
 impl MaterialShaders{
@@ -194,7 +203,24 @@ impl MaterialShaders{
         MaterialShaders { 
             materialid: unsafe{
                 newmaterial(ren.euclid, vert.as_ptr() as *mut u32, frag.as_ptr() as *mut u32, shadow.as_ptr() as *mut u32, vert.len() as u32, frag.len() as u32, shadow.len() as u32, cullmode as u32, shadow_cullmode as u32)
+            },
+            destroyed: false,
+        }
+    }
+    pub fn destroy(&mut self, ren: Render){
+        if !self.destroyed{
+            unsafe {
+                destroy_material(ren.euclid, self.materialid);
             }
+            self.destroyed = true;
+        }
+    }
+    pub fn init(&mut self, ren: Render, vert: Vec<u8>, frag: Vec<u8>, shadow: Vec<u8>, cullmode: CullMode, shadow_cullmode: CullMode){
+        if self.destroyed{
+            unsafe {
+                recmaterial(ren.euclid, self.materialid, vert.as_ptr() as *mut u32, frag.as_ptr() as *mut u32, shadow.as_ptr() as *mut u32, vert.len() as u32, frag.len() as u32, shadow.len() as u32, cullmode as u32, shadow_cullmode as u32);
+            }
+            self.destroyed = false;
         }
     }
 }
@@ -202,6 +228,7 @@ impl MaterialShaders{
 #[derive(Copy, Clone)]
 pub struct Vertexes{
     pub modelid: u32,
+    pub destroyed: bool,
 }
 
 impl Vertexes{
@@ -222,7 +249,37 @@ impl Vertexes{
         Vertexes { 
             modelid: unsafe{
                 newmodel(ren.euclid, v.as_ptr() as *mut f32, u.as_ptr() as *mut f32, n.as_ptr() as *mut f32, size as u32)
+            },
+            destroyed: false,
+        }
+    }
+    pub fn destroy(&mut self, ren: Render){
+        if !self.destroyed{
+            unsafe {
+                destroy_model(ren.euclid, self.modelid);
             }
+            self.destroyed = true;
+        }
+    }
+    pub fn init(&mut self, ren: Render, vertices: Vec<f32>){
+        if self.destroyed{
+            let size = vertices.len()/8;
+            let mut v: Vec<f32> = vec![];
+            let mut u: Vec<f32> = vec![];
+            let mut n: Vec<f32> = vec![];
+            for i in 0..size*3 {
+                v.push(vertices[i]);
+            }
+            for i in 0..size*2 {
+                u.push(vertices[i+size*3]);
+            }
+            for i in 0..size*3 {
+                n.push(vertices[i+size*5]);
+            }
+            unsafe {
+                recmodel(ren.euclid, self.modelid, v.as_ptr() as *mut f32, u.as_ptr() as *mut f32, n.as_ptr() as *mut f32, size as u32);
+            }
+            self.destroyed = false;
         }
     }
 }
@@ -235,6 +292,7 @@ pub enum TextureFormat{
 #[derive(Copy, Clone)]
 pub struct Texture{
     pub texid: u32,
+    pub destroyed: bool,
 }
 
 impl Texture {
@@ -246,7 +304,28 @@ impl Texture {
         Texture { 
             texid: unsafe {
                 newtexture(render.euclid, xs, ys, zs, byteperpixel, data.as_ptr() as *mut i8, is3d as u8, format as u32, gen_mipmaps as u8)
+            },
+            destroyed: false,
+        }
+    }
+    pub fn destroy(&mut self, ren: Render){
+        if !self.destroyed{
+            unsafe {
+                destroy_texture(ren.euclid, self.texid);
             }
+            self.destroyed = true;
+        }
+    }
+    pub fn init(&mut self, render: Render, xs: u32, ys: u32, zs: u32, data: Vec<u8>, is3d: bool, format: TextureFormat, gen_mipmaps: bool){
+        if self.destroyed{
+            let byteperpixel = match format {
+                TextureFormat::R8g8b8a8Unorm => 4,
+                TextureFormat::R16g16b16a16Sfloat => 8,
+            };
+            unsafe {
+                rectexture(render.euclid, self.texid, xs, ys, zs, byteperpixel, data.as_ptr() as *mut i8, is3d as u8, format as u32, gen_mipmaps as u8);
+            }
+            self.destroyed = false;
         }
     }
 }
@@ -271,6 +350,7 @@ pub struct Mesh{
     pub render_all_cameras: bool,
     pub exclude_selected_camera: bool,
     pub camera_number: i8,
+    pub destroyed: bool,
 }
 
 impl Mesh{
@@ -290,9 +370,28 @@ impl Mesh{
             render_all_cameras: true,
             exclude_selected_camera: false,
             camera_number: 0,
+            destroyed: false,
         }
     }
-
+    pub fn init(&mut self, ren: Render, model: Vertexes, material: MaterialShaders, textures: Vec<Texture>, usage: MeshUsage){
+        if self.destroyed{
+            let mut idv = vec![];
+            for i in 0..textures.len(){
+                idv.push(textures[i].texid);
+            }
+            unsafe {
+                recmesh(ren.euclid, self.meshid, material.materialid, model.modelid, idv.as_mut_ptr(), textures.len() as u32, usage as u32);
+                self.ubo = [1.0; 56];
+                self.draw = true;
+                self.draw_shadow = true;
+                self.keep_shadow = true;
+                self.render_all_cameras = true;
+                self.exclude_selected_camera = false;
+                self.camera_number = 0;
+                self.destroyed = false;
+            }
+        }
+    }
     pub fn exec(&self, ren: Render){
         for i in 0..self.ubo.len(){
             unsafe {
@@ -320,6 +419,21 @@ impl Mesh{
                     }
                 }
             });
+        }
+    }
+    pub fn destroy(&mut self, ren: Render){
+        if !self.destroyed{
+            unsafe {
+                destroy_mesh(ren.euclid, self.meshid);
+            }
+            self.ubo = [1.0; 56];
+            self.draw = true;
+            self.draw_shadow = true;
+            self.keep_shadow = true;
+            self.render_all_cameras = true;
+            self.exclude_selected_camera = false;
+            self.camera_number = 0;
+            self.destroyed = true;
         }
     }
 }

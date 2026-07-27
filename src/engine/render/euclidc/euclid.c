@@ -1927,6 +1927,112 @@ static void free_creation_queue_item(euclidCreationQueue *item){
     //memset(item, 0, sizeof(*item));
 }
 
+uint8_t deinitmaterial(uint32_t eh, uint32_t em){
+    if(em >= euclid.handle[eh].msize){
+        if (euclid.handle[eh].debug == 1) printf("\e[1;31mError\e[0;37m: deinitmaterial - invalid id = %d\n", em);
+        return 0;
+    }
+    vkDestroyShaderModule(euclid.handle[eh].device, euclid.handle[eh].materials[em].vertModule, NULL);
+    vkDestroyShaderModule(euclid.handle[eh].device, euclid.handle[eh].materials[em].fragModule, NULL);
+    vkDestroyShaderModule(euclid.handle[eh].device, euclid.handle[eh].materials[em].shadowModule, NULL);
+    euclid.handle[eh].materials[em].vertModule = VK_NULL_HANDLE;
+    euclid.handle[eh].materials[em].fragModule = VK_NULL_HANDLE;
+    euclid.handle[eh].materials[em].shadowModule = VK_NULL_HANDLE;
+
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMT\e[0;37m: De-initialized material id = %d\n", em);
+    return 1;
+}
+
+uint8_t deinitmodel(uint32_t eh, uint32_t em){
+    if(em >= euclid.handle[eh].mosize){
+        if (euclid.handle[eh].debug == 1) printf("\e[1;31mError\e[0;37m: deinitmodel - invalid id = %d\n", em);
+        return 0;
+    }
+    vkDestroyBuffer(euclid.handle[eh].device, euclid.handle[eh].models[em].vertexBuffer, NULL);
+    vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].models[em].vertexBufferMemory, NULL);
+    euclid.handle[eh].models[em].vertexBuffer = VK_NULL_HANDLE;
+    euclid.handle[eh].models[em].vertexBufferMemory = VK_NULL_HANDLE;
+
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMD\e[0;37m: De-initialized model id = %d\n", em);
+    return 1;
+}
+
+uint8_t deinittexture(uint32_t eh, uint32_t te){
+    if(te >= euclid.handle[eh].tsize){
+        if (euclid.handle[eh].debug == 1) printf("\e[1;31mError\e[0;37m: deinittexture - invalid id = %d\n", te);
+        return 0;
+    }
+    vkDestroySampler(euclid.handle[eh].device, euclid.handle[eh].textures[te].sampler, NULL);
+    vkDestroyImageView(euclid.handle[eh].device, euclid.handle[eh].textures[te].textureImageView, NULL);
+    vkDestroyImage(euclid.handle[eh].device, euclid.handle[eh].textures[te].texture, NULL);
+    vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].textures[te].textureImageMemory, NULL);
+    euclid.handle[eh].textures[te].sampler = VK_NULL_HANDLE;
+    euclid.handle[eh].textures[te].textureImageView = VK_NULL_HANDLE;
+    euclid.handle[eh].textures[te].texture = VK_NULL_HANDLE;
+    euclid.handle[eh].textures[te].textureImageMemory = VK_NULL_HANDLE;
+
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidTEX\e[0;37m: De-initialized texture id = %d\n", te);
+    return 1;
+}
+
+uint8_t deinitmesh(uint32_t eh, uint32_t eme){
+    if(eme >= euclid.handle[eh].mesize){
+        if (euclid.handle[eh].debug == 1) printf("\e[1;31mError\e[0;37m: deinitmesh - invalid id = %d\n", eme);
+        return 0;
+    }
+    euclid.handle[eh].meshes[eme].drawable = 0;
+
+    if(euclid.handle[eh].meshes[eme].usage == 0){
+        vkDestroyPipeline(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].graphicsPipeline, NULL);
+        vkDestroyDescriptorSetLayout(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].descriptorSetLayout, NULL);
+        vkDestroyPipelineLayout(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].pipelineLayout, NULL);
+        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].descriptorPool, NULL);
+        free(euclid.handle[eh].meshes[eme].descriptorSets);
+    }
+    if(euclid.handle[eh].meshes[eme].usage == 1){
+        vkDestroyPipeline(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].defferedPipeline, NULL);
+        vkDestroyDescriptorSetLayout(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].defferedDescriptorSetLayout, NULL);
+        vkDestroyPipelineLayout(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].defferedPipelineLayout, NULL);
+        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].defferedDescriptorPool, NULL);
+    }
+    if(euclid.handle[eh].meshes[eme].usage == 2){
+        vkDestroyPipeline(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].shadowPipeline, NULL);
+        vkDestroyDescriptorSetLayout(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].shadowDescriptorSetLayout, NULL);
+        vkDestroyPipelineLayout(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].shadowPipelineLayout, NULL);
+        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].shadowDescriptorPool, NULL);
+    }
+    if(euclid.handle[eh].meshes[eme].usage == 3){
+        vkDestroyPipeline(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].defferedPipeline, NULL);
+        vkDestroyDescriptorSetLayout(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].defferedDescriptorSetLayout, NULL);
+        vkDestroyPipelineLayout(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].defferedPipelineLayout, NULL);
+        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].defferedDescriptorPool, NULL);
+        vkDestroyPipeline(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].shadowPipeline, NULL);
+        vkDestroyDescriptorSetLayout(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].shadowDescriptorSetLayout, NULL);
+        vkDestroyPipelineLayout(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].shadowPipelineLayout, NULL);
+        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].shadowDescriptorPool, NULL);
+    }
+    if(euclid.handle[eh].meshes[eme].usage == 4){
+        vkDestroyPipeline(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].graphicsPipeline, NULL);
+        vkDestroyDescriptorSetLayout(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].lightingDescriptorSetLayout, NULL);
+        vkFreeDescriptorSets(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].lightingDescriptorPool, 1, &euclid.handle[eh].meshes[eme].lightingDescriptorSets);
+        vkDestroyDescriptorPool(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].lightingDescriptorPool, NULL);
+    }
+
+    for(uint32_t j = 0; j != MAX_FRAMES_IN_FLIGHT+1; j++){
+        vkDestroyBuffer(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].uniformBuffers[j], NULL);
+        vkFreeMemory(euclid.handle[eh].device, euclid.handle[eh].meshes[eme].uniformBuffersMemory[j], NULL);
+    }
+    free(euclid.handle[eh].meshes[eme].uniformBuffers);
+    free(euclid.handle[eh].meshes[eme].uniformBuffersMemory);
+    free(euclid.handle[eh].meshes[eme].uniformBuffersMapped);
+    free(euclid.handle[eh].meshes[eme].savedtex);
+    euclid.handle[eh].meshes[eme].savedtex = NULL;
+    euclid.handle[eh].meshes[eme].texnm = 0;
+
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidMS\e[0;37m: De-initialized mesh id = %d\n", eme);
+    return 1;
+}
+
 static uint32_t newmaterial_real(uint32_t eh, uint32_t em, euclidCreationQueue *item);
 static uint32_t newmodel_real(uint32_t eh, uint32_t em, euclidCreationQueue *item);
 static uint32_t newmesh_real(uint32_t eh, uint32_t eme, euclidCreationQueue *item);
@@ -1942,6 +2048,34 @@ static void push_creation_queue(uint32_t eh, const euclidCreationQueue *item){
     euclid.handle[eh].eq[euclid.handle[eh].queuesize] = item[0];
     euclid.handle[eh].queuesize++;
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidOQ\e[0;37m: queue reallocation complete\n");
+}
+
+void destroy_material(uint32_t eh, uint32_t em){
+    euclidCreationQueue item;
+    item.es = em;
+    item.type = EUCLID_QUEUE_TYPE_MATERIAL_DEINIT;
+    push_creation_queue(eh, &item);
+}
+
+void destroy_model(uint32_t eh, uint32_t em){
+    euclidCreationQueue item;
+    item.em = em;
+    item.type = EUCLID_QUEUE_TYPE_MODEL_DEINIT;
+    push_creation_queue(eh, &item);
+}
+
+void destroy_texture(uint32_t eh, uint32_t te){
+    euclidCreationQueue item;
+    item.em = te;
+    item.type = EUCLID_QUEUE_TYPE_TEXTURE_DEINIT;
+    push_creation_queue(eh, &item);
+}
+
+void destroy_mesh(uint32_t eh, uint32_t eme){
+    euclidCreationQueue item;
+    item.meshid = eme;
+    item.type = EUCLID_QUEUE_TYPE_MESH_DEINIT;
+    push_creation_queue(eh, &item);
 }
 
 static void process_creation_queue(uint32_t eh){
@@ -1986,6 +2120,18 @@ static void process_creation_queue(uint32_t eh){
                     euclid.handle[eh].textures[euclid.handle[eh].eq[i].em].trec = 0;
                 }
                 newtexture_real(eh, euclid.handle[eh].eq[i].em, &euclid.handle[eh].eq[i]);
+                break;
+            case EUCLID_QUEUE_TYPE_MATERIAL_DEINIT:
+                deinitmaterial(eh, euclid.handle[eh].eq[i].es);
+                break;
+            case EUCLID_QUEUE_TYPE_MODEL_DEINIT:
+                deinitmodel(eh, euclid.handle[eh].eq[i].em);
+                break;
+            case EUCLID_QUEUE_TYPE_MESH_DEINIT:
+                deinitmesh(eh, euclid.handle[eh].eq[i].meshid);
+                break;
+            case EUCLID_QUEUE_TYPE_TEXTURE_DEINIT:
+                deinittexture(eh, euclid.handle[eh].eq[i].em);
                 break;
             default:
                 break;
@@ -2065,6 +2211,34 @@ uint32_t newmaterial(uint32_t eh, uint32_t *vert, uint32_t *frag, uint32_t *shad
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidOQ\e[0;37m: New material pushed in queue creation, index = %i\n", em);
 
     return em;
+}
+
+void recmaterial(uint32_t eh, uint32_t em, uint32_t *vert, uint32_t *frag, uint32_t *shadow, uint32_t svert, uint32_t sfrag, uint32_t sshadow, uint32_t cullmode, uint32_t scullmode){
+    euclidCreationQueue item = {0};
+    item.type = EUCLID_QUEUE_TYPE_MATERIAL;
+    item.em = em;
+    item.svert = svert;
+    item.sfrag = sfrag;
+    item.sshadow = sshadow;
+    item.cullmode = cullmode;
+    item.scullmode = scullmode;
+    item.reset_rec = 0;
+    if(svert > 0){
+        item.vert = malloc(svert);
+        memcpy(item.vert, vert, svert);
+    }
+    if(sfrag > 0){
+        item.frag = malloc(sfrag);
+        memcpy(item.frag, frag, sfrag);
+    }
+    if(sshadow > 0){
+        item.shadow = malloc(sshadow);
+        memcpy(item.shadow, shadow, sshadow);
+    }
+
+    push_creation_queue(eh, &item);
+
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidOQ\e[0;37m: Material pushed in queue creation, index = %i\n", em);
 }
 
 static uint32_t newmodel_real(uint32_t eh, uint32_t em, euclidCreationQueue *item){
@@ -2176,6 +2350,25 @@ uint32_t newmodel(uint32_t eh, float *vertices, float *uv, float *normals, uint3
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidOQ\e[0;37m: New model pushed in queue creation, index = %i\n", em);
 
     return em;
+}
+
+void recmodel(uint32_t eh, uint32_t em, float *vertices, float *uv, float *normals, uint32_t size){
+    euclidCreationQueue item = {0};
+    item.type = EUCLID_QUEUE_TYPE_MODEL;
+    item.size = size;
+    item.em = em;
+    if(size > 0){
+        item.vertices = malloc(size*sizeof(float)*3);
+        item.uv = malloc(size*sizeof(float)*2);
+        item.normals = malloc(size*sizeof(float)*3);
+        memcpy(item.vertices, vertices, size*sizeof(float)*3);
+        memcpy(item.uv, uv, size*sizeof(float)*2);
+        memcpy(item.normals, normals, size*sizeof(float)*3);
+    }
+
+    push_creation_queue(eh, &item);
+
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidOQ\e[0;37m: Model pushed in queue creation, index = %i\n", em);
 }
 
 void createDescriptorSetLayout(uint32_t eh, uint32_t eme) {
@@ -3866,6 +4059,24 @@ uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t *te, uint32_t t
     return eme;
 }
 
+void recmesh(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em, uint32_t *te, uint32_t tn, uint32_t usage){
+    euclidCreationQueue item = {0};
+    item.type = EUCLID_QUEUE_TYPE_MESH;
+    item.meshid = eme;
+    item.es = es;
+    item.em = em;
+    item.tn = tn;
+    item.usage = usage;
+    if(tn > 0){
+        item.te = malloc(sizeof(uint32_t) * tn);
+        memcpy(item.te, te, sizeof(uint32_t) * tn);
+    }
+
+    push_creation_queue(eh, &item);
+
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidOQ\e[0;37m: Mesh pushed in queue creation, index = %i\n", eme);
+}
+
 void setrendercamera(uint32_t eh, uint32_t eme, int8_t val){
     if(eme >= euclid.handle[eh].mesize){
         return;
@@ -4323,6 +4534,29 @@ uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize,
     if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidOQ\e[0;37m: New texture pushed in queue creation, index = %i\n", te);
 
     return te;
+}
+
+void rectexture(uint32_t eh, uint32_t te, uint32_t xsize, uint32_t ysize, uint32_t zsize, uint32_t byteperpixel, char *pixels, uint8_t is3d, uint32_t imageformat, uint8_t genmips){
+    euclidCreationQueue item = {0};
+    item.type = EUCLID_QUEUE_TYPE_TEXTURE;
+    item.em = te;
+    item.xsize = xsize;
+    item.ysize = ysize;
+    item.zsize = zsize;
+    item.byteperpixel = byteperpixel;
+    item.is3d = is3d;
+    item.imageformat = imageformat;
+    item.genmips = genmips;
+    item.reset_rec = 0;
+    if(xsize > 0 && ysize > 0 && zsize > 0 && byteperpixel > 0){
+        uint32_t pixelSize = xsize * ysize * zsize * byteperpixel;
+        item.pixels = malloc(pixelSize);
+        memcpy(item.pixels, pixels, pixelSize);
+    }
+
+    push_creation_queue(eh, &item);
+
+    if (euclid.handle[eh].debug == 1) printf("\e[1;36mEuclidOQ\e[0;37m: Texture pushed in queue creation, index = %i\n", te);
 }
 
 void draw(uint32_t eh, uint32_t eme){

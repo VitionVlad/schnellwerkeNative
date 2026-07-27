@@ -39,5 +39,13 @@ void setdrawable(uint32_t eh, uint32_t eme, uint8_t val);
 uint32_t newmesh(uint32_t eh, uint32_t es, uint32_t em, uint32_t *te, uint32_t tn, uint32_t usage);
 uint32_t newtexture(uint32_t eh, uint32_t xsize, uint32_t ysize, uint32_t zsize, uint32_t byteperpixel, char *pixels, uint8_t is3d, uint32_t imageformat, uint8_t genmips);
 uint32_t loopcont(uint32_t eh);
+void destroy_material(uint32_t eh, uint32_t em);
+void destroy_model(uint32_t eh, uint32_t em);
+void destroy_texture(uint32_t eh, uint32_t te);
+void destroy_mesh(uint32_t eh, uint32_t eme);
+void recmaterial(uint32_t eh, uint32_t em, uint32_t *vert, uint32_t *frag, uint32_t *shadow, uint32_t svert, uint32_t sfrag, uint32_t sshadow, uint32_t cullmode, uint32_t scullmode);
+void recmodel(uint32_t eh, uint32_t em, float *vertices, float *uv, float *normals, uint32_t size);
+void recmesh(uint32_t eh, uint32_t eme, uint32_t es, uint32_t em, uint32_t *te, uint32_t tn, uint32_t usage);
+void rectexture(uint32_t eh, uint32_t te, uint32_t xsize, uint32_t ysize, uint32_t zsize, uint32_t byteperpixel, char *pixels, uint8_t is3d, uint32_t imageformat, uint8_t genmips);
 
 #endif

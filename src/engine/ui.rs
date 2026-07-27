@@ -142,12 +142,12 @@ impl UItext {
     }
     pub fn new_blank() -> UItext{
         UItext{
-            plane: Model { vertexbuf: Vertexes{ modelid: 0 }, points: [Vec3::new(), Vec3::new()] },
-            font: vec![Image { textures: Texture{ texid: 0 } }],
+            plane: Model { vertexbuf: Vertexes{ modelid: 0, destroyed: true }, points: [Vec3::new(), Vec3::new()] },
+            font: vec![Image { textures: Texture{ texid: 0, destroyed: true } }],
             symbols: "".as_bytes().to_vec(),
             planes: vec![],
             symbol_number: 0,
-            material: Material { material_shaders: MaterialShaders{ materialid: 0 } },
+            material: Material { material_shaders: MaterialShaders{ materialid: 0, destroyed: true } },
             size: Vec2{ x: 20.0, y: 40.0},
             pos: Vec3::new(),
             clickzone: Clickzone { pos1: Vec2::new(), pos2: Vec2::new() },
