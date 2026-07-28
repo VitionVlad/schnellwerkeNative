@@ -1913,7 +1913,7 @@ void endrender(uint32_t eh){
 }
 
 static void free_creation_queue_item(euclidCreationQueue *item){
-    if(item == NULL){
+    if(item == NULL || item->type == EUCLID_QUEUE_TYPE_MATERIAL_DEINIT || item->type == EUCLID_QUEUE_TYPE_MODEL_DEINIT || item->type == EUCLID_QUEUE_TYPE_MESH_DEINIT || item->type == EUCLID_QUEUE_TYPE_TEXTURE_DEINIT){
         return;
     }
     free(item->vert);

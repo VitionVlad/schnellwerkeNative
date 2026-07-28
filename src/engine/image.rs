@@ -47,4 +47,37 @@ impl Image{
             textures: Texture::new(eng.render, size[0], size[1], size[2], data, false, TextureFormat::R8g8b8a8Unorm, true),
         }
     }
+    pub fn init(&mut self, eng: &Engine, size: [u32; 3], data: Vec<u8>, is3d: bool, format: TextureFormat, gen_mipmaps: bool){
+        self.textures.destroy(eng.render);
+        self.textures.init(eng.render, size[0], size[1], size[2], data, is3d, format, gen_mipmaps);
+    }
+    pub fn init_color(&mut self, eng: &Engine, color: [u8; 4]){
+        self.textures.destroy(eng.render);
+        self.textures.init(eng.render, 1, 1, 1, color.to_vec(), false, TextureFormat::R8g8b8a8Unorm, false);
+    }
+    pub fn init_from_files(&mut self, eng: &Engine, paths: Vec<String>){
+        let mut size: [u32; 3] = [0, 0, paths.len() as u32];
+        let mut data: Vec<u8> = vec![];
+        for i in 0..paths.len(){
+            let spl = paths[i].as_bytes();
+            if spl[spl.len()-1] == b'a' && spl[spl.len()-2] == b'g' && spl[spl.len()-3] == b't'{
+                let mut ia = ImageAsset::load_tga(&paths[i]);
+                size[0] = ia.size[0];
+                size[1] = ia.size[1];
+                data.append(&mut ia.data);
+            }else if spl[spl.len()-1] == b'f' && spl[spl.len()-2] == b'f' && spl[spl.len()-3] == b'i' && spl[spl.len()-4] == b't'{
+                let mut ia = ImageAsset::load_tiff(&paths[i]);
+                size[0] = ia.size[0];
+                size[1] = ia.size[1];
+                data.append(&mut ia.data);
+            }else{
+                let mut ia = ImageAsset::other_load(&paths[i]);
+                size[0] = ia.size[0];
+                size[1] = ia.size[1];
+                data.append(&mut ia.data);
+            }
+        }
+        self.textures.destroy(eng.render);
+        self.textures.init(eng.render, size[0], size[1], size[2], data, false, TextureFormat::R8g8b8a8Unorm, true);
+    }
 }
