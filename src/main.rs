@@ -74,14 +74,11 @@ fn main() {
     );
     fpscnt.new_line_symbol = b'|';
 
-    let mut black3d = Image::new_color(&eng, [0, 0, 0, 0]);
-
     let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral, true, 0.25f32);
 
     println!("{}, {}, {}, decomp_size: {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2], scn.voxel_representation.data.len());
 
-    //let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm, false);
-    black3d.init(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm, false);
+    let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm, false);
 
     let bluenoise = Image::new_from_files(&eng, vec!["assets/noise.png".to_string()]);
 

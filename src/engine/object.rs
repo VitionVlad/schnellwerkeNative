@@ -63,6 +63,30 @@ impl Object {
             blank: true,
         }
     }
+    pub fn init(&mut self, engine: &mut Engine, model: Model, material: Material, images: Vec<Image>, usage: MeshUsage, is_static: bool, name: String){
+        let ph = PhysicsObject::new(model.points.to_vec(), is_static);
+        let id = engine.obj_ph.len();
+        if usage == MeshUsage::DefferedPass || usage == MeshUsage::ShadowAndDefferedPass || usage == MeshUsage::ShadowPass{
+            engine.obj_ph.push(ph);
+        }
+        let mut txs = vec![];
+        for i in 0..images.len(){
+            txs.push(images[i].textures);
+        }
+        self.mesh.destroy(engine.render);
+        self.mesh.init(engine.render, model.vertexbuf, material.material_shaders, txs, usage);
+        self.physic_object = ph;
+        self.is_looking_at = false;
+        self.draw = true;
+        self.draw_shadow = true;
+        self.draw_distance = 100f32;
+        self.view_reaction_distance = 2f32;
+        self.render_in_behind = true;
+        self.name = name;
+        self.usage = usage;
+        self.eng_ph_id = id;
+        self.blank = false;
+    }
     pub fn execph(&mut self, eng: &mut Engine){
         if self.usage == MeshUsage::DefferedPass || self.usage == MeshUsage::ShadowAndDefferedPass {
             self.physic_object.reset_states();
