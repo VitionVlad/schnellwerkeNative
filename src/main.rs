@@ -66,15 +66,15 @@ fn main() {
     viewport.signal = false;
 
     let mut fpscnt = UItext::new_from_file(
-        &mut eng,
-        matt,
-        "assets/lat.png",
-        "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_[]{}/*`~$% ",
-        engine::render::render::MeshUsage::PostPass
+      &mut eng,
+      matt,
+      "assets/lat.png",
+      "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0123456789,.;:'+-<>_[]{}/*`~$% ",
+      engine::render::render::MeshUsage::PostPass
     );
     fpscnt.new_line_symbol = b'|';
 
-    let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral, true, 0.25f32);
+    let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral, true, 0.2f32);
 
     println!("{}, {}, {}, decomp_size: {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2], scn.voxel_representation.data.len());
 

@@ -172,6 +172,7 @@ impl Scene{
               if voxelize && !pak3e{
                 texsv.push(gltfsc.material_data[i][0].clone());
               }
+              println!("material {} size: {}x{} data len: {}, expected size: {}, real size: {}", i, gltfsc.material_data[i][0].size[0], gltfsc.material_data[i][0].size[1], gltfsc.material_data[i].len(), gltfsc.material_data[i][0].size[0]*gltfsc.material_data[i][0].size[1]*4*gltfsc.material_data[i].len() as u32, totdata.len());
               ldmt.push(Image::new(eng, [gltfsc.material_data[i][0].size[0], gltfsc.material_data[i][0].size[1], gltfsc.material_data[i].len() as u32], totdata, false, TextureFormat::R8g8b8a8Unorm, true));
             }
         }else{

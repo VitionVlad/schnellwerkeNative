@@ -112,7 +112,7 @@ impl VoxelScene{
                 });
                 i += run_len;
             } else {
-                tail.extend_from_slice(&data[i..i + run_len]);
+                tail.extend_from_slice(&data[i..(i + run_len)]);
                 i += run_len;
             }
         }
@@ -129,8 +129,15 @@ impl VoxelScene{
         while cursor < result.len(){
             for i in 0.. entries.len(){
                 if entries[i].location == cursor as u64{
-                    result[(entries[i].location) as usize..(entries[i].location+entries[i].length) as usize].fill(entries[i].data);
-                    cursor += entries[i].length as usize;
+                    //println!("Filling data at location: {}, length: {}, data: {}", entries[i].location, entries[i].length, entries[i].data);
+                    if entries[i].location + entries[i].length >= total_len as u64{
+                        let diff = total_len as u64 - entries[i].location;
+                        result[(entries[i].location) as usize..(entries[i].location+diff) as usize].fill(entries[i].data);
+                        cursor += diff as usize;
+                    } else {
+                        result[(entries[i].location) as usize..(entries[i].location+entries[i].length) as usize].fill(entries[i].data);
+                        cursor += entries[i].length as usize;
+                    }
                     filleddt = true;
                     break;
                 }
@@ -295,11 +302,11 @@ impl VoxelScene{
                         break;
                     }
                     let mut data_byte = [0u8; 1];
-                    data_byte.copy_from_slice(&payload[cursor..cursor + 1]);
+                    data_byte.copy_from_slice(&payload[cursor..(cursor + 1)]);
                     let mut location_bytes = [0u8; 8];
-                    location_bytes.copy_from_slice(&payload[cursor + 1..cursor + 9]);
+                    location_bytes.copy_from_slice(&payload[(cursor + 1)..(cursor + 9)]);
                     let mut length_bytes = [0u8; 8];
-                    length_bytes.copy_from_slice(&payload[cursor + 9..cursor + 17]);
+                    length_bytes.copy_from_slice(&payload[(cursor + 9)..(cursor + 17)]);
                     entries.push(Rledata {
                         data: data_byte[0],
                         location: u64::from_ne_bytes(location_bytes),

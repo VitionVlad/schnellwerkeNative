@@ -386,6 +386,7 @@ impl Glscene{
           let view = pgltf.bufferview[pgltf.images[pgltf.textures[pgltf.materials[i].texture_indices[j]].image].buffer_view];
           let rwimg = chunksrd[bini].data[view.boffset..(view.boffset+view.blenght)].to_vec();
           data.push(ImageAsset::other_parse(rwimg));
+          println!("index {}, data len: {}, size: {}x{}, expected len: {}", j, data.last().unwrap().data.len(), data.last().unwrap().size[0], data.last().unwrap().size[1], data.last().unwrap().size[0] * data.last().unwrap().size[1] * 4);
         }
       }else{
         data.push(ImageAsset { 
