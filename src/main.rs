@@ -74,11 +74,13 @@ fn main() {
     );
     fpscnt.new_line_symbol = b'|';
 
-    let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral, true, 0.2f32);
+    let mut scn = Scene::load_from_gltf(&mut eng, "assets/something.glb", matgeneral, true, 0.25f32);
 
     println!("{}, {}, {}, decomp_size: {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2], scn.voxel_representation.data.len());
 
     let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm, false);
+
+    //let black3d = Image::new(&eng, [1, 1, 1], vec![u8::MAX, u8::MAX, u8::MAX, u8::MAX], true, TextureFormat::R8g8b8a8Unorm, false);
 
     let bluenoise = Image::new_from_files(&eng, vec!["assets/noise.png".to_string()]);
 
@@ -94,12 +96,13 @@ fn main() {
 
     let mut relposx = 0.0;
 
-    const SPEED: f32 = 0.000125f32;
+    const SPEED: f32 = 0.0025f32;
 
     let mut tm = 0;
 
     for i in 0..scn.objects.len() {
-      scn.objects[i].draw_distance = 500.0;
+      scn.objects[i].draw_distance = f32::MAX;
+      scn.objects[i].render_in_behind = false;
     }
 
     eng.render.shadow_map_count = 0;

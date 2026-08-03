@@ -125,30 +125,22 @@ impl VoxelScene{
         sorted_entries.sort_by_key(|entry| entry.location);
         let mut raw_index = 0usize;
         let mut cursor = 0usize;
-        let mut filleddt = false;
-        while cursor < result.len(){
-            for i in 0.. entries.len(){
-                if entries[i].location == cursor as u64{
-                    //println!("Filling data at location: {}, length: {}, data: {}", entries[i].location, entries[i].length, entries[i].data);
-                    if entries[i].location + entries[i].length >= total_len as u64{
-                        let diff = total_len as u64 - entries[i].location;
-                        result[(entries[i].location) as usize..(entries[i].location+diff) as usize].fill(entries[i].data);
-                        cursor += diff as usize;
-                    } else {
-                        result[(entries[i].location) as usize..(entries[i].location+entries[i].length) as usize].fill(entries[i].data);
-                        cursor += entries[i].length as usize;
-                    }
-                    filleddt = true;
-                    break;
-                }
+        for e in &sorted_entries {
+            let start = e.location as usize;
+            if start > cursor {
+                let n = start - cursor;
+                result[cursor..start].copy_from_slice(&tail[raw_index..raw_index + n]);
+                raw_index += n;
             }
-            if !filleddt{
-                result[cursor] = tail[raw_index];
-                cursor += 1;
-                raw_index += 1;
-            }
-            filleddt = false;
+            let end = start + e.length as usize;
+            result[start..end].fill(e.data);
+            cursor = end;
         }
+        if cursor < total_len {
+            let n = total_len - cursor;
+            result[cursor..total_len].copy_from_slice(&tail[raw_index..raw_index + n]);
+        }
+
         result
     }
     pub fn new_blank() -> VoxelScene{
@@ -315,7 +307,7 @@ impl VoxelScene{
                     cursor += 17;
                 }
                 let tail = payload[cursor..payload.len()].to_vec();
-                let expected_len = (size[0] as usize) * (size[1] as usize) * (size[2] as usize) * 4;
+                let expected_len = ((size[0] as f32) * (size[1] as f32) * (size[2] as f32) / voxelsize.powi(3)) as usize * 4;
                 Self::decompress_data_impl(&entries, &tail, expected_len)
             }
         } else {
