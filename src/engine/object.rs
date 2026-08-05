@@ -22,14 +22,18 @@ pub struct Object{
 }
 
 impl Object {
-    pub fn new(engine: &mut Engine, model: Model, material: Material, image: Image, usage: MeshUsage, is_static: bool, name: String) -> Object{
+    pub fn new(engine: &mut Engine, model: Model, material: Material, images: Vec<Image>, usage: MeshUsage, is_static: bool, name: String) -> Object{
         let ph = PhysicsObject::new(model.points.to_vec(), is_static);
         let id = engine.obj_ph.len();
         if usage == MeshUsage::DefferedPass || usage == MeshUsage::ShadowAndDefferedPass || usage == MeshUsage::ShadowPass{
             engine.obj_ph.push(ph);
         }
+        let mut txs = vec![];
+        for i in 0..images.len(){
+            txs.push(images[i].textures);
+        }
         Object { 
-            mesh: Mesh::new(engine.render, model.vertexbuf, material.material_shaders, image.textures, usage),
+            mesh: Mesh::new(engine.render, model.vertexbuf, material.material_shaders, txs, usage),
             physic_object: ph,
             is_looking_at: false,
             draw: true,
@@ -45,7 +49,7 @@ impl Object {
     }
     pub fn new_blank() -> Object{
         Object { 
-            mesh: Mesh { meshid: 0, ubo: [0.0; 56], draw: true, draw_shadow: true, keep_shadow: false, render_all_cameras: true, exclude_selected_camera: false, camera_number: 0 },
+            mesh: Mesh { meshid: 0, ubo: [0.0; 56], draw: true, draw_shadow: true, keep_shadow: false, render_all_cameras: true, exclude_selected_camera: false, camera_number: 0, destroyed: true },
             physic_object: PhysicsObject::new(vec![Vec3::new(), Vec3::new()], true),
             usage: MeshUsage::ShadowAndDefferedPass,
             is_looking_at: false,
@@ -58,6 +62,30 @@ impl Object {
             eng_ph_id: 0,
             blank: true,
         }
+    }
+    pub fn init(&mut self, engine: &mut Engine, model: Model, material: Material, images: Vec<Image>, usage: MeshUsage, is_static: bool, name: String){
+        let ph = PhysicsObject::new(model.points.to_vec(), is_static);
+        let id = engine.obj_ph.len();
+        if usage == MeshUsage::DefferedPass || usage == MeshUsage::ShadowAndDefferedPass || usage == MeshUsage::ShadowPass{
+            engine.obj_ph.push(ph);
+        }
+        let mut txs = vec![];
+        for i in 0..images.len(){
+            txs.push(images[i].textures);
+        }
+        self.mesh.destroy(engine.render);
+        self.mesh.init(engine.render, model.vertexbuf, material.material_shaders, txs, usage);
+        self.physic_object = ph;
+        self.is_looking_at = false;
+        self.draw = true;
+        self.draw_shadow = true;
+        self.draw_distance = 100f32;
+        self.view_reaction_distance = 2f32;
+        self.render_in_behind = true;
+        self.name = name;
+        self.usage = usage;
+        self.eng_ph_id = id;
+        self.blank = false;
     }
     pub fn execph(&mut self, eng: &mut Engine){
         if self.usage == MeshUsage::DefferedPass || self.usage == MeshUsage::ShadowAndDefferedPass {
@@ -205,7 +233,7 @@ impl Object {
                 if Self::in_range(lsg.x, lbg.x, 0.0) && Self::in_range(lsg.y, lbg.y, 0.0) && !behind && fdst <= self.view_reaction_distance{
                     self.is_looking_at = true;
                 }
-            }else if self.usage == MeshUsage::LightingPass{
+            }else if self.usage == MeshUsage::LightingPass || self.usage == MeshUsage::PostPass{
                 self.mesh.draw = self.draw;
                 self.mesh.keep_shadow = false;
                 self.mesh.draw_shadow = true;
@@ -214,7 +242,7 @@ impl Object {
                 self.mesh.keep_shadow = self.draw;
                 self.mesh.draw_shadow = self.draw;
             }
-            self.mesh.exec();
+            self.mesh.exec(eng.render);
         }
     }
 }

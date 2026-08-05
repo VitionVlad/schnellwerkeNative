@@ -17,4 +17,9 @@ impl Model{
             points: [pt[0], pt[1]],
         }        
     }
+    pub fn init(&mut self, engine: &Engine, vertices: Vec<f32>){
+        let pt = getpoints(vertices.clone());
+        self.vertexbuf.destroy(engine.render);
+        self.vertexbuf.init(engine.render, vertices);
+    }
 }

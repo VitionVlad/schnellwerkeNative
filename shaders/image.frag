@@ -28,15 +28,19 @@ layout(binding = 2) uniform DefferedMatricesInput {
 
 layout(binding = 3) uniform texture2DArray texTexture;
 
-layout(binding = 4) uniform texture2DArray defferedTexture;
+layout(binding = 4) uniform texture2DArray lightingTexture;
 
-layout(binding = 5) uniform texture2DArray defferedDepthTexture;
+layout(binding = 5) uniform texture2DArray lightingDepthTexture;
 
-layout(binding = 6) uniform texture2DArray shadowTexture;
+layout(binding = 6) uniform texture2DArray defferedTexture;
 
-layout(binding = 7) uniform sampler imageSampler;
+layout(binding = 7) uniform texture2DArray defferedDepthTexture;
 
-layout(binding = 8) uniform sampler attachmentSampler;
+layout(binding = 8) uniform texture2DArray shadowTexture;
+
+layout(binding = 9) uniform sampler imageSampler;
+
+layout(binding = 10) uniform sampler attachmentSampler;
 
 void main() {
     if(mi.addinfo.z > 0.0){

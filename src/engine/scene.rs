@@ -125,7 +125,7 @@ impl Scene{
         for i in 0..mdst.len(){
             for j in 0..mdtx.len(){
                 if obj.mtl.matnam[j] == obj.matnam[i]{
-                    fobj.push(Object::new(eng, mdst[i], material, mdtx[j], super::render::render::MeshUsage::ShadowAndDefferedPass, true, obj.obn[i].clone()));
+                    fobj.push(Object::new(eng, mdst[i], material, vec![mdtx[j]], super::render::render::MeshUsage::ShadowAndDefferedPass, true, obj.obn[i].clone()));
                     break;
                 }
             }
@@ -172,7 +172,7 @@ impl Scene{
               if voxelize && !pak3e{
                 texsv.push(gltfsc.material_data[i][0].clone());
               }
-              ldmt.push(Image::new(eng, [gltfsc.material_data[i][0].size[0], gltfsc.material_data[i][0].size[1], gltfsc.material_data[i].len() as u32], totdata, false, TextureFormat::R8g8b8a8Unorm));
+              ldmt.push(Image::new(eng, [gltfsc.material_data[i][0].size[0], gltfsc.material_data[i][0].size[1], gltfsc.material_data[i].len() as u32], totdata, false, TextureFormat::R8g8b8a8Unorm, true));
             }
         }else{
             let pke = pakpath.len();
@@ -207,7 +207,7 @@ impl Scene{
 
         for i in 0..gltfsc.objs.len(){
             let tobj = Model::new(eng, gltfsc.objs[i].vertices.clone());
-            scn.objects.push(Object::new(eng, tobj, material, ldmt[gltfsc.objs[i].material], super::render::render::MeshUsage::ShadowAndDefferedPass, true, gltfsc.objs[i].name.clone()));
+            scn.objects.push(Object::new(eng, tobj, material, vec![ldmt[gltfsc.objs[i].material]], super::render::render::MeshUsage::ShadowAndDefferedPass, true, gltfsc.objs[i].name.clone()));
             let lobj = scn.objects.len()-1;
             scn.objects[lobj].physic_object.pos = gltfsc.objs[i].position;
             scn.objects[lobj].physic_object.scale = gltfsc.objs[i].scale;
@@ -215,7 +215,6 @@ impl Scene{
 
             if !pak3e && voxelize{
                 let reqlen = (gltfsc.objs[i].vertices.len()/8)*3;
-
                 for j in (0..reqlen).step_by(3){
                     let v4 = Vec4{ x: gltfsc.objs[i].vertices[j], y: gltfsc.objs[i].vertices[j+1], z: gltfsc.objs[i].vertices[j+2], w: 1.0};
 
@@ -287,7 +286,7 @@ impl Scene{
             if pak3e{
                 scn.voxel_representation = VoxelScene::from_file(&pakpath);
             }else{
-                scn.voxel_representation = VoxelScene::from_vertices(totvrt, voxel_size, tricolor);
+                scn.voxel_representation = VoxelScene::from_vertices(totvrt.clone(), voxel_size, tricolor);
                 scn.voxel_representation.save_file(&pakpath);
             }
         }

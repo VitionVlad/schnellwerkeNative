@@ -31,10 +31,10 @@ pub struct UIplane{
 }
 
 impl UIplane {
-    pub fn new(eng: &mut Engine, mat: Material, image: Image, usage: super::render::render::MeshUsage) -> UIplane{
+    pub fn new(eng: &mut Engine, mat: Material, images: Vec<Image>, usage: super::render::render::MeshUsage) -> UIplane{
         let model = Model::new(&eng, PLANEUI.to_vec());
         UIplane { 
-            object: Object::new(eng, model, mat, image, usage, true, "".to_string()),
+            object: Object::new(eng, model, mat, images, usage, true, "".to_string()),
             clickzone: Clickzone { pos1: Vec2::new(), pos2: Vec2::new() },
             signal: false,
             allow_when_mouse_locked: false,
@@ -58,7 +58,7 @@ impl UIplane {
         let image = Image::new_from_files(eng, paths);
         let model = Model::new(&eng, PLANEUI.to_vec());
         UIplane { 
-            object: Object::new(eng, model, mat, image, super::render::render::MeshUsage::LightingPass, true, "".to_string()),
+            object: Object::new(eng, model, mat, vec![image], super::render::render::MeshUsage::LightingPass, true, "".to_string()),
             clickzone: Clickzone { pos1: Vec2::new(), pos2: Vec2::new() },
             signal: false,
             allow_when_mouse_locked: false,
@@ -88,7 +88,7 @@ impl UIplane {
 #[derive(Clone)]
 pub struct UItext{
     plane: Model,
-    pub font: Image,
+    pub font: Vec<Image>,
     pub symbols: Vec<u8>,
     pub planes: Vec<Object>,
     pub symbol_number: u32,
@@ -113,10 +113,10 @@ pub struct UItext{
 }
 
 impl UItext {
-    pub fn new(eng: &mut Engine, mat: Material, image: Image, symbols: &str, usage: super::render::render::MeshUsage) -> UItext{
+    pub fn new(eng: &mut Engine, mat: Material, images: Vec<Image>, symbols: &str, usage: super::render::render::MeshUsage) -> UItext{
         UItext{
             plane: Model::new(&eng, PLANEUI.to_vec()),
-            font: image,
+            font: images,
             symbols: symbols.as_bytes().to_vec(),
             planes: vec![],
             symbol_number: symbols.len() as u32,
@@ -142,12 +142,12 @@ impl UItext {
     }
     pub fn new_blank() -> UItext{
         UItext{
-            plane: Model { vertexbuf: Vertexes{ modelid: 0 }, points: [Vec3::new(), Vec3::new()] },
-            font: Image { textures: Texture{ texid: 0 } },
+            plane: Model { vertexbuf: Vertexes{ modelid: 0, destroyed: true }, points: [Vec3::new(), Vec3::new()] },
+            font: vec![Image { textures: Texture{ texid: 0, destroyed: true } }],
             symbols: "".as_bytes().to_vec(),
             planes: vec![],
             symbol_number: 0,
-            material: Material { material_shaders: MaterialShaders{ materialid: 0 } },
+            material: Material { material_shaders: MaterialShaders{ materialid: 0, destroyed: true } },
             size: Vec2{ x: 20.0, y: 40.0},
             pos: Vec3::new(),
             clickzone: Clickzone { pos1: Vec2::new(), pos2: Vec2::new() },
@@ -171,7 +171,7 @@ impl UItext {
         let img = Image::new_from_files(eng, vec![image.to_string()]);
         UItext{
             plane: Model::new(&eng, PLANEUI.to_vec()),
-            font: img,
+            font: vec![img],
             symbols: symbols.as_bytes().to_vec(),
             planes: vec![],
             symbol_number: symbols.len() as u32,
@@ -222,12 +222,11 @@ impl UItext {
             let mut lbtst = btst;
             if self.planes.len() < bt.len() {
                 for i in  self.planes.len()..bt.len(){
-                    self.planes.push(Object::new(eng, self.plane, self.material, self.font, self.usage, true, "".to_string()));
+                    self.planes.push(Object::new(eng, self.plane, self.material, self.font.clone(), self.usage, true, "".to_string()));
                 }
             }
             for i in  0..self.planes.len(){
-                self.planes[i].mesh.draw = false;
-                self.planes[i].mesh.exec();
+                self.planes[i].draw = false;
             }
             let mut posy: f32 = self.pos.y;
             let mut bp: usize = 0;
@@ -237,7 +236,7 @@ impl UItext {
                     bp2+=1;
                     for j in 0..self.symbols.len(){
                         if bt[i] == self.symbols[j] {
-                            self.planes[i].mesh.draw = true;
+                            self.planes[i].draw = true;
                             self.planes[i].mesh.ubo[self.ubo_index] = self.symbol_number as f32;
                             self.planes[i].mesh.ubo[self.ubo_index+1] = j as f32;
                             self.planes[i].physic_object.scale.x = self.size.x;
@@ -264,8 +263,6 @@ impl UItext {
                             }else{
                                 self.planes[i].mesh.ubo[self.ubo_index+2] = self.signal_off_value;
                             }
-
-                            self.planes[i].exec(eng);
                             break;
                         }
                         if bt[i] == self.new_line_symbol{
@@ -281,6 +278,9 @@ impl UItext {
                         }
                     }
                 }
+            }
+            for i in 0..self.planes.len(){
+                self.planes[i].exec(eng);
             }
             return btst;
         }

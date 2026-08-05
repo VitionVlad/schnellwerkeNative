@@ -40,5 +40,5 @@ void main() {
     ftg = tg;
     fctg = ctg;
     fnormal = (mi.r * vec4(normal, 1.0)).xyz;
-    gl_Position = dmi.defferedView * mi.t * mi.r * mi.s * vec4(pos.x, pos.y, pos.z, 1.0);
+    gl_Position = dmi.defferedView * fpos;
 }

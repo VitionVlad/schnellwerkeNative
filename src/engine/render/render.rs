@@ -1,12 +1,14 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::ffi::CString;
+use std::{ffi::CString};
 
 use cty::{uint8_t, uint32_t};
 
 unsafe extern "C"{
     fn get_frametime(eh: cty::uint32_t) -> cty::c_float;
+    fn get_gpuframetime(eh: cty::uint32_t) -> cty::c_float;
+    fn get_gpufps(eh: cty::uint32_t) -> cty::uint32_t;
     fn get_resx(eh: cty::uint32_t) -> cty::uint32_t;
     fn get_resy(eh: cty::uint32_t) -> cty::uint32_t;
     fn setresolution(eh: cty::uint32_t, xs: cty::uint32_t, ys: cty::uint32_t);
@@ -35,12 +37,20 @@ unsafe extern "C"{
     fn destroy(eh: cty::uint32_t);
     fn newmaterial(eh: cty::uint32_t, vert: *mut cty::uint32_t, frag: *mut cty::uint32_t, shadow: *mut cty::uint32_t, svert: cty::uint32_t, sfrag: cty::uint32_t, sshadow: cty::uint32_t, cullmode: cty::uint32_t, scullmode: cty::uint32_t) -> cty::uint32_t;
     fn newmodel(eh: cty::uint32_t, vert: *mut cty::c_float, uv: *mut cty::c_float, normals: *mut cty::c_float, size: cty::uint32_t) -> cty::uint32_t;
-    fn setrendercamera(eme: cty::uint32_t, val: cty::int8_t);
-    fn setmeshbuf(eme: cty::uint32_t, i: cty::uint32_t, val: cty::c_float);
-    fn setdrawable(eme: cty::uint32_t, val: cty::uint8_t);
-    fn newmesh(eh: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t, te: cty::uint32_t, usage: cty::uint32_t) -> cty::uint32_t;
-    fn newtexture(eh: cty::uint32_t, xsize: cty::uint32_t, ysize: cty::uint32_t, zsize: cty::uint32_t, byteperpixel: cty::uint32_t, pixels: *mut cty::c_char, is3d: cty::uint8_t, imageformat: cty::uint32_t) -> cty::uint32_t;
+    fn setrendercamera(eh: cty::uint32_t, eme: cty::uint32_t, val: cty::int8_t);
+    fn setmeshbuf(eh: cty::uint32_t, eme: cty::uint32_t, i: cty::uint32_t, val: cty::c_float);
+    fn setdrawable(eh: cty::uint32_t, eme: cty::uint32_t, val: cty::uint8_t);
+    fn newmesh(eh: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t, te: *mut cty::uint32_t, tn: cty::uint32_t, usage: cty::uint32_t) -> cty::uint32_t;
+    fn newtexture(eh: cty::uint32_t, xsize: cty::uint32_t, ysize: cty::uint32_t, zsize: cty::uint32_t, byteperpixel: cty::uint32_t, pixels: *mut cty::c_char, is3d: cty::uint8_t, imageformat: cty::uint32_t, genmips: cty::uint8_t) -> cty::uint32_t;
     fn loopcont(eh: cty::uint32_t) -> cty::uint32_t;
+    fn destroy_material(eh: cty::uint32_t, em: cty::uint32_t);
+    fn destroy_model(eh: cty::uint32_t, em: cty::uint32_t);
+    fn destroy_texture(eh: cty::uint32_t, te: cty::uint32_t);
+    fn destroy_mesh(eh: cty::uint32_t, em: cty::uint32_t);
+    fn recmaterial(eh: cty::uint32_t, em: cty::uint32_t, vert: *mut cty::uint32_t, frag: *mut cty::uint32_t, shadow: *mut cty::uint32_t, svert: cty::uint32_t, sfrag: cty::uint32_t, sshadow: cty::uint32_t, cullmode: cty::uint32_t, scullmode: cty::uint32_t);
+    fn recmodel(eh: cty::uint32_t, em: cty::uint32_t, vert: *mut cty::c_float, uv: *mut cty::c_float, normals: *mut cty::c_float, size: cty::uint32_t);
+    fn recmesh(eh: cty::uint32_t, em: cty::uint32_t, es: cty::uint32_t, em: cty::uint32_t, te: *mut cty::uint32_t, tn: cty::uint32_t, usage: cty::uint32_t);
+    fn rectexture(eh: cty::uint32_t, te: cty::uint32_t, xsize: cty::uint32_t, ysize: cty::uint32_t, zsize: cty::uint32_t, byteperpixel: cty::uint32_t, pixels: *mut cty::c_char, is3d: cty::uint8_t, imageformat: cty::uint32_t, genmips: cty::uint8_t);
 }
 
 #[derive(Copy, Clone)]
@@ -53,7 +63,9 @@ pub struct Render{
     pub resolution_x: u32,
     pub resolution_y: u32,
     pub fullscreen: bool,
-    pub frametime: f32,
+    pub cpu_frametime: f32,
+    pub gpu_frametime: f32,
+    pub gpu_fps: u32,
     pub lights_count: u32,
     fullscreeno: bool,
 }
@@ -72,7 +84,9 @@ impl Render{
             resolution_y: 600,
             fullscreen: false,
             fullscreeno: false,
-            frametime: 0.0,
+            cpu_frametime: 0.0,
+            gpu_frametime: 0.0,
+            gpu_fps: 0,
             lights_count: 1,
         }
     }
@@ -89,7 +103,9 @@ impl Render{
             }
             modifyshadowdata(self.euclid, self.shadow_map_count, self.shadow_map_resolution, self.lights_count);
             modifydeffereddata(self.euclid, self.camera_count, self.resolution_scale);
-            self.frametime = get_frametime(self.euclid)
+            self.cpu_frametime = get_frametime(self.euclid);
+            self.gpu_frametime = get_gpuframetime(self.euclid);
+            self.gpu_fps = get_gpufps(self.euclid);
         };
         return unsafe { loopcont(self.euclid) } == 1;
     }
@@ -179,6 +195,7 @@ pub enum CullMode {
 #[derive(Copy, Clone)]
 pub struct MaterialShaders{
     pub materialid: u32,
+    pub destroyed: bool,
 }
 
 impl MaterialShaders{
@@ -186,7 +203,24 @@ impl MaterialShaders{
         MaterialShaders { 
             materialid: unsafe{
                 newmaterial(ren.euclid, vert.as_ptr() as *mut u32, frag.as_ptr() as *mut u32, shadow.as_ptr() as *mut u32, vert.len() as u32, frag.len() as u32, shadow.len() as u32, cullmode as u32, shadow_cullmode as u32)
+            },
+            destroyed: false,
+        }
+    }
+    pub fn destroy(&mut self, ren: Render){
+        if !self.destroyed{
+            unsafe {
+                destroy_material(ren.euclid, self.materialid);
             }
+            self.destroyed = true;
+        }
+    }
+    pub fn init(&mut self, ren: Render, vert: Vec<u8>, frag: Vec<u8>, shadow: Vec<u8>, cullmode: CullMode, shadow_cullmode: CullMode){
+        if self.destroyed{
+            unsafe {
+                recmaterial(ren.euclid, self.materialid, vert.as_ptr() as *mut u32, frag.as_ptr() as *mut u32, shadow.as_ptr() as *mut u32, vert.len() as u32, frag.len() as u32, shadow.len() as u32, cullmode as u32, shadow_cullmode as u32);
+            }
+            self.destroyed = false;
         }
     }
 }
@@ -194,6 +228,7 @@ impl MaterialShaders{
 #[derive(Copy, Clone)]
 pub struct Vertexes{
     pub modelid: u32,
+    pub destroyed: bool,
 }
 
 impl Vertexes{
@@ -214,7 +249,37 @@ impl Vertexes{
         Vertexes { 
             modelid: unsafe{
                 newmodel(ren.euclid, v.as_ptr() as *mut f32, u.as_ptr() as *mut f32, n.as_ptr() as *mut f32, size as u32)
+            },
+            destroyed: false,
+        }
+    }
+    pub fn destroy(&mut self, ren: Render){
+        if !self.destroyed{
+            unsafe {
+                destroy_model(ren.euclid, self.modelid);
             }
+            self.destroyed = true;
+        }
+    }
+    pub fn init(&mut self, ren: Render, vertices: Vec<f32>){
+        if self.destroyed{
+            let size = vertices.len()/8;
+            let mut v: Vec<f32> = vec![];
+            let mut u: Vec<f32> = vec![];
+            let mut n: Vec<f32> = vec![];
+            for i in 0..size*3 {
+                v.push(vertices[i]);
+            }
+            for i in 0..size*2 {
+                u.push(vertices[i+size*3]);
+            }
+            for i in 0..size*3 {
+                n.push(vertices[i+size*5]);
+            }
+            unsafe {
+                recmodel(ren.euclid, self.modelid, v.as_ptr() as *mut f32, u.as_ptr() as *mut f32, n.as_ptr() as *mut f32, size as u32);
+            }
+            self.destroyed = false;
         }
     }
 }
@@ -227,18 +292,40 @@ pub enum TextureFormat{
 #[derive(Copy, Clone)]
 pub struct Texture{
     pub texid: u32,
+    pub destroyed: bool,
 }
 
 impl Texture {
-    pub fn new(render: Render, xs: u32, ys: u32, zs: u32, data: Vec<u8>, is3d: bool, format: TextureFormat) -> Texture{
+    pub fn new(render: Render, xs: u32, ys: u32, zs: u32, data: Vec<u8>, is3d: bool, format: TextureFormat, gen_mipmaps: bool) -> Texture{
         let byteperpixel = match format {
             TextureFormat::R8g8b8a8Unorm => 4,
             TextureFormat::R16g16b16a16Sfloat => 8,
         };
         Texture { 
             texid: unsafe {
-                newtexture(render.euclid, xs, ys, zs, byteperpixel, data.as_ptr() as *mut i8, is3d as u8, format as u32)
+                newtexture(render.euclid, xs, ys, zs, byteperpixel, data.as_ptr() as *mut i8, is3d as u8, format as u32, gen_mipmaps as u8)
+            },
+            destroyed: false,
+        }
+    }
+    pub fn destroy(&mut self, ren: Render){
+        if !self.destroyed{
+            unsafe {
+                destroy_texture(ren.euclid, self.texid);
             }
+            self.destroyed = true;
+        }
+    }
+    pub fn init(&mut self, render: Render, xs: u32, ys: u32, zs: u32, data: Vec<u8>, is3d: bool, format: TextureFormat, gen_mipmaps: bool){
+        if self.destroyed{
+            let byteperpixel = match format {
+                TextureFormat::R8g8b8a8Unorm => 4,
+                TextureFormat::R16g16b16a16Sfloat => 8,
+            };
+            unsafe {
+                rectexture(render.euclid, self.texid, xs, ys, zs, byteperpixel, data.as_ptr() as *mut i8, is3d as u8, format as u32, gen_mipmaps as u8);
+            }
+            self.destroyed = false;
         }
     }
 }
@@ -263,13 +350,18 @@ pub struct Mesh{
     pub render_all_cameras: bool,
     pub exclude_selected_camera: bool,
     pub camera_number: i8,
+    pub destroyed: bool,
 }
 
 impl Mesh{
-    pub fn new(ren: Render, model: Vertexes, material: MaterialShaders, texture: Texture, usage: MeshUsage) -> Mesh{
+    pub fn new(ren: Render, model: Vertexes, material: MaterialShaders, textures: Vec<Texture>, usage: MeshUsage) -> Mesh{
+        let mut idv = vec![];
+        for i in 0..textures.len(){
+            idv.push(textures[i].texid);
+        }
         Mesh { 
             meshid: unsafe{
-                newmesh(ren.euclid, material.materialid, model.modelid, texture.texid,usage as u32)
+                newmesh(ren.euclid, material.materialid, model.modelid, idv.as_mut_ptr(), textures.len() as u32, usage as u32)
             },
             ubo: [1.0; 56],
             draw: true,
@@ -278,17 +370,36 @@ impl Mesh{
             render_all_cameras: true,
             exclude_selected_camera: false,
             camera_number: 0,
+            destroyed: false,
         }
     }
-
-    pub fn exec(&self){
+    pub fn init(&mut self, ren: Render, model: Vertexes, material: MaterialShaders, textures: Vec<Texture>, usage: MeshUsage){
+        if self.destroyed{
+            let mut idv = vec![];
+            for i in 0..textures.len(){
+                idv.push(textures[i].texid);
+            }
+            unsafe {
+                recmesh(ren.euclid, self.meshid, material.materialid, model.modelid, idv.as_mut_ptr(), textures.len() as u32, usage as u32);
+                self.ubo = [1.0; 56];
+                self.draw = true;
+                self.draw_shadow = true;
+                self.keep_shadow = true;
+                self.render_all_cameras = true;
+                self.exclude_selected_camera = false;
+                self.camera_number = 0;
+                self.destroyed = false;
+            }
+        }
+    }
+    pub fn exec(&self, ren: Render){
         for i in 0..self.ubo.len(){
             unsafe {
-                setmeshbuf(self.meshid, i as u32, self.ubo[i]);
+                setmeshbuf(ren.euclid, self.meshid, i as u32, self.ubo[i]);
             };
         }
         unsafe {
-            setdrawable(self.meshid, match self.draw {
+            setdrawable(ren.euclid, self.meshid, match self.draw {
                 true => match self.draw_shadow {
                     true => 1,
                     false => 3,
@@ -298,7 +409,7 @@ impl Mesh{
                     false => 0,
                 },
             });
-            setrendercamera(self.meshid, match self.render_all_cameras{
+            setrendercamera(ren.euclid, self.meshid, match self.render_all_cameras{
                 true => -1,
                 false => {
                     if self.exclude_selected_camera {
@@ -308,6 +419,21 @@ impl Mesh{
                     }
                 }
             });
+        }
+    }
+    pub fn destroy(&mut self, ren: Render){
+        if !self.destroyed{
+            unsafe {
+                destroy_mesh(ren.euclid, self.meshid);
+            }
+            self.ubo = [1.0; 56];
+            self.draw = true;
+            self.draw_shadow = true;
+            self.keep_shadow = true;
+            self.render_all_cameras = true;
+            self.exclude_selected_camera = false;
+            self.camera_number = 0;
+            self.destroyed = true;
         }
     }
 }

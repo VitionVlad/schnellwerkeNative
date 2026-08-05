@@ -18,7 +18,8 @@ pub struct Engine{
     cumulated_time: f32,
     pub times_to_calculate_physics: u32,
     pub obj_ph: Vec<PhysicsObject>,
-    pub fps: u32,
+    pub cpu_fps: u32,
+    pub gpu_fps: u32,
     cfps: u32,
     tmpassed: f32,
     pub primary_camera: usize,
@@ -40,7 +41,8 @@ impl Engine{
             cumulated_time: 0.0,
             times_to_calculate_physics: 0,
             obj_ph: vec![],
-            fps: 0,
+            cpu_fps: 0,
+            gpu_fps: 0,
             cfps: 0,
             tmpassed: 0.0,
             primary_camera: 0,
@@ -49,11 +51,12 @@ impl Engine{
     }
     pub fn work(&mut self) -> bool{
         self.audio.exec();
-        self.cumulated_time += self.render.frametime;
-        self.tmpassed += self.render.frametime;
+        self.gpu_fps = self.render.gpu_fps;
+        self.cumulated_time += self.render.cpu_frametime;
+        self.tmpassed += self.render.cpu_frametime;
         self.cfps += 1;
         if self.tmpassed >= 1000.0 {
-            self.fps = self.cfps;
+            self.cpu_fps = self.cfps;
             self.cfps = 0;
             self.tmpassed = 0.0;
         }
@@ -80,7 +83,7 @@ impl Engine{
             self.render.set_deffered_uniform_data(i*4+360, self.cameras[i as usize].physic_object.rot.x);
             self.render.set_deffered_uniform_data(i*4+361, self.cameras[i as usize].physic_object.rot.y);
             self.render.set_deffered_uniform_data(i*4+362, self.cameras[i as usize].physic_object.rot.z);
-            self.render.set_deffered_uniform_data(i*4+363, 0.0);
+            self.render.set_deffered_uniform_data(i*4+363, self.cameras[i as usize].fov);
         }
         let mut li = 0;
         for i in 0..u32::min(self.used_light_count, 100){
@@ -108,6 +111,7 @@ impl Engine{
             self.render.set_shadow_uniform_data(i*4+2002, self.lights[i as usize].color.z);
             self.render.set_shadow_uniform_data(i*4+2003, if self.lights[i as usize].shadow { 1.0f32 } else { 0.0f32 });
         }
+        //if self.used_light_count
         self.control.get_mouse_pos();
         for _ in 0..self.times_to_calculate_physics{
             for i in 0..u32::min(self.used_camera_count, 10){
