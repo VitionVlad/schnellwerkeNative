@@ -2248,9 +2248,9 @@ static uint32_t newmodel_real(uint32_t eh, uint32_t em, euclidCreationQueue *ite
         float v0[] = { item->vertices[i], item->vertices[i+1], item->vertices[i+2] };
         float v1[] = { item->vertices[i+3], item->vertices[i+4], item->vertices[i+5] };
         float v2[] = { item->vertices[i+6], item->vertices[i+7], item->vertices[i+8] };
-        float uv0[] = { item->uv[u], item->uv[u+1]+1.0f };
-        float uv1[] = { item->uv[u+2], item->uv[u+3]+1.0f };
-        float uv2[] = { item->uv[u+4], item->uv[u+5]+1.0f };
+        float uv0[] = { item->uv[u], 1.0f - item->uv[u+1] };
+        float uv1[] = { item->uv[u+2], 1.0f - item->uv[u+3] };
+        float uv2[] = { item->uv[u+4], 1.0f - item->uv[u+5] };
         float deltapos1[] = { v1[0]-v0[0], v1[1]-v0[1], v1[2]-v0[2]};
         float deltapos2[] = { v2[0]-v0[0], v2[1]-v0[1], v2[2]-v0[2]};
         float delta_uv1[] = {uv1[0]-uv0[0], uv1[1]-uv0[1]};
