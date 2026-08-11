@@ -13,7 +13,7 @@ fn main() {
     let frag = readfs("shaders/frag");
     let dvert = readfs("shaders/vdeffered");
     let dfrag = readfs("shaders/fdeffered");
-    let lfrag = readfs("shaders/fslight");
+    let lfrag = readfs("shaders/klight");
     let shadow = readfs("shaders/shadow");
     let textf = readfs("shaders/ftext");
     //let imgf = readfs("shaders/fimg");
@@ -74,13 +74,13 @@ fn main() {
     );
     fpscnt.new_line_symbol = b'|';
 
-    let mut scn = Scene::load_from_gltf(&mut eng, "assets/something.glb", matgeneral, true, 0.2f32);
+    let mut scn = Scene::load_from_gltf(&mut eng, "assets/something.glb", matgeneral, false, 0.2f32);
 
     println!("{}, {}, {}, decomp_size: {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2], scn.voxel_representation.data.len());
 
-    let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm, false);
+    //let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm, false);
 
-    //let black3d = Image::new(&eng, [1, 1, 1], vec![u8::MAX, u8::MAX, u8::MAX, u8::MAX], true, TextureFormat::R8g8b8a8Unorm, false);
+    let black3d = Image::new(&eng, [1, 1, 1], vec![u8::MAX, u8::MAX, u8::MAX, u8::MAX], true, TextureFormat::R8g8b8a8Unorm, false);
 
     let bluenoise = Image::new_from_files(&eng, vec!["assets/noise.png".to_string()]);
 
@@ -100,10 +100,10 @@ fn main() {
 
     let mut tm = 0;
 
-    for i in 0..scn.objects.len() {
-      scn.objects[i].draw_distance = f32::MAX;
-      scn.objects[i].render_in_behind = false;
-    }
+    //for i in 0..scn.objects.len() {
+    //  scn.objects[i].draw_distance = f32::MAX;
+    //  scn.objects[i].render_in_behind = false;
+    //}
 
     eng.render.shadow_map_count = 0;
     eng.used_light_count = 1;
@@ -119,7 +119,7 @@ fn main() {
 
     let mut fcnt = 0u32;
 
-    eng.render.resolution_scale = 0.75;
+    //eng.render.resolution_scale = 0.5;
 
     println!("shadowmapresolution(ignore if shadowmaps are off): {}", eng.render.shadow_map_resolution);
 
@@ -179,7 +179,7 @@ fn main() {
         tm = eng.cpu_fps as i32/5;
       }
 
-      let fpstxt = format!("CPU_fps:{}|GPU_fps:{}", eng.cpu_fps, eng.gpu_fps);
+      let fpstxt = format!("CPU_fps:{}|GPU_fps:{}|CPU_frametime:{}", eng.cpu_fps, eng.gpu_fps, eng.render.cpu_frametime);
       fpscnt.size.x = 15_f32;
       fpscnt.size.y = 30_f32;
       fpscnt.pos.x = 0.0;

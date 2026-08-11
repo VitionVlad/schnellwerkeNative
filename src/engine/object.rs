@@ -136,9 +136,11 @@ impl Object {
             if self.usage == MeshUsage::DefferedPass || self.usage == MeshUsage::ShadowAndDefferedPass || self.usage == MeshUsage::ShadowPass{
                 self.physic_object.reset_states();
                 self.physic_object.exec();
-                for i in 0..eng.obj_ph.len(){
-                    if i != self.eng_ph_id{
-                        self.physic_object.interact_with_other_object(eng.obj_ph[i]);
+                if !self.physic_object.is_static{
+                    for i in 0..eng.obj_ph.len(){
+                        if i != self.eng_ph_id{
+                            self.physic_object.interact_with_other_object(eng.obj_ph[i]);
+                        }
                     }
                 }
                 eng.obj_ph[self.eng_ph_id] = self.physic_object;
