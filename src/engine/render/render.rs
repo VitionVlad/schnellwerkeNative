@@ -287,6 +287,7 @@ impl Vertexes{
 pub enum TextureFormat{
     R8g8b8a8Unorm = 37,
     R16g16b16a16Sfloat = 97,
+    R8 = 13,
 }
 
 #[derive(Copy, Clone)]
@@ -300,6 +301,7 @@ impl Texture {
         let byteperpixel = match format {
             TextureFormat::R8g8b8a8Unorm => 4,
             TextureFormat::R16g16b16a16Sfloat => 8,
+            TextureFormat::R8 => 1,
         };
         Texture { 
             texid: unsafe {
@@ -321,6 +323,7 @@ impl Texture {
             let byteperpixel = match format {
                 TextureFormat::R8g8b8a8Unorm => 4,
                 TextureFormat::R16g16b16a16Sfloat => 8,
+                TextureFormat::R8 => 1,
             };
             unsafe {
                 rectexture(render.euclid, self.texid, xs, ys, zs, byteperpixel, data.as_ptr() as *mut i8, is3d as u8, format as u32, gen_mipmaps as u8);

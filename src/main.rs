@@ -54,7 +54,7 @@ fn main() {
         dfrag,
         shadow.clone(),
         [
-            engine::render::render::CullMode::CullModeNone,
+            engine::render::render::CullMode::CullModeBackBit,
             engine::render::render::CullMode::CullModeFrontBit,
         ],
     );
@@ -74,13 +74,15 @@ fn main() {
     );
     fpscnt.new_line_symbol = b'|';
 
-    let mut scn = Scene::load_from_gltf(&mut eng, "assets/something.glb", matgeneral, false, 0.2f32);
+    let mut scn = Scene::load_from_gltf(&mut eng, "assets/scene.glb", matgeneral, true, 0.25f32);
 
     println!("{}, {}, {}, decomp_size: {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2], scn.voxel_representation.data.len());
 
     //let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm, false);
 
-    let black3d = Image::new(&eng, [1, 1, 1], vec![u8::MAX, u8::MAX, u8::MAX, u8::MAX], true, TextureFormat::R8g8b8a8Unorm, false);
+    let black3d = Image::new(&eng, [scn.voxel_representation.data.len() as u32, 1, 1], scn.voxel_representation.data.clone(), false, TextureFormat::R8, false);
+
+    //let black3d = Image::new(&eng, [1, 1, 1], vec![u8::MAX, u8::MAX, u8::MAX, u8::MAX], true, TextureFormat::R8g8b8a8Unorm, false);
 
     let bluenoise = Image::new_from_files(&eng, vec!["assets/noise.png".to_string()]);
 
@@ -96,7 +98,7 @@ fn main() {
 
     let mut relposx = 0.0;
 
-    const SPEED: f32 = 0.0025f32;
+    const SPEED: f32 = 0.00125f32;
 
     let mut tm = 0;
 
@@ -119,7 +121,7 @@ fn main() {
 
     let mut fcnt = 0u32;
 
-    //eng.render.resolution_scale = 0.5;
+    //eng.render.resolution_scale = 0.1;
 
     println!("shadowmapresolution(ignore if shadowmaps are off): {}", eng.render.shadow_map_resolution);
 
