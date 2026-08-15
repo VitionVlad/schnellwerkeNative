@@ -23,20 +23,22 @@ pub struct SVO{
     is_leaf: bool,
     color: [u8; 4],
     children: Vec<SVO>,
+    octant_index: u8,
 }
 
 const LEAF_MARKER: u8 = 0;
-const BRANCH_MARKER: u8 = u8::MAX;
+const BRANCH_MARKER: u8 = 100;
+const NODE_SIZE: usize = 5;
 
 impl SVO {
-    pub fn build_tree_recursive(voxels: Vec<Voxel>, boxmin: Ivec3, boxmax: Ivec3, current_level: u32) -> SVO{
+    pub fn build_tree_recursive(voxels: Vec<Voxel>, boxmin: Ivec3, boxmax: Ivec3, current_level: u32, octant_index: u8) -> SVO{
         if current_level == 0 {
             for v in &voxels {
                 if v.pos.x >= boxmin.x && v.pos.x <= boxmax.x &&
                    v.pos.y >= boxmin.y && v.pos.y <= boxmax.y &&
                    v.pos.z >= boxmin.z && v.pos.z <= boxmax.z {
                     println!("Leaf voxel found at ({}, {}, {}) with color {:?}", v.pos.x, v.pos.y, v.pos.z, v.color);
-                    return SVO { is_leaf: true, color: v.color, children: Vec::new() };
+                    return SVO { is_leaf: true, color: v.color, children: Vec::new(), octant_index: octant_index };
                 }
             }
         }
@@ -45,21 +47,21 @@ impl SVO {
                v.pos.y >= boxmin.y && v.pos.y <= boxmax.y &&
                v.pos.z >= boxmin.z && v.pos.z <= boxmax.z {
                 println!("Non-leaf voxel found at ({}, {}, {}) with color {:?}", v.pos.x, v.pos.y, v.pos.z, v.color);
-                let new_svo_boxes = [
-                    Self::build_tree_recursive(voxels.clone(), boxmin, Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: (boxmin.y + boxmax.y) / 2, z: (boxmin.z + boxmax.z) / 2 }, current_level - 1),
-                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: boxmin.y, z: boxmin.z }, Ivec3 { x: boxmax.x, y: (boxmin.y + boxmax.y) / 2, z: (boxmin.z + boxmax.z) / 2 }, current_level - 1),
-                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: boxmin.x, y: (boxmin.y + boxmax.y) / 2, z: boxmin.z }, Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: boxmax.y, z: (boxmin.z + boxmax.z) / 2 }, current_level - 1),
-                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: (boxmin.y + boxmax.y) / 2, z: boxmin.z }, Ivec3 { x: boxmax.x, y: boxmax.y, z: (boxmin.z + boxmax.z) / 2 }, current_level - 1),
-                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: boxmin.x, y: boxmin.y, z: (boxmin.z + boxmax.z) / 2 }, Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: (boxmin.y + boxmax.y) / 2, z: boxmax.z }, current_level - 1),
-                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: boxmin.y, z: (boxmin.z + boxmax.z) / 2 }, Ivec3 { x: boxmax.x, y: (boxmin.y + boxmax.y) / 2, z: boxmax.z }, current_level - 1),
-                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: boxmin.x, y: (boxmin.y + boxmax.y) / 2, z: (boxmin.z + boxmax.z) / 2 }, Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: boxmax.y, z: boxmax.z }, current_level - 1),
-                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: (boxmin.y + boxmax.y) / 2, z: (boxmin.z + boxmax.z) / 2 }, boxmax, current_level - 1),
+                let new_svo_boxes = vec![
+                    Self::build_tree_recursive(voxels.clone(), boxmin, Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: (boxmin.y + boxmax.y) / 2, z: (boxmin.z + boxmax.z) / 2 }, current_level - 1, 0),
+                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: boxmin.y, z: boxmin.z }, Ivec3 { x: boxmax.x, y: (boxmin.y + boxmax.y) / 2, z: (boxmin.z + boxmax.z) / 2 }, current_level - 1, 1),
+                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: boxmin.x, y: (boxmin.y + boxmax.y) / 2, z: boxmin.z }, Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: boxmax.y, z: (boxmin.z + boxmax.z) / 2 }, current_level - 1, 2),
+                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: (boxmin.y + boxmax.y) / 2, z: boxmin.z }, Ivec3 { x: boxmax.x, y: boxmax.y, z: (boxmin.z + boxmax.z) / 2 }, current_level - 1, 3),
+                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: boxmin.x, y: boxmin.y, z: (boxmin.z + boxmax.z) / 2 }, Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: (boxmin.y + boxmax.y) / 2, z: boxmax.z }, current_level - 1, 4),
+                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: boxmin.y, z: (boxmin.z + boxmax.z) / 2 }, Ivec3 { x: boxmax.x, y: (boxmin.y + boxmax.y) / 2, z: boxmax.z }, current_level - 1, 5),
+                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: boxmin.x, y: (boxmin.y + boxmax.y) / 2, z: (boxmin.z + boxmax.z) / 2 }, Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: boxmax.y, z: boxmax.z }, current_level - 1, 6),
+                    Self::build_tree_recursive(voxels.clone(), Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: (boxmin.y + boxmax.y) / 2, z: (boxmin.z + boxmax.z) / 2 }, boxmax, current_level - 1, 7),
                 ];
-                return SVO { is_leaf: false, color: [0, 0, 0, 0], children: new_svo_boxes.to_vec() };
+                return SVO { is_leaf: false, color: [0, 0, 0, 0], children: new_svo_boxes, octant_index: octant_index };
             }
         }
         println!("Empty voxel region at boxmin ({}, {}, {}) and boxmax ({}, {}, {})", boxmin.x, boxmin.y, boxmin.z, boxmax.x, boxmax.y, boxmax.z);
-        SVO { is_leaf: true, color: [0, 0, 0, 0], children: Vec::new() }
+        SVO { is_leaf: true, color: [0, 0, 0, 0], children: Vec::new(), octant_index: 9 }
     }
     pub fn estimate_branch_size(&self) -> usize {
         if self.is_leaf {
@@ -74,228 +76,92 @@ impl SVO {
     }
     pub fn pack_recursive(&self, packed_data: &mut Vec<u8>) {
         if self.is_leaf {
-            packed_data.push(LEAF_MARKER); // Leaf node indicator
+            packed_data.push(LEAF_MARKER);
             packed_data.extend_from_slice(&self.color);
         } else {
-            packed_data.push(BRANCH_MARKER); // Non-leaf node indicator
-            let sz = self.estimate_branch_size().to_le();
-            packed_data.push(sz as u8);
-            packed_data.push((sz >> 8) as u8);
-            packed_data.push((sz >> 16) as u8);
-            packed_data.push((sz >> 24) as u8);
+            packed_data.push(BRANCH_MARKER);
+            let node_size = Self::estimate_branch_size(&self);
+            packed_data.extend_from_slice(&(node_size as u32).to_le_bytes());
             for child in &self.children {
                 child.pack_recursive(packed_data);
             }
         }
     }
-    pub fn extract_3d_texture(&self, levels: u32) -> (Vec<u8>, [u32; 3]) {
-        let size = 2u32.pow(levels);
-        let dimensions = [size, size, size];
-        let total_voxels = (size as usize).pow(3);
-        
-        let mut texture_data = vec![0u8; total_voxels * 4];
-        
-        self.fill_3d_texture_recursive(
-            &mut texture_data,
-            dimensions,
-            Ivec3 { x: 0, y: 0, z: 0 },
-            Ivec3 { x: size as i32 - 1, y: size as i32 - 1, z: size as i32 - 1 },
-            levels,
-        );
-        
-        (texture_data, dimensions)
-    }
-    fn fill_3d_texture_recursive(&self, texture_data: &mut Vec<u8>, dimensions: [u32; 3], box_min: Ivec3, box_max: Ivec3, current_level: u32,) {
+    pub fn pack_recursive_layer(&self, packed_data: &mut Vec<u8>, layer: u32) {
         if self.is_leaf {
-            Self::fill_region_with_color(texture_data, dimensions, box_min, box_max, self.color,);
-        } else if current_level > 0 && self.children.len() == 8 {
-            let mid_x = (box_min.x + box_max.x) / 2;
-            let mid_y = (box_min.y + box_max.y) / 2;
-            let mid_z = (box_min.z + box_max.z) / 2;
-            let octants = [
-                (Ivec3 { x: box_min.x, y: box_min.y, z: box_min.z }, Ivec3 { x: mid_x, y: mid_y, z: mid_z }),
-                (Ivec3 { x: mid_x + 1, y: box_min.y, z: box_min.z }, Ivec3 { x: box_max.x, y: mid_y, z: mid_z }),
-                (Ivec3 { x: box_min.x, y: mid_y + 1, z: box_min.z }, Ivec3 { x: mid_x, y: box_max.y, z: mid_z }),
-                (Ivec3 { x: mid_x + 1, y: mid_y + 1, z: box_min.z }, Ivec3 { x: box_max.x, y: box_max.y, z: mid_z }),
-                (Ivec3 { x: box_min.x, y: box_min.y, z: mid_z + 1 }, Ivec3 { x: mid_x, y: mid_y, z: box_max.z }),
-                (Ivec3 { x: mid_x + 1, y: box_min.y, z: mid_z + 1 }, Ivec3 { x: box_max.x, y: mid_y, z: box_max.z }),
-                (Ivec3 { x: box_min.x, y: mid_y + 1, z: mid_z + 1 }, Ivec3 { x: mid_x, y: box_max.y, z: box_max.z }),
-                (Ivec3 { x: mid_x + 1, y: mid_y + 1, z: mid_z + 1 }, Ivec3 { x: box_max.x, y: box_max.y, z: box_max.z }),
-            ];
-
-            for (i, &(octant_min, octant_max)) in octants.iter().enumerate() {
-                if i < self.children.len() {
-                    self.children[i].fill_3d_texture_recursive(
-                        texture_data,
-                        dimensions,
-                        octant_min,
-                        octant_max,
-                        current_level - 1,
-                    );
-                }
+            if layer == 0 && self.octant_index != 9{
+                packed_data.push(LEAF_MARKER + self.octant_index);
+                packed_data.extend_from_slice(&self.color);
             }
-        }
-    }
-    fn fill_region_with_color(texture_data: &mut Vec<u8>, dimensions: [u32; 3], box_min: Ivec3, box_max: Ivec3, color: [u8; 4]) {
-        for z in box_min.z..=box_max.z {
-            for y in box_min.y..=box_max.y {
-                for x in box_min.x..=box_max.x {
-                    let index = Self::compute_texture_index(x as u32, y as u32, z as u32, dimensions);
-                    if index + 3 < texture_data.len() {
-                        texture_data[index] = color[0];
-                        texture_data[index + 1] = color[1];
-                        texture_data[index + 2] = color[2];
-                        texture_data[index + 3] = color[3];
+        } else {
+            if layer == 0{
+                packed_data.push(BRANCH_MARKER + self.octant_index);
+                let mut nn = 0u8;
+                for i in 0..8{
+                    if self.children[i].octant_index != 9{
+                        nn+=1;
                     }
                 }
-            }
-        }
-    }
-    pub fn get_texture_at_position(&self, pos: Ivec3, box_min: Ivec3, box_max: Ivec3, current_level: u32,) -> [u8; 4] {
-        if self.is_leaf {
-            return self.color;
-        }
-
-        if current_level == 0 {
-            return [0, 0, 0, 0];
-        }
-
-        let mid_x = (box_min.x + box_max.x) / 2;
-        let mid_y = (box_min.y + box_max.y) / 2;
-        let mid_z = (box_min.z + box_max.z) / 2;
-
-        let octant_index = Self::get_octant_index(pos, mid_x, mid_y, mid_z);
-
-        if octant_index < self.children.len() {
-            let (octant_min, octant_max) = Self::get_octant_bounds(
-                octant_index,
-                box_min,
-                box_max,
-                mid_x,
-                mid_y,
-                mid_z,
-            );
-            self.children[octant_index].get_texture_at_position(pos, octant_min, octant_max, current_level - 1)
-        } else {
-            [0, 0, 0, 0]
-        }
-    }
-    fn compute_texture_index(x: u32, y: u32, z: u32, dimensions: [u32; 3]) -> usize {
-        ((z * dimensions[1] * dimensions[0]) + (y * dimensions[0]) + x) as usize * 4
-    }
-    fn get_octant_index(pos: Ivec3, mid_x: i32, mid_y: i32, mid_z: i32) -> usize {
-        let mut index = 0;
-        if pos.x > mid_x { index |= 1; }
-        if pos.y > mid_y { index |= 2; }
-        if pos.z > mid_z { index |= 4; }
-        index
-    }
-    fn get_octant_bounds(octant_index: usize, box_min: Ivec3, box_max: Ivec3, mid_x: i32, mid_y: i32, mid_z: i32,) -> (Ivec3, Ivec3) {
-        let min_x = if octant_index & 1 == 0 { box_min.x } else { mid_x + 1 };
-        let max_x = if octant_index & 1 == 0 { mid_x } else { box_max.x };
-        let min_y = if octant_index & 2 == 0 { box_min.y } else { mid_y + 1 };
-        let max_y = if octant_index & 2 == 0 { mid_y } else { box_max.y };
-        let min_z = if octant_index & 4 == 0 { box_min.z } else { mid_z + 1 };
-        let max_z = if octant_index & 4 == 0 { mid_z } else { box_max.z };
-
-        (
-            Ivec3 { x: min_x, y: min_y, z: min_z },
-            Ivec3 { x: max_x, y: max_y, z: max_z },
-        )
-    }
-    pub fn extract_3d_texture_from_packed(packed_data: &[u8], levels: u32,) -> (Vec<u8>, [u32; 3]) {
-        let size = 2u32.pow(levels);
-        let dimensions = [size, size, size];
-        let total_voxels = (size as usize).pow(3);
-        
-        let mut texture_data = vec![0u8; total_voxels * 4];
-        let mut cursor = 0;
-        
-        Self::fill_3d_texture_from_packed_recursive(
-            packed_data,
-            &mut cursor,
-            &mut texture_data,
-            dimensions,
-            Ivec3 { x: 0, y: 0, z: 0 },
-            Ivec3 { x: size as i32 - 1, y: size as i32 - 1, z: size as i32 - 1 },
-            levels,
-        );
-        
-        (texture_data, dimensions)
-    }
-    fn fill_3d_texture_from_packed_recursive(packed_data: &[u8], cursor: &mut usize, texture_data: &mut Vec<u8>, dimensions: [u32; 3], box_min: Ivec3, box_max: Ivec3, current_level: u32,) {
-        if *cursor >= packed_data.len() {
-            return;
-        }
-
-        let marker = packed_data[*cursor];
-        *cursor += 1;
-
-        if marker == LEAF_MARKER {
-            // Read 4 bytes of RGBA color
-            if *cursor + 4 <= packed_data.len() {
-                let color = [
-                    packed_data[*cursor],
-                    packed_data[*cursor + 1],
-                    packed_data[*cursor + 2],
-                    packed_data[*cursor + 3],
-                ];
-                *cursor += 4;
-
-                // Fill entire region with this leaf color
-                Self::fill_region_with_color(texture_data, dimensions, box_min, box_max, color);
-            }
-        } else if marker == BRANCH_MARKER && current_level > 0 {
-            // Read 4-byte size in little-endian format (we mainly skip past it)
-            if *cursor + 4 <= packed_data.len() {
-                let _branch_size = u32::from_le_bytes([
-                    packed_data[*cursor],
-                    packed_data[*cursor + 1],
-                    packed_data[*cursor + 2],
-                    packed_data[*cursor + 3],
-                ]);
-                *cursor += 4;
-
-                // Subdivide into 8 octants
-                let mid_x = (box_min.x + box_max.x) / 2;
-                let mid_y = (box_min.y + box_max.y) / 2;
-                let mid_z = (box_min.z + box_max.z) / 2;
-
-                let octants = [
-                    (Ivec3 { x: box_min.x, y: box_min.y, z: box_min.z }, Ivec3 { x: mid_x, y: mid_y, z: mid_z }),
-                    (Ivec3 { x: mid_x + 1, y: box_min.y, z: box_min.z }, Ivec3 { x: box_max.x, y: mid_y, z: mid_z }),
-                    (Ivec3 { x: box_min.x, y: mid_y + 1, z: box_min.z }, Ivec3 { x: mid_x, y: box_max.y, z: mid_z }),
-                    (Ivec3 { x: mid_x + 1, y: mid_y + 1, z: box_min.z }, Ivec3 { x: box_max.x, y: box_max.y, z: mid_z }),
-                    (Ivec3 { x: box_min.x, y: box_min.y, z: mid_z + 1 }, Ivec3 { x: mid_x, y: mid_y, z: box_max.z }),
-                    (Ivec3 { x: mid_x + 1, y: box_min.y, z: mid_z + 1 }, Ivec3 { x: box_max.x, y: mid_y, z: box_max.z }),
-                    (Ivec3 { x: box_min.x, y: mid_y + 1, z: mid_z + 1 }, Ivec3 { x: mid_x, y: box_max.y, z: box_max.z }),
-                    (Ivec3 { x: mid_x + 1, y: mid_y + 1, z: mid_z + 1 }, Ivec3 { x: box_max.x, y: box_max.y, z: box_max.z }),
-                ];
-
-                // Process all 8 children
-                for (octant_min, octant_max) in &octants {
-                    Self::fill_3d_texture_from_packed_recursive(
-                        packed_data,
-                        cursor,
-                        texture_data,
-                        dimensions,
-                        *octant_min,
-                        *octant_max,
-                        current_level - 1,
-                    );
+                packed_data.push(nn);
+                for i in 0..nn{
+                    packed_data.push(0);
+                    packed_data.push(0);
+                    packed_data.push(0);
+                    packed_data.push(0);
+                }
+                //let node_size = Self::estimate_branch_size(&self);
+                //packed_data.extend_from_slice(&(node_size as u32).to_le_bytes());
+            }else{
+                for child in &self.children {
+                    child.pack_recursive_layer(packed_data, layer-1);
                 }
             }
         }
     }
-    pub fn extract_3d_texture_mipmaps_from_packed(packed_data: &[u8], max_levels: u32) -> Vec<(Vec<u8>, [u32; 3])> {
-        let mut mipmaps = Vec::new();
-        
-        for level in 0..=max_levels {
-            let (texture, dims) = Self::extract_3d_texture_from_packed(packed_data, level);
-            mipmaps.push((texture, dims));
+}
+
+pub fn compute_raw_data_indices(packed_data: &mut Vec<u8>) -> Vec<u32>{
+    let mut indices = vec![];
+    let mut i = 0;
+    while i < packed_data.len(){
+        match packed_data[i] < BRANCH_MARKER{
+            true => {
+                indices.push(i as u32);
+                i+=4;
+            },
+            false => {
+                indices.push(i as u32);
+                let chn = packed_data[i+1];
+                i += (chn as usize)*4+1;
+            },
         }
-        
-        mipmaps
+        i += 1;
+    }
+    indices
+}
+
+pub fn fill_indices(packed_data: &mut Vec<u8>, indices: Vec<u32>){
+    let mut ii = 0;
+    let mut i = 0;
+    while i < packed_data.len(){
+        match packed_data[i] < BRANCH_MARKER{
+            true => {
+                i+=4;
+            },
+            false => {
+                let chn = packed_data[i+1];
+                for j in (0..chn*4).step_by(4){
+                    let nextind = indices[ii].to_le_bytes();
+                    ii+=1;
+                    packed_data[i+2+j as usize] = nextind[0];
+                    packed_data[i+3+j as usize] = nextind[1];
+                    packed_data[i+4+j as usize] = nextind[2];
+                    packed_data[i+5+j as usize] = nextind[3];
+                }
+                i += (chn as usize)*4+1;
+            },
+        }
+        i += 1;
     }
 }
 
@@ -568,10 +434,34 @@ impl VoxelScene{
         //scn.data.resize(((size[0]*size[1]*size[2]*4) as f32) as usize, 0);
         scn.voxelize_triangles(vertices, tricolor, true);
         println!("Voxels generated: {}", scn.voxels.len());
-        let svo = SVO::build_tree_recursive(scn.voxels.clone(), Ivec3 { x: 0, y: 0, z: 0 }, Ivec3 { x: size[0] as i32, y: size[1] as i32, z: size[2] as i32 }, levels);
+        let svo = SVO::build_tree_recursive(scn.voxels.clone(), Ivec3 { x: 0, y: 0, z: 0 }, Ivec3 { x: size[0] as i32, y: size[1] as i32, z: size[2] as i32 }, levels, 10);
         println!("SVO built with {} children", svo.children.len());
         //scn.data = svo.pack_recursive(packed_data);
-        svo.pack_recursive(&mut scn.data);
+        //svo.pack_recursive(&mut scn.data);
+        scn.data = vec![];
+        let mut datavec = vec![];
+        let mut indvec = vec![];
+        for i in (0..(levels+1)).rev(){
+            let mut dvec = vec![];
+            svo.pack_recursive_layer(&mut dvec, i);
+            fill_indices(&mut dvec, indvec);
+            indvec = compute_raw_data_indices(&mut dvec);
+            datavec.push(dvec);
+        }
+        let mut szn = 0u32;
+        for i in (1..(levels)).rev(){
+            println!("level: {}", i);
+            szn += (datavec[i as usize].len() + 4) as u32;
+            let sz = szn.to_le_bytes();
+            scn.data.push(sz[0]);
+            scn.data.push(sz[1]);
+            scn.data.push(sz[2]);
+            scn.data.push(sz[3]);
+            //scn.data.extend_from_slice(&datavec[i as usize]);
+        }
+        for i in (0..(levels)).rev(){
+            scn.data.extend_from_slice(&datavec[i as usize]);
+        }
         println!("SVO packed with {} bytes", scn.data.len());
         scn
     }

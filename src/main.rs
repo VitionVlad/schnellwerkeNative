@@ -1,6 +1,6 @@
 use std::println;
 
-use crate::engine::{engine::Engine, image::Image, loader::rw::readfs, material::Material, math::vec2::Vec2, render::render::TextureFormat, scene::Scene, ui::{UIplane, UItext}};
+use crate::engine::{engine::Engine, image::Image, loader::rw::{readfs, writefs}, material::Material, math::vec2::Vec2, render::render::TextureFormat, scene::Scene, ui::{UIplane, UItext}};
 
 mod engine;
 
@@ -89,6 +89,8 @@ fn main() {
     let mut ltviewport = UIplane::new(&mut eng, lightmat, vec![black3d, bluenoise], engine::render::render::MeshUsage::LightingPass);
     ltviewport.object.physic_object.pos.z = 1.0;
     ltviewport.signal = false;
+
+    writefs("artifact.bin", scn.voxel_representation.data.clone());
 
     scn.voxel_representation.data.resize(0, 0);
 
