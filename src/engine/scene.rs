@@ -280,14 +280,13 @@ impl Scene{
                 }
             }
         }
-        println!("total vertices: {}, total colors: {}", totvrt.len(), tricolor.len());
 
         //let bd = VoxelScene::get_boundaries(totvrt.clone());
         if voxelize{
             if pak3e{
                 scn.voxel_representation = VoxelScene::from_file(&pakpath);
             }else{
-                scn.voxel_representation = VoxelScene::from_vertices_svo(totvrt.clone(), tricolor, 5);
+                scn.voxel_representation = VoxelScene::from_vertices(totvrt.clone(), voxel_size, tricolor);
                 scn.voxel_representation.save_file(&pakpath);
             }
         }

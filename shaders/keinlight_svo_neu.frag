@@ -81,11 +81,6 @@ const uint SVO_BRANCH_HEADER_SIZE= 2u;
 const int  SVO_MAX_DEPTH = 20;
 const uint SVO_LEVELS = 8u;
 
-uint addr[SVO_MAX_DEPTH+1];
-//uint entriesaddr[8];
-//float entriesd[8];
-//uint entrynm;
-
 void GetOctantBounds(int octantIdx, vec3 boxMin, vec3 boxMax, vec3 mid, out vec3 octMin, out vec3 octMax) {
     switch (octantIdx) {
         case 0: octMin = boxMin; octMax = mid; break;
@@ -129,15 +124,16 @@ vec4 SVO_LeafColor(uint leafPtr) {
     );
 }
 
-vec4 SVORaycast_DDA(vec3 ro, vec3 rd, vec3 gridMin, vec3 gridMax, int maxDepth, out vec3 hitPos, out vec3 hitNormal) {
+vec4 SVORaycast(vec3 ro, vec3 rd, vec3 gridMin, vec3 gridMax, int maxDepth, out vec3 hitPos, out vec3 hitNormal) {
     hitPos = vec3(0.0);
     hitNormal = vec3(0.0);
 
-    float gridTEnter, gridTExit;
-    if (!SVO_RayAABB(ro, rd, gridMin, gridMax, gridTEnter, gridTExit)) {
+    float rootTEnter, rootTExit;
+    if (!SVO_RayAABB(ro, rd, gridMin, gridMax, rootTEnter, rootTExit)) {
         return vec4(0.0, 0.0, 0.0, 1.0);
     }
 
+    // Layer table: absolute byte offset where each depth's node data begins.
     uint stkNodePtr[SVO_MAX_DEPTH + 1];
     stkNodePtr[0] = uint(maxDepth) * 4u;
     {
@@ -148,73 +144,84 @@ vec4 SVORaycast_DDA(vec3 ro, vec3 rd, vec3 gridMin, vec3 gridMax, int maxDepth, 
         }
     }
 
-    float t = max(gridTEnter, 0.0);
-    float epsBase = max(length(gridMax - gridMin), 1.0) * 1e-5;
-    t += epsBase;
+    uint stkBranchPtr[SVO_MAX_DEPTH];
+    uint stkChildIdx[SVO_MAX_DEPTH];
+    uint stkChildCount[SVO_MAX_DEPTH];
+    vec3 stkBoxMin[SVO_MAX_DEPTH];
+    vec3 stkBoxMax[SVO_MAX_DEPTH];
 
-    for (int step = 0; step < SVO_MAX_DEPTH * 8; step++) {
-        if (t >= gridTExit) {
-            break;
+    int current_layer = 0;
+    uint nodeptr = stkNodePtr[0];
+    stkBoxMin[0] = gridMin;
+    stkBoxMax[0] = gridMax;
+
+    for (int iter = 0; iter < SVO_MAX_DEPTH * 64; iter++) {
+        uint marker = SVO_Byte(nodeptr);
+        vec3 pBoxMin = stkBoxMin[current_layer];
+        vec3 pBoxMax = stkBoxMax[current_layer];
+
+        vec3 ownMin, ownMax;
+        if (current_layer == 0) {
+            ownMin = pBoxMin;
+            ownMax = pBoxMax;
+        } else {
+            int ownOctant = int(marker < SVO_BRANCH_MARKER ? marker : marker - SVO_BRANCH_MARKER);
+            GetOctantBounds(ownOctant, pBoxMin, pBoxMax, (pBoxMin + pBoxMax) * 0.5, ownMin, ownMax);
         }
-        vec3 p = ro + rd * t;
-        uint nodeptr = stkNodePtr[0];
-        vec3 bmin = gridMin;
-        vec3 bmax = gridMax;
-        int depth = 0;
-        bool foundLeaf = false;
 
-        for (int d = 0; d < maxDepth + 1; d++) {
-            uint marker = SVO_Byte(nodeptr);
-            if (marker < SVO_BRANCH_MARKER) {
-                foundLeaf = true;
-                break;
-            }
+        float te, tm;
+        bool hitsBox;
+        if (current_layer == 0) {
+            hitsBox = true;
+            te = rootTEnter;
+            tm = rootTExit;
+        } else {
+            hitsBox = SVO_RayAABB(ro, rd, ownMin, ownMax, te, tm);
+        }
 
-            vec3 mid = (bmin + bmax) * 0.5;
-            int targetOctant = 0;
-            if (p.x >= mid.x) targetOctant |= 1;
-            if (p.y >= mid.y) targetOctant |= 2;
-            if (p.z >= mid.z) targetOctant |= 4;
+        bool descended = false;
 
-            vec3 obmin, obmax;
-            GetOctantBounds(targetOctant, bmin, bmax, mid, obmin, obmax);
-
-            uint childCount = SVO_Byte(nodeptr + 1u);
-            uint childAddr = 0u;
-            bool found = false;
-            for (uint c = 0u; c < childCount; c++) {
-                uint rel = SVO_U32(nodeptr + 2u + c * 4u);
-                uint addr = stkNodePtr[depth + 1] + rel;
-                uint cmarker = SVO_Byte(addr);
-                int coctant = int(cmarker < SVO_BRANCH_MARKER ? cmarker : cmarker - SVO_BRANCH_MARKER);
-                if (coctant == targetOctant) {
-                    childAddr = addr;
-                    found = true;
-                    break;
+        if (marker < SVO_BRANCH_MARKER) {
+            if (hitsBox) {
+                vec4 lfc = SVO_LeafColor(nodeptr);
+                if (lfc.a != 0.0) {
+                    hitPos = ro + rd * te;
+                    return lfc;
                 }
             }
-            bmin = obmin;
-            bmax = obmax;
+        } else {
+            uint childCount = SVO_Byte(nodeptr + 1u);
+            if (hitsBox && childCount > 0u) {
+                stkBranchPtr[current_layer] = nodeptr;
+                stkChildCount[current_layer] = childCount;
+                stkChildIdx[current_layer] = 0u;
+                stkBoxMin[current_layer + 1] = ownMin;
+                stkBoxMax[current_layer + 1] = ownMax;
 
-            if (!found) {
+                uint childRel = SVO_U32(nodeptr + 2u);
+                nodeptr = stkNodePtr[current_layer + 1] + childRel;
+                current_layer++;
+                descended = true;
+            }
+        }
+        if (descended) {
+            continue;
+        }
+        current_layer--;
+        while (current_layer >= 0) {
+            stkChildIdx[current_layer]++;
+            if (stkChildIdx[current_layer] < stkChildCount[current_layer]) {
+                uint branchPtr = stkBranchPtr[current_layer];
+                uint childRel = SVO_U32(branchPtr + 2u + stkChildIdx[current_layer] * 4u);
+                nodeptr = stkNodePtr[current_layer + 1] + childRel;
+                current_layer++;
                 break;
             }
-
-            nodeptr = childAddr;
-            depth++;
+            current_layer--;
         }
-
-        if (foundLeaf) {
-            vec4 col = SVO_LeafColor(nodeptr);
-            if (col.a != 0.0) {
-                hitPos = p;
-                return col;
-            }
+        if (current_layer < 0) {
+            break;
         }
-        float boxTEnter, boxTExit;
-        SVO_RayAABB(ro, rd, bmin, bmax, boxTEnter, boxTExit);
-        float stepEps = max(length(bmax - bmin), 1.0) * 1e-4;
-        t = boxTExit + stepEps;
     }
 
     return vec4(SKY_COLOR, 1.0);
@@ -253,6 +260,6 @@ void main() {
     vec3 gridMin = mi.rtinfo.xyz;
     vec3 gridSize = mi.addinfo.yzw;
     vec3 gridMax = gridMin + gridSize * voxelSize;
-    outColor = SVORaycast_DDA(rayOrigin, rayDir, gridMin, gridMax, 5, outp, outn);
+    outColor = SVORaycast(rayOrigin, rayDir, gridMin, gridMax, 5, outp, outn);
     //outColor = voxelRaycast(rayOrigin, rayDir, outn);
 }

@@ -46,7 +46,6 @@ impl SVO {
             if v.pos.x >= boxmin.x && v.pos.x <= boxmax.x &&
                v.pos.y >= boxmin.y && v.pos.y <= boxmax.y &&
                v.pos.z >= boxmin.z && v.pos.z <= boxmax.z {
-                println!("Non-leaf voxel found at ({}, {}, {}) with color {:?}", v.pos.x, v.pos.y, v.pos.z, v.color);
                 let new_svo_boxes = vec![
                     Self::build_tree_recursive(voxels.clone(), boxmin, Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: (boxmin.y + boxmax.y) / 2, z: (boxmin.z + boxmax.z) / 2 }, current_level - 1, 0),
                     Self::build_tree_recursive(voxels.clone(), Ivec3 { x: (boxmin.x + boxmax.x) / 2, y: boxmin.y, z: boxmin.z }, Ivec3 { x: boxmax.x, y: (boxmin.y + boxmax.y) / 2, z: (boxmin.z + boxmax.z) / 2 }, current_level - 1, 1),
@@ -60,7 +59,6 @@ impl SVO {
                 return SVO { is_leaf: false, color: [0, 0, 0, 0], children: new_svo_boxes, octant_index: octant_index };
             }
         }
-        println!("Empty voxel region at boxmin ({}, {}, {}) and boxmax ({}, {}, {})", boxmin.x, boxmin.y, boxmin.z, boxmax.x, boxmax.y, boxmax.z);
         SVO { is_leaf: true, color: [0, 0, 0, 0], children: Vec::new(), octant_index: 9 }
     }
     pub fn estimate_branch_size(&self) -> usize {
@@ -95,13 +93,13 @@ impl SVO {
             }
         } else {
             if layer == 0{
-                packed_data.push(BRANCH_MARKER + self.octant_index);
                 let mut nn = 0u8;
                 for i in 0..8{
                     if self.children[i].octant_index != 9{
                         nn+=1;
                     }
                 }
+                packed_data.push(BRANCH_MARKER + self.octant_index);
                 packed_data.push(nn);
                 for i in 0..nn{
                     packed_data.push(0);
@@ -433,36 +431,29 @@ impl VoxelScene{
         let mut scn = Self::new(vec![], voxel_size, size, Vec3 { x: bond.0[0] as f32, y: bond.0[1] as f32, z: bond.0[2] as f32 }, levels);
         //scn.data.resize(((size[0]*size[1]*size[2]*4) as f32) as usize, 0);
         scn.voxelize_triangles(vertices, tricolor, true);
-        println!("Voxels generated: {}", scn.voxels.len());
         let svo = SVO::build_tree_recursive(scn.voxels.clone(), Ivec3 { x: 0, y: 0, z: 0 }, Ivec3 { x: size[0] as i32, y: size[1] as i32, z: size[2] as i32 }, levels, 10);
-        println!("SVO built with {} children", svo.children.len());
-        //scn.data = svo.pack_recursive(packed_data);
-        //svo.pack_recursive(&mut scn.data);
+
         scn.data = vec![];
         let mut datavec = vec![];
         let mut indvec = vec![];
-        for i in (0..(levels+1)).rev(){
+        for i in (0..(levels + 1)).rev() {
             let mut dvec = vec![];
             svo.pack_recursive_layer(&mut dvec, i);
             fill_indices(&mut dvec, indvec);
             indvec = compute_raw_data_indices(&mut dvec);
             datavec.push(dvec);
         }
-        let mut szn = 0u32;
-        for i in (1..(levels)).rev(){
-            println!("level: {}", i);
-            szn += (datavec[i as usize].len() + 4) as u32;
-            let sz = szn.to_le_bytes();
-            scn.data.push(sz[0]);
-            scn.data.push(sz[1]);
-            scn.data.push(sz[2]);
-            scn.data.push(sz[3]);
-            //scn.data.extend_from_slice(&datavec[i as usize]);
+        datavec.reverse();
+        let header_size = (levels * 4) as u32;
+        let mut offset = header_size + datavec[0].len() as u32;
+        for depth in 1..=levels {
+            scn.data.extend_from_slice(&offset.to_le_bytes());
+            offset += datavec[depth as usize].len() as u32;
         }
-        for i in (0..(levels)).rev(){
-            scn.data.extend_from_slice(&datavec[i as usize]);
+
+        for depth in 0..=levels {
+            scn.data.extend_from_slice(&datavec[depth as usize]);
         }
-        println!("SVO packed with {} bytes", scn.data.len());
         scn
     }
     pub fn from_file(path: &str) -> VoxelScene{
