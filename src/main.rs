@@ -100,7 +100,7 @@ fn main() {
 
     let mut relposx = 0.0;
 
-    const SPEED: f32 = 15.0f32;
+    const SPEED: f32 = 25.0f32;
 
     let mut tm = 0.0;
 
@@ -135,17 +135,16 @@ fn main() {
 
     let mut lastmsmv = eng.control.xpos;
 
+    let mut interactingph = false;
+
     for i in 0..scn.objects.len(){
       if scn.objects[i].name.contains("door_"){
         println!("object {} is door", scn.objects[i].name);
-        doors.push((i, false, scn.objects[i].physic_object.rot.y));
+        doors.push((i, false, scn.objects[i].physic_object.rot.y, scn.objects[i].physic_object.rot.y));
       }
     }
 
     while eng.work(){
-        //eng.cameras[0].physic_object.gravity = false;
-        //eng.cameras[0].physic_object.solid = false;
-
         if tm > 0.0{
           tm -= eng.logic_frametime;
         }
@@ -157,10 +156,16 @@ fn main() {
         }
 
         if eng.control.mouse_lock{
-          eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
-          eng.cameras[0].physic_object.rot.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - relpos.y;
-          savpos.x = eng.cameras[0].physic_object.rot.x;
-          savpos.y = eng.cameras[0].physic_object.rot.y;
+          if !interactingph{
+            eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
+            eng.cameras[0].physic_object.rot.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - relpos.y;
+            savpos.x = eng.cameras[0].physic_object.rot.x;
+            savpos.y = eng.cameras[0].physic_object.rot.y;
+          }else{
+            relpos.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - savpos.x;
+            relpos.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - savpos.y;
+            relposx = 0.0;
+          }
           if eng.cameras[0].physic_object.rot.x < -1.5 {
             relposx = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x + 1.5;
             eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
@@ -172,12 +177,10 @@ fn main() {
           if eng.control.get_key_state(40){
             eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED;
             eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED;
-            //eng.cameras[0].physic_object.acceleration.y += f32::sin(eng.cameras[0].physic_object.rot.x) * SPEED;
           }
           if eng.control.get_key_state(44){
             eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED;
             eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED;
-            //eng.cameras[0].physic_object.acceleration.y += f32::sin(eng.cameras[0].physic_object.rot.x) * -SPEED;
           }
           if eng.control.get_key_state(25){
             eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED;
@@ -187,24 +190,22 @@ fn main() {
             eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED;
             eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED;
           }
-          //if eng.control.mousebtn[2]{
-          //  eng.lights[0].pos.x = eng.cameras[0].physic_object.pos.x;
-          //  eng.lights[0].pos.y = eng.cameras[0].physic_object.pos.y;
-          //  eng.lights[0].pos.z = eng.cameras[0].physic_object.pos.z;
-          //}
           if !eng.control.mousebtn[2]{
             mousexmv = 0.0;
             for i in 0..doors.len(){
+              interactingph = false;
               doors[i].1 = false;
               doors[i].2 = scn.objects[doors[i].0].physic_object.rot.y;
             }
           }else{
             for i in 0..doors.len(){
               if scn.objects[doors[i].0].is_looking_at || doors[i].1{
+                interactingph = true;
                 doors[i].1 = true;
                 let delta = lastmsmv - eng.control.xpos;
                 mousexmv += delta;
                 scn.objects[doors[i].0].physic_object.rot.y = doors[i].2 - (mousexmv as f32)/1000.0;
+                scn.objects[doors[i].0].physic_object.rot.y = scn.objects[doors[i].0].physic_object.rot.y.clamp(doors[i].3 - 2.0943951, doors[i].3)
               }
             }
           }
