@@ -84,15 +84,15 @@ impl PhysicsObject{
             is_interacting: false,
             elasticity: 0.0f32,
             gravity: true,
-            air_friction: 0.9f32,
+            air_friction: 0.0125f32,
             pos: Vec3::new(),
             rot: Vec3::new(),
             scale: Vec3{ x: 1f32, y: 1f32, z: 1f32},
             mat: Mat4::new(),
             solid: true,
-            mass: 0.01f32,
+            mass: 15.0f32,
             enable_rotation: true,
-            step_height: 2f32,
+            step_height: 0.5f32,
             oldpos: Vec3::new(),
             oldrot: Vec3::new(),
             oldscale: Vec3::new(),
@@ -144,34 +144,40 @@ impl PhysicsObject{
         return f;
     }
     #[allow(dead_code)]
-    pub fn exec(&mut self){
+    pub fn exec(&mut self, logic_frametime: f32){
         if !self.is_static{
-            self.hit = false;
             self.hit = false;
             self.oldpos = self.pos;
             self.oldrot = self.rot;
             self.oldscale = self.scale;
-            self.speed += self.acceleration;
-            self.acceleration.x = 0.0;
-            self.acceleration.y = 0.0;
-            self.acceleration.z = 0.0;
-
-            self.speed.x *= self.air_friction;
-            self.speed.y *= self.air_friction;
-            self.speed.z *= self.air_friction;
-            self.pos += self.speed;
 
             if self.gravity{
                 self.acceleration.y = -self.mass;
             }
+
+            self.speed.x += self.acceleration.x*logic_frametime;
+            self.speed.y += self.acceleration.y*logic_frametime;
+            self.speed.z += self.acceleration.z*logic_frametime;
+            self.acceleration.x = 0.0;
+            self.acceleration.y = 0.0;
+            self.acceleration.z = 0.0;
+
+            let decay = self.air_friction.powf(logic_frametime);
+            self.speed.x *= decay;
+            self.speed.y *= decay;
+            self.speed.z *= decay;
+
+            self.pos.x += self.speed.x*logic_frametime;
+            self.pos.y += self.speed.y*logic_frametime;
+            self.pos.z += self.speed.z*logic_frametime;
             let mut mmat = Mat4::new();
             mmat.trans(self.pos);
             let mut t: Mat4 = Mat4::new();
             if self.enable_rotation {
-                t.yrot(self.rot.y);
+                t.xrot(self.rot.x);
                 mmat = mmat.mul(t);
                 t = Mat4::new();
-                t.xrot(self.rot.x);
+                t.yrot(self.rot.y);
                 mmat =  mmat.mul(t);
                 t = Mat4::new();
                 t.zrot(self.rot.z);
@@ -199,10 +205,10 @@ impl PhysicsObject{
                 mmat.trans(self.pos);
                 let mut t: Mat4 = Mat4::new();
                 if self.enable_rotation {
-                    t.yrot(self.rot.y);
+                    t.xrot(self.rot.x);
                     mmat =  mmat.mul(t);
                     t = Mat4::new();
-                    t.xrot(self.rot.x);
+                    t.yrot(self.rot.y);
                     mmat =  mmat.mul(t);
                     t = Mat4::new();
                     t.zrot(self.rot.z);

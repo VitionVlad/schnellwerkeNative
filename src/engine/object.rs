@@ -39,7 +39,7 @@ impl Object {
             draw: true,
             draw_shadow: true,
             draw_distance: 100f32,
-            view_reaction_distance: 2f32,
+            view_reaction_distance: 5f32,
             render_in_behind: true,
             name: name,
             usage: usage,
@@ -56,7 +56,7 @@ impl Object {
             draw: true,
             draw_shadow: true,
             draw_distance: 100f32,
-            view_reaction_distance: 2f32,
+            view_reaction_distance: 5f32,
             render_in_behind: true,
             name: "".to_string(),
             eng_ph_id: 0,
@@ -90,7 +90,7 @@ impl Object {
     pub fn execph(&mut self, eng: &mut Engine){
         if self.usage == MeshUsage::DefferedPass || self.usage == MeshUsage::ShadowAndDefferedPass {
             self.physic_object.reset_states();
-            self.physic_object.exec();
+            self.physic_object.exec(eng.logic_frametime);
             for i in 0..u32::min(eng.used_camera_count, 10){
                 eng.cameras[i as usize].physic_object.interact_with_other_object(self.physic_object);
             }
@@ -135,7 +135,7 @@ impl Object {
         if !self.blank{
             if self.usage == MeshUsage::DefferedPass || self.usage == MeshUsage::ShadowAndDefferedPass || self.usage == MeshUsage::ShadowPass{
                 self.physic_object.reset_states();
-                self.physic_object.exec();
+                self.physic_object.exec(eng.logic_frametime);
                 if !self.physic_object.is_static{
                     for i in 0..eng.obj_ph.len(){
                         if i != self.eng_ph_id{
@@ -210,6 +210,12 @@ impl Object {
                     mt.vec4mul(c1[6]),
                     mt.vec4mul(c1[7]),
                 ];
+
+                for i in 0..8{
+                    c1[i].x /= c1[i].w;
+                    c1[i].y /= c1[i].w; 
+                    c1[i].z /= c1[i].w;
+                }
 
                 let lbg = Self::getbgp(c1.to_vec());
                 let lsg = Self::getbsp(c1.to_vec());

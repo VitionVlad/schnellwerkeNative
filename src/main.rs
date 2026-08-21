@@ -13,7 +13,7 @@ fn main() {
     let frag = readfs("shaders/frag");
     let dvert = readfs("shaders/vdeffered");
     let dfrag = readfs("shaders/fdeffered");
-    let lfrag = readfs("shaders/fslight");
+    let lfrag = readfs("shaders/klight");
     let shadow = readfs("shaders/shadow");
     let textf = readfs("shaders/ftext");
     //let imgf = readfs("shaders/fimg");
@@ -74,25 +74,23 @@ fn main() {
     );
     fpscnt.new_line_symbol = b'|';
 
-    let mut scn = Scene::load_from_gltf(&mut eng, "assets/something.glb", matgeneral, true, 0.2f32);
+    let mut scn = Scene::load_from_gltf(&mut eng, "assets/test.glb", matgeneral, false, 0.2f32);
 
-    println!("{}, {}, {}, decomp_size: {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2], scn.voxel_representation.data.len());
+    //println!("{}, {}, {}, decomp_size: {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2], scn.voxel_representation.data.len());
 
     //let d3d = unpack_svo_to_texture(&scn.voxel_representation.data, 5, 32);
 
-    let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm, false);
+    //let black3d = Image::new(&eng, scn.voxel_representation.size, scn.voxel_representation.data.clone(), true, TextureFormat::R8g8b8a8Unorm, false);
 
     //let black3d = Image::new(&eng, [scn.voxel_representation.data.len() as u32, 1, 1], scn.voxel_representation.data.clone(), false, TextureFormat::R8, false);
 
-    //let black3d = Image::new(&eng, [1, 1, 1], vec![u8::MAX, u8::MAX, u8::MAX, u8::MAX], true, TextureFormat::R8g8b8a8Unorm, false);
+    let black3d = Image::new(&eng, [1, 1, 1], vec![u8::MAX, u8::MAX, u8::MAX, u8::MAX], true, TextureFormat::R8g8b8a8Unorm, false);
 
     let bluenoise = Image::new_from_files(&eng, vec!["assets/noise.png".to_string()]);
 
     let mut ltviewport = UIplane::new(&mut eng, lightmat, vec![black3d, bluenoise], engine::render::render::MeshUsage::LightingPass);
     ltviewport.object.physic_object.pos.z = 1.0;
     ltviewport.signal = false;
-
-    //writefs("artifact.bin", scn.voxel_representation.data.clone());
 
     scn.voxel_representation.data.resize(0, 0);
 
@@ -102,9 +100,9 @@ fn main() {
 
     let mut relposx = 0.0;
 
-    const SPEED: f32 = 0.0025f32;
+    const SPEED: f32 = 15.0f32;
 
-    let mut tm = 0;
+    let mut tm = 0.0;
 
     //for i in 0..scn.objects.len() {
     //  scn.objects[i].draw_distance = f32::MAX;
@@ -123,18 +121,33 @@ fn main() {
     eng.lights[0].color.y = 1.25f32;
     eng.lights[0].color.z = 1.25f32;
 
+    eng.cameras[0].physic_object.pos.y = 5.0;
+
     let mut fcnt = 0u32;
 
-    eng.render.resolution_scale = 0.1;
+    //eng.render.resolution_scale = 0.5;
 
     println!("shadowmapresolution(ignore if shadowmaps are off): {}", eng.render.shadow_map_resolution);
 
-    while eng.work(){
-        eng.cameras[0].physic_object.gravity = false;
-        eng.cameras[0].physic_object.solid = false;
+    let mut doors = vec![];
 
-        if tm > 0{
-          tm -= eng.times_to_calculate_physics as i32;
+    let mut mousexmv = 0.0;
+
+    let mut lastmsmv = eng.control.xpos;
+
+    for i in 0..scn.objects.len(){
+      if scn.objects[i].name.contains("door_"){
+        println!("object {} is door", scn.objects[i].name);
+        doors.push((i, false, scn.objects[i].physic_object.rot.y));
+      }
+    }
+
+    while eng.work(){
+        //eng.cameras[0].physic_object.gravity = false;
+        //eng.cameras[0].physic_object.solid = false;
+
+        if tm > 0.0{
+          tm -= eng.logic_frametime;
         }
 
         if !eng.control.mouse_lock {
@@ -159,12 +172,12 @@ fn main() {
           if eng.control.get_key_state(40){
             eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED;
             eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED;
-            eng.cameras[0].physic_object.acceleration.y += f32::sin(eng.cameras[0].physic_object.rot.x) * SPEED;
+            //eng.cameras[0].physic_object.acceleration.y += f32::sin(eng.cameras[0].physic_object.rot.x) * SPEED;
           }
           if eng.control.get_key_state(44){
             eng.cameras[0].physic_object.acceleration.z += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED;
             eng.cameras[0].physic_object.acceleration.x += f32::sin(eng.cameras[0].physic_object.rot.y) * SPEED;
-            eng.cameras[0].physic_object.acceleration.y += f32::sin(eng.cameras[0].physic_object.rot.x) * -SPEED;
+            //eng.cameras[0].physic_object.acceleration.y += f32::sin(eng.cameras[0].physic_object.rot.x) * -SPEED;
           }
           if eng.control.get_key_state(25){
             eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * SPEED;
@@ -174,18 +187,34 @@ fn main() {
             eng.cameras[0].physic_object.acceleration.x += f32::cos(eng.cameras[0].physic_object.rot.y) * -SPEED;
             eng.cameras[0].physic_object.acceleration.z += f32::sin(eng.cameras[0].physic_object.rot.y) * -SPEED;
           }
-          if eng.control.mousebtn[2]{
-            eng.lights[0].pos.x = eng.cameras[0].physic_object.pos.x;
-            eng.lights[0].pos.y = eng.cameras[0].physic_object.pos.y;
-            eng.lights[0].pos.z = eng.cameras[0].physic_object.pos.z;
+          //if eng.control.mousebtn[2]{
+          //  eng.lights[0].pos.x = eng.cameras[0].physic_object.pos.x;
+          //  eng.lights[0].pos.y = eng.cameras[0].physic_object.pos.y;
+          //  eng.lights[0].pos.z = eng.cameras[0].physic_object.pos.z;
+          //}
+          if !eng.control.mousebtn[2]{
+            mousexmv = 0.0;
+            for i in 0..doors.len(){
+              doors[i].1 = false;
+              doors[i].2 = scn.objects[doors[i].0].physic_object.rot.y;
+            }
+          }else{
+            for i in 0..doors.len(){
+              if scn.objects[doors[i].0].is_looking_at || doors[i].1{
+                doors[i].1 = true;
+                let delta = lastmsmv - eng.control.xpos;
+                mousexmv += delta;
+                scn.objects[doors[i].0].physic_object.rot.y = doors[i].2 - (mousexmv as f32)/1000.0;
+              }
+            }
           }
       }
-      if eng.control.get_key_state(49) && tm <= 0{
+      if eng.control.get_key_state(49) && tm <= 0.0{
         eng.control.mouse_lock = !eng.control.mouse_lock;
-        tm = eng.cpu_fps as i32/5;
+        tm = 0.25;
       }
 
-      let fpstxt = format!("CPU_fps:{}|GPU_fps:{}|CPU_frametime:{}", eng.cpu_fps, eng.gpu_fps, eng.render.cpu_frametime);
+      let fpstxt = format!("CPU_fps:{}|GPU_fps:{}|CPU_frametime:{}", eng.cpu_fps, eng.gpu_fps, eng.logic_frametime);
       fpscnt.size.x = 15_f32;
       fpscnt.size.y = 30_f32;
       fpscnt.pos.x = 0.0;
@@ -220,6 +249,7 @@ fn main() {
       if fcnt > 100000{
         fcnt = 0;
       }
+      lastmsmv = eng.control.xpos;
     }
     eng.end();
 }
