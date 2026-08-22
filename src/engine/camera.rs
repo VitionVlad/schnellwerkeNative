@@ -1,7 +1,7 @@
-use super::{math::{mat4::Mat4, vec3::Vec3}, physics::PhysicsObject};
+use super::{math::{mat4::Mat4, vec3::Vec3}, physics::physics::PhysicsObject};
 
 #[allow(dead_code)]
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct Camera{
     pub physic_object: PhysicsObject,
     pub fov: f32,

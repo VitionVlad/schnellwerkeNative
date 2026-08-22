@@ -3,16 +3,16 @@
 
 use crate::engine::light::LightType;
 
-use super::{camera::Camera, light::Light, math::vec3::Vec3, physics::PhysicsObject, render::render::{Control, Render}, audio::audio::AudioEngine};
+use super::{camera::Camera, light::Light, math::vec3::Vec3, physics::physics::PhysicsObject, render::render::{Control, Render}, audio::audio::AudioEngine};
 
 #[derive(Clone)]
 pub struct Engine{
     pub render: Render,
     pub audio: AudioEngine,
     pub control: Control,
-    pub cameras: [Camera; 10],
+    pub cameras: Vec<Camera>,
     pub used_camera_count: u32,
-    pub lights: [Light; 100],
+    pub lights: Vec<Light>,
     pub used_light_count: u32,
     pub physics_tick: u32,
     cumulated_time: f32,
@@ -33,9 +33,9 @@ impl Engine{
             render: rn,
             audio: AudioEngine::new(),
             control: Control::new(rn), 
-            cameras: [Camera{ physic_object: PhysicsObject::new(vec![Vec3{ x: 0.15, y: 0f32, z: 0.15}, Vec3{ x: -0.15, y: -2f32, z: -0.15}], false), fov: 90f32, znear: 0.1f32, zfar: 100f32, is_orthographic: false, rotation_colision_calc: false }; 10],
+            cameras: vec![Camera{ physic_object: PhysicsObject::new(vec![Vec3{ x: 0.15, y: 0f32, z: 0.15}, Vec3{ x: -0.15, y: -2f32, z: -0.15}], false), fov: 90f32, znear: 0.1f32, zfar: 100f32, is_orthographic: false, rotation_colision_calc: false }],
             used_camera_count: 1,
-            lights: [Light::new(super::light::LightType::Directional); 100],
+            lights: vec![Light::new(super::light::LightType::Directional)],
             used_light_count: 1,
             physics_tick: 4,
             cumulated_time: 0.0,
@@ -64,7 +64,7 @@ impl Engine{
         self.render.camera_count = self.used_camera_count;
         self.render.lights_count = self.used_light_count;
         self.render.shadow_map_count = self.lights.iter().take(self.used_light_count as usize).filter(|l| l.shadow).count() as u32;
-        for i in 0..u32::min(self.used_camera_count, 10){
+        for i in 0..u32::min(self.used_camera_count.min(self.cameras.len() as u32), 10){
             let mt = self.cameras[i as usize].get_projection(self.render.resolution_x as f32/self.render.resolution_y as f32);
             for j in 0..16{
                 self.render.set_deffered_uniform_data(j+i*16, mt.mat[j as usize]);
@@ -83,7 +83,7 @@ impl Engine{
             self.render.set_deffered_uniform_data(i*4+363, self.cameras[i as usize].fov);
         }
         let mut li = 0;
-        for i in 0..u32::min(self.used_light_count, 100){
+        for i in 0..u32::min(self.used_light_count.min(self.lights.len() as u32), 100){
             if self.lights[i as usize].shadow{
                 let mt = self.lights[i as usize].getvec();
                 for j in 0..16{
@@ -110,13 +110,13 @@ impl Engine{
         }
         //if self.used_light_count
         self.control.get_mouse_pos();
-        for i in 0..u32::min(self.used_camera_count, 10){
+        for i in 0..u32::min(self.used_camera_count.min(self.cameras.len() as u32), 10){
             self.cameras[i as usize].physic_object.reset_states();
             self.cameras[i as usize].physic_object.exec(self.logic_frametime);
         }
         for i in 0..self.obj_ph.len(){
-            for j in 0..u32::min(self.used_camera_count, 10){
-                self.cameras[j as usize].physic_object.interact_with_other_object(self.obj_ph[i]);
+            for j in 0..u32::min(self.used_camera_count.min(self.cameras.len() as u32), 10){
+                self.cameras[j as usize].physic_object.interact_with_other_object(self.obj_ph[i].clone());
             }
         }
         return self.render.continue_loop();

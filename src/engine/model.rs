@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use super::{engine::Engine, math::vec3::Vec3, physics::getpoints, render::render::Vertexes};
+use super::{engine::Engine, math::vec3::Vec3, physics::physics::getpoints, render::render::Vertexes};
 
 #[derive(Copy, Clone)]
 pub struct Model{

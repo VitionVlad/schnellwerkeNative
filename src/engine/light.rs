@@ -1,6 +1,6 @@
 use core::f32;
 
-use super::{camera::Camera, math::vec3::Vec3, physics::PhysicsObject};
+use super::{camera::Camera, math::vec3::Vec3, physics::physics::PhysicsObject};
 
 #[allow(dead_code)]
 #[derive(PartialEq)]
@@ -11,7 +11,7 @@ pub enum LightType{
 }
 
 #[allow(dead_code)]
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct Light{
     pub light_type: LightType,
     pub pos: Vec3,

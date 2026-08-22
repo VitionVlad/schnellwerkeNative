@@ -53,6 +53,7 @@ fn quat_to_euler(q: Vec4) -> Vec3 {
 
 pub struct ModelAsset{
     pub vertices: Vec<Vec<f32>>,
+    pub rwvertices: Vec<Vec<Vec3>>,
     pub matnam: Vec<String>,
     pub objpos: Vec<Vec3>,
     pub objrot: Vec<Vec3>,
@@ -65,9 +66,9 @@ impl ModelAsset{
     pub fn load_obj(path: &str) -> ModelAsset{
         let file = String::from_utf8(readfs(path)).unwrap();
         let reader: Vec<&str> = file.split('\n').collect();
-        let mut vert: Vec<[f32; 3]> = vec![];
-        let mut uv: Vec<[f32; 2]> = vec![];
-        let mut norm: Vec<[f32; 3]> = vec![];
+        let mut vert: Vec<Vec3> = vec![];
+        let mut uv: Vec<Vec2> = vec![];
+        let mut norm: Vec<Vec3> = vec![];
 
         let mut ivert: Vec<u32> = vec![];
         let mut iuv: Vec<u32> = vec![];
@@ -75,6 +76,8 @@ impl ModelAsset{
 
         let mut fnvrt: Vec<f32> = vec![];
         let mut fnobj: Vec<Vec<f32>> = vec![];
+
+        let mut fnrwobj: Vec<Vec<Vec3>> = vec![];
         
         let mut objcnt = 0usize;
         let mut objbegind: Vec<[usize; 3]> = vec![];
@@ -112,19 +115,19 @@ impl ModelAsset{
             }
             if va.as_bytes()[0] == b'v' && va.as_bytes()[1] == b' '{
                 let spl: Vec<&str> = va.split(' ').collect();
-                let pos: [f32; 3] = [spl[1].parse::<f32>().unwrap(), spl[2].parse::<f32>().unwrap(), spl[3].parse::<f32>().unwrap()];
+                let pos = Vec3{ x: spl[1].parse::<f32>().unwrap(), y: spl[2].parse::<f32>().unwrap(), z: spl[3].parse::<f32>().unwrap()};
                 vert.push(pos);
                 continue;
             }
             if va.as_bytes()[0] == b'v' && va.as_bytes()[1] == b't'{
                 let spl: Vec<&str> = va.split(' ').collect();
-                let uvc: [f32; 2] = [spl[1].parse::<f32>().unwrap(), spl[2].parse::<f32>().unwrap()];
+                let uvc = Vec2{ x: spl[1].parse::<f32>().unwrap(), y: spl[2].parse::<f32>().unwrap()};
                 uv.push(uvc);
                 continue;
             }
             if va.as_bytes()[0] == b'v' && va.as_bytes()[1] == b'n'{
                 let spl: Vec<&str> = va.split(' ').collect();
-                let normal: [f32; 3] = [spl[1].parse::<f32>().unwrap(), spl[2].parse::<f32>().unwrap(), spl[3].parse::<f32>().unwrap()];
+                let normal = Vec3{ x: spl[1].parse::<f32>().unwrap(), y: spl[2].parse::<f32>().unwrap(), z: spl[3].parse::<f32>().unwrap()};
                 norm.push(normal);
                 continue;
             }
@@ -151,24 +154,26 @@ impl ModelAsset{
         objbegind.push([ivert.len(), iuv.len(), inorm.len()]);
         for j in 0..objcnt{
             for i in objbegind[j][0]..objbegind[j+1][0]{
-                fnvrt.push(vert[ivert[i] as usize - 1][0]);
-                fnvrt.push(vert[ivert[i] as usize - 1][1]);
-                fnvrt.push(vert[ivert[i] as usize - 1][2]);
+                fnvrt.push(vert[ivert[i] as usize - 1].x);
+                fnvrt.push(vert[ivert[i] as usize - 1].y);
+                fnvrt.push(vert[ivert[i] as usize - 1].z);
             }
             for i in objbegind[j][1]..objbegind[j+1][1]{
-                fnvrt.push(uv[iuv[i] as usize - 1][0]);
-                fnvrt.push(uv[iuv[i] as usize - 1][1]);
+                fnvrt.push(uv[iuv[i] as usize - 1].x);
+                fnvrt.push(uv[iuv[i] as usize - 1].y);
             }
             for i in objbegind[j][2]..objbegind[j+1][2]{
-                fnvrt.push(norm[inorm[i] as usize - 1][0]);
-                fnvrt.push(norm[inorm[i] as usize - 1][1]);
-                fnvrt.push(norm[inorm[i] as usize - 1][2]);
+                fnvrt.push(norm[inorm[i] as usize - 1].x);
+                fnvrt.push(norm[inorm[i] as usize - 1].y);
+                fnvrt.push(norm[inorm[i] as usize - 1].z);
             }
+            fnrwobj.push(vert[objbegind[j][0]..objbegind[j+1][0]].to_vec());
             fnobj.push(fnvrt.clone());
             fnvrt = vec![];
         }
         ModelAsset { 
-            vertices: fnobj, 
+            vertices: fnobj,
+            rwvertices: fnrwobj, 
             matnam: mtsl,
             obn: obn,
             objpos: vec![],

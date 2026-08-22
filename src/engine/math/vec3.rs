@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[allow(dead_code)]
 #[derive(Clone, Copy)]
@@ -40,6 +40,12 @@ impl Vec3{
             y: self.y.abs(),
             z: self.z.abs(),
         }
+    }
+    pub fn dot(self, other: Vec3) -> f32 {
+        self.x*other.x + self.y*other.y + self.z*other.z
+    }
+    pub fn length_squared(self) -> f32{
+        self.x*self.x + self.y*self.y + self.z*self.z
     }
 }
 
@@ -116,5 +122,16 @@ impl DivAssign for Vec3 {
         self.x /= other.x;
         self.y /= other.y;
         self.z /= other.z;
+    }
+}
+
+impl Neg for Vec3{
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z
+        }
     }
 }

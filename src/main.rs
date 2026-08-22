@@ -140,7 +140,12 @@ fn main() {
     for i in 0..scn.objects.len(){
       if scn.objects[i].name.contains("door_"){
         println!("object {} is door", scn.objects[i].name);
+        scn.objects[i].physic_object.is_static = false;
+        scn.objects[i].physic_object.gravity = false;
+        scn.objects[i].physic_object.pin_pos = true;
         doors.push((i, false, scn.objects[i].physic_object.rot.y, scn.objects[i].physic_object.rot.y));
+      }else if scn.objects[i].name.contains("nos_"){
+        scn.objects[i].physic_object.solid = false;
       }
     }
 
@@ -196,6 +201,7 @@ fn main() {
               interactingph = false;
               doors[i].1 = false;
               doors[i].2 = scn.objects[doors[i].0].physic_object.rot.y;
+              scn.objects[doors[i].0].physic_object.rot.y = scn.objects[doors[i].0].physic_object.rot.y.clamp(doors[i].3 - 2.0943951, doors[i].3)
             }
           }else{
             for i in 0..doors.len(){
@@ -204,7 +210,8 @@ fn main() {
                 doors[i].1 = true;
                 let delta = lastmsmv - eng.control.xpos;
                 mousexmv += delta;
-                scn.objects[doors[i].0].physic_object.rot.y = doors[i].2 - (mousexmv as f32)/1000.0;
+                //scn.objects[doors[i].0].physic_object.rot.y = doors[i].2 - (mousexmv as f32)/1000.0;
+                scn.objects[doors[i].0].physic_object.angular_velocity.y = -(mousexmv as f32)/1000.0;
                 scn.objects[doors[i].0].physic_object.rot.y = scn.objects[doors[i].0].physic_object.rot.y.clamp(doors[i].3 - 2.0943951, doors[i].3)
               }
             }

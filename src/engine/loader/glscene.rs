@@ -60,6 +60,7 @@ fn quat_to_euler(q: Vec4) -> Vec3 {
 pub struct Globject{
   pub name: String,
   pub vertices: Vec<f32>,
+  pub rwvertices: Vec<Vec3>,
   pub position: Vec3,
   pub scale: Vec3,
   pub rot: Vec3,
@@ -186,11 +187,14 @@ impl Glscene{
       let mut acc = vec![];
       let mut accu = vec![];
 
+      let mut posacc = 0;
+
       for i in 0..mesh.attributes.len(){
         acc.push(mesh.attributes[i]);
         if mesh.attributesu[i] == "POSITION"{
           sbf[mesh.attributes[i]].mu = Aus::INDICES;
           accu.push(Aus::POSITION);
+          posacc = i;
         }else if mesh.attributesu[i] == "NORMAL"{
           sbf[mesh.attributes[i]].mu = Aus::INDICES;
           accu.push(Aus::NORMAL);
@@ -288,6 +292,7 @@ impl Glscene{
       objvec.push(Globject{
         name: gobj.name,
         vertices: fvrt,
+        rwvertices: sbf[posacc].vec3.clone(),
         position: Vec3 { x: gobj.position.x, y: gobj.position.y, z: gobj.position.z },
         scale: Vec3 { x: gobj.scale.x, y: gobj.scale.y, z: gobj.scale.z },
         rot: quat_to_euler(gobj.rotation),

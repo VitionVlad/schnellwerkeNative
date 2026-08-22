@@ -3,7 +3,7 @@
 
 use crate::engine::math::{vec3::Vec3, vec4::Vec4};
 
-use super::{engine::Engine, image::Image, material::Material, math::mat4::Mat4, model::Model, physics::PhysicsObject, render::render::{Mesh, MeshUsage}};
+use super::{engine::Engine, image::Image, material::Material, math::mat4::Mat4, model::Model, physics::physics::PhysicsObject, render::render::{Mesh, MeshUsage}};
 
 #[derive(Clone)]
 pub struct Object{
@@ -22,11 +22,11 @@ pub struct Object{
 }
 
 impl Object {
-    pub fn new(engine: &mut Engine, model: Model, material: Material, images: Vec<Image>, usage: MeshUsage, is_static: bool, name: String) -> Object{
-        let ph = PhysicsObject::new(model.points.to_vec(), is_static);
+    pub fn new(engine: &mut Engine, model: Model, material: Material, images: Vec<Image>, usage: MeshUsage, is_static: bool, name: String, raw_vertices: Vec<Vec3>) -> Object{
+        let ph = PhysicsObject::new_mesh(model.points.to_vec(), is_static, raw_vertices);
         let id = engine.obj_ph.len();
         if usage == MeshUsage::DefferedPass || usage == MeshUsage::ShadowAndDefferedPass || usage == MeshUsage::ShadowPass{
-            engine.obj_ph.push(ph);
+            engine.obj_ph.push(ph.clone());
         }
         let mut txs = vec![];
         for i in 0..images.len(){
@@ -34,7 +34,7 @@ impl Object {
         }
         Object { 
             mesh: Mesh::new(engine.render, model.vertexbuf, material.material_shaders, txs, usage),
-            physic_object: ph,
+            physic_object: ph.clone(),
             is_looking_at: false,
             draw: true,
             draw_shadow: true,
@@ -67,7 +67,7 @@ impl Object {
         let ph = PhysicsObject::new(model.points.to_vec(), is_static);
         let id = engine.obj_ph.len();
         if usage == MeshUsage::DefferedPass || usage == MeshUsage::ShadowAndDefferedPass || usage == MeshUsage::ShadowPass{
-            engine.obj_ph.push(ph);
+            engine.obj_ph.push(ph.clone());
         }
         let mut txs = vec![];
         for i in 0..images.len(){
@@ -75,7 +75,7 @@ impl Object {
         }
         self.mesh.destroy(engine.render);
         self.mesh.init(engine.render, model.vertexbuf, material.material_shaders, txs, usage);
-        self.physic_object = ph;
+        self.physic_object = ph.clone();
         self.is_looking_at = false;
         self.draw = true;
         self.draw_shadow = true;
@@ -92,7 +92,7 @@ impl Object {
             self.physic_object.reset_states();
             self.physic_object.exec(eng.logic_frametime);
             for i in 0..u32::min(eng.used_camera_count, 10){
-                eng.cameras[i as usize].physic_object.interact_with_other_object(self.physic_object);
+                eng.cameras[i as usize].physic_object.interact_with_other_object(self.physic_object.clone());
             }
         }
     }
@@ -139,11 +139,11 @@ impl Object {
                 if !self.physic_object.is_static{
                     for i in 0..eng.obj_ph.len(){
                         if i != self.eng_ph_id{
-                            self.physic_object.interact_with_other_object(eng.obj_ph[i]);
+                            self.physic_object.interact_with_other_object(eng.obj_ph[i].clone());
                         }
                     }
                 }
-                eng.obj_ph[self.eng_ph_id] = self.physic_object;
+                eng.obj_ph[self.eng_ph_id] = self.physic_object.clone();
             }
 
             let mut lubm;
