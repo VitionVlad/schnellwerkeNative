@@ -6,6 +6,8 @@ use crate::engine::math::vec2::Vec2;
 
 use crate::engine::math::{mat4::Mat4, vec3::Vec3};
 
+use crate::engine::physics::collision::*;
+
 #[allow(dead_code)]
 pub fn check_for_intersection(x1: f32, x2: f32, y1: f32, y2: f32) -> bool{
     return x1 <= y2 && y1 <= x2;
@@ -45,10 +47,9 @@ pub fn getpoints(v: Vec<f32>) -> Vec<Vec3>{
 #[allow(dead_code)]
 #[derive(Clone)]
 pub struct PhysicsObject{
+    pub collider: Collider,
     pub acceleration: Vec3,
     pub speed: Vec3,
-    pub v1: Vec3,
-    pub v2: Vec3,
     pub is_static: bool,
     pub is_interacting: bool,
     pub elasticity: f32,
@@ -67,23 +68,18 @@ pub struct PhysicsObject{
     oldpos: Vec3,
     oldrot: Vec3,
     oldscale: Vec3,
-    pub savedp1: Vec3,
-    pub savedp2: Vec3,
-    pub c1: [Vec3; 8],
     intersectionp: Vec2,
     pub hit: bool,
     pub pin_pos: bool,
-    pub raw_vertices: Vec<Vec3>,
 }
 
 impl PhysicsObject{
     #[allow(dead_code)]
     pub fn new(v: Vec<Vec3>, is_static: bool) -> PhysicsObject{
         PhysicsObject{
+            collider: Collider::new(v[1], v[0]),
             acceleration: Vec3::new(),
             speed: Vec3::new(),
-            v1: v[0],
-            v2: v[1],
             is_static: is_static,
             is_interacting: false,
             elasticity: 0.0f32,
@@ -102,22 +98,17 @@ impl PhysicsObject{
             oldpos: Vec3::new(),
             oldrot: Vec3::new(),
             oldscale: Vec3::new(),
-            savedp1: v[0],
-            savedp2: v[1],
-            c1: [Vec3::new(); 8],
             intersectionp: Vec2::new(),
             hit: false,
             pin_pos: false,
-            raw_vertices: vec![],
         }
     }
     #[allow(dead_code)]
     pub fn new_mesh(v: Vec<Vec3>, is_static: bool, raw_vertices: Vec<Vec3>) -> PhysicsObject{
         PhysicsObject{
+            collider: Collider::new_mesh(v[1], v[0], raw_vertices),
             acceleration: Vec3::new(),
             speed: Vec3::new(),
-            v1: v[0],
-            v2: v[1],
             is_static: is_static,
             is_interacting: false,
             elasticity: 0.0f32,
@@ -136,13 +127,9 @@ impl PhysicsObject{
             oldpos: Vec3::new(),
             oldrot: Vec3::new(),
             oldscale: Vec3::new(),
-            savedp1: v[0],
-            savedp2: v[1],
-            c1: [Vec3::new(); 8],
             intersectionp: Vec2::new(),
             hit: false,
             pin_pos: false,
-            raw_vertices: raw_vertices,
         }
     }
     #[allow(dead_code)]
@@ -154,38 +141,6 @@ impl PhysicsObject{
         }
     }
     #[allow(dead_code)]
-    fn getbgp(v: Vec<Vec3>) -> Vec3 {
-        let mut f = Vec3{ x: v[0].x, y: v[0].y, z: v[0].z};
-        for i in 0..v.len(){
-            if v[i].x > f.x{
-                f.x = v[i].x;
-            }
-            if v[i].y > f.y{
-                f.y = v[i].y;
-            }
-            if v[i].z > f.z{
-                f.z = v[i].z;
-            }
-        }
-        return f;
-    }
-    #[allow(dead_code)]
-    fn getbsp(v: Vec<Vec3>) -> Vec3 {
-        let mut f = Vec3{ x: v[0].x, y: v[0].y, z: v[0].z};
-        for i in 0..v.len(){
-            if v[i].x < f.x{
-                f.x = v[i].x;
-            }
-            if v[i].y < f.y{
-                f.y = v[i].y;
-            }
-            if v[i].z < f.z{
-                f.z = v[i].z;
-            }
-        }
-        return f;
-    }
-    #[allow(dead_code)]
     pub fn exec(&mut self, logic_frametime: f32){
         if !self.is_static{
             self.hit = false;
@@ -194,7 +149,7 @@ impl PhysicsObject{
             self.oldscale = self.scale;
 
             if self.gravity{
-                self.acceleration.y = -self.mass;
+                self.acceleration.y += -self.mass;
             }
 
             let decay = self.air_friction.powf(logic_frametime);
@@ -248,18 +203,7 @@ impl PhysicsObject{
             t.scale(self.scale);
             mmat =  mmat.mul(t);
             self.mat = mmat;
-            self.c1 = [
-                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v1.y, z: self.v1.z}),
-                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v2.y, z: self.v1.z}),
-                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v2.y, z: self.v1.z}),
-                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v1.y, z: self.v1.z}),
-                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v2.y, z: self.v2.z}),
-                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v2.y, z: self.v2.z}),
-                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v1.y, z: self.v2.z}),
-                Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v1.y, z: self.v2.z}),
-            ];
-            self.savedp1 = Self::getbgp(self.c1.to_vec());
-            self.savedp2 = Self::getbsp(self.c1.to_vec());
+            self.collider.update(self.mat);
         }else{
             if self.pos.x != self.oldpos.x || self.pos.y != self.oldpos.y || self.pos.z != self.oldpos.z || self.rot.x != self.oldrot.x || self.rot.y != self.oldrot.y || self.rot.z != self.oldrot.z || self.scale.x != self.oldscale.x || self.scale.y != self.oldscale.y || self.scale.z != self.oldscale.z{
                 let mut mmat = Mat4::new();
@@ -282,18 +226,8 @@ impl PhysicsObject{
                 self.oldpos = self.pos;
                 self.oldrot = self.rot;
                 self.oldscale = self.scale;
-                self.c1 = [
-                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v1.y, z: self.v1.z}),
-                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v2.y, z: self.v1.z}),
-                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v2.y, z: self.v1.z}),
-                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v1.y, z: self.v1.z}),
-                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v2.y, z: self.v2.z}),
-                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v2.y, z: self.v2.z}),
-                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v1.x, y: self.v1.y, z: self.v2.z}),
-                    Self::mat4vec3mulop(self.mat, Vec3{ x: self.v2.x, y: self.v1.y, z: self.v2.z}),
-                ];
-                self.savedp1 = Self::getbgp(self.c1.to_vec());
-                self.savedp2 = Self::getbsp(self.c1.to_vec());
+                self.mat = mmat;
+                self.collider.update(self.mat);
             }
         }
     }
@@ -304,7 +238,6 @@ impl PhysicsObject{
     pub fn reset_states(&mut self){
         self.is_interacting = false;
     }
-
     fn calclninter(&mut self, l1p1: Vec2, l1p2: Vec2, l2p1: Vec2, l2p2: Vec2){
         self.hit = false;
 
@@ -332,68 +265,50 @@ impl PhysicsObject{
     }
     #[allow(dead_code)]
     pub fn interact_with_other_object(&mut self, ph2: PhysicsObject){
-        if !self.pin_pos && check_for_intersection(ph2.savedp2.y, ph2.savedp1.y, self.savedp2.y, self.savedp1.y) && 
-            check_for_intersection(ph2.savedp2.x, ph2.savedp1.x, self.savedp2.x, self.savedp1.x) && 
-            check_for_intersection(ph2.savedp2.z, ph2.savedp1.z, self.savedp2.z, self.savedp1.z) {
-            self.is_interacting = true;
-            if self.solid && !self.is_static && ph2.solid{
-                self.acceleration.y = 0f32;
-                self.speed.y = -self.speed.y * self.elasticity;
-                if self.savedp2.y + self.step_height <= ph2.savedp1.y{
-                    let m = [
-                        [Vec2{ x: self.c1[3].x, y: self.c1[3].z}, Vec2{ x: self.c1[0].x, y: self.c1[0].z}],
-                        [Vec2{ x: self.c1[0].x, y: self.c1[0].z}, Vec2{ x: self.c1[6].x, y: self.c1[6].z}],
-                        [Vec2{ x: self.c1[6].x, y: self.c1[6].z}, Vec2{ x: self.c1[7].x, y: self.c1[7].z}],
-                        [Vec2{ x: self.c1[7].x, y: self.c1[7].z}, Vec2{ x: self.c1[3].x, y: self.c1[3].z}],
-                    ];
+        if self.pin_pos {
+            return;
+        }
+        if !self.collider.broad_phase(&ph2.collider) {
+            return;
+        }
 
-                    let o = [
-                        [Vec2{ x: ph2.c1[3].x, y: ph2.c1[3].z}, Vec2{ x: ph2.c1[0].x, y: ph2.c1[0].z}],
-                        [Vec2{ x: ph2.c1[0].x, y: ph2.c1[0].z}, Vec2{ x: ph2.c1[6].x, y: ph2.c1[6].z}],
-                        [Vec2{ x: ph2.c1[6].x, y: ph2.c1[6].z}, Vec2{ x: ph2.c1[7].x, y: ph2.c1[7].z}],
-                        [Vec2{ x: ph2.c1[7].x, y: ph2.c1[7].z}, Vec2{ x: ph2.c1[3].x, y: ph2.c1[3].z}],
-                    ];
+        self.is_interacting = true;
 
-                    for i in 0..4{
-                        for j in 0..4{
-                            self.calclninter(m[i][0], m[i][1], o[j][0], o[j][1]);
-                            if self.hit{
-                                break;
-                            }
+        if !(self.solid && !self.is_static && ph2.solid) {
+            return;
+        }
+
+        self.acceleration.y = 0.0;
+        self.speed.y = -self.speed.y * self.elasticity;
+
+        if self.collider.aabb_min.y + self.step_height <= ph2.collider.aabb_max.y {
+            if let Some(m) = self.collider.narrow_phase(&ph2.collider) {
+                match m.axis {
+                    Axis::X => {
+                        self.pos.x += m.sign * (m.penetration + 0.001);
+                        if self.speed.x * m.sign < 0.0 {
+                            self.speed.x = -self.speed.x * self.elasticity;
                         }
-                        if self.hit{
-                            let overlap_x_right = self.savedp1.x - ph2.savedp2.x;
-                            let overlap_x_left  = ph2.savedp1.x - self.savedp2.x;
-                            let overlap_z_front = self.savedp1.z - ph2.savedp2.z;
-                            let overlap_z_back  = ph2.savedp1.z - self.savedp2.z;
-
-                            let pen_x = overlap_x_right.min(overlap_x_left);
-                            let pen_z = overlap_z_front.min(overlap_z_back);
-
-                            if pen_x < pen_z {
-                                let sign = if overlap_x_right < overlap_x_left { -1.0f32 } else { 1.0f32 };
-                                self.pos.x += sign * (pen_x + 0.001);
-                            
-                                if self.speed.x * sign < 0.0 {
-                                    self.speed.x = -self.speed.x * self.elasticity;
-                                }
-                                self.acceleration.x = 0.0;
-                            } else {
-                                let sign = if overlap_z_front < overlap_z_back { -1.0f32 } else { 1.0f32 };
-                                self.pos.z += sign * (pen_z + 0.001);
-                            
-                                if self.speed.z * sign < 0.0 {
-                                    self.speed.z = -self.speed.z * self.elasticity;
-                                }
-                                self.acceleration.z = 0.0;
-                            }
-                            break;
-                        }
+                        self.acceleration.x = 0.0;
                     }
-                }else{
-                    self.pos.y += ph2.savedp1.y - self.savedp2.y - 0.001f32;
+                    Axis::Y => {
+                        self.pos.y += m.sign * (m.penetration + 0.001);
+                        if self.speed.y * m.sign < 0.0 {
+                            self.speed.y = -self.speed.y * self.elasticity;
+                        }
+                        self.acceleration.y = 0.0;
+                    }
+                    Axis::Z => {
+                        self.pos.z += m.sign * (m.penetration + 0.001);
+                        if self.speed.z * m.sign < 0.0 {
+                            self.speed.z = -self.speed.z * self.elasticity;
+                        }
+                        self.acceleration.z = 0.0;
+                    }
                 }
             }
+        } else {
+            self.pos.y += ph2.collider.aabb_max.y - self.collider.aabb_min.y - 0.001;
         }
     }
 }

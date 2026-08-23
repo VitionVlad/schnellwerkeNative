@@ -1,6 +1,6 @@
 use std::println;
 
-use crate::engine::{engine::Engine, image::Image, loader::rw::{readfs}, material::Material, math::{vec2::Vec2}, render::render::TextureFormat, scene::Scene, ui::{UIplane, UItext}};
+use crate::engine::{engine::Engine, image::Image, loader::rw::readfs, material::Material, math::{vec2::Vec2, vec3::Vec3}, render::render::TextureFormat, scene::Scene, ui::{UIplane, UItext}};
 
 mod engine;
 
@@ -74,7 +74,7 @@ fn main() {
     );
     fpscnt.new_line_symbol = b'|';
 
-    let mut scn = Scene::load_from_gltf(&mut eng, "assets/test.glb", matgeneral, false, 0.2f32);
+    let mut scn = Scene::load_from_gltf(&mut eng, "assets/test_field.glb", matgeneral, false, 0.2f32);
 
     //println!("{}, {}, {}, decomp_size: {}", scn.voxel_representation.size[0], scn.voxel_representation.size[1], scn.voxel_representation.size[2], scn.voxel_representation.data.len());
 
@@ -131,11 +131,21 @@ fn main() {
 
     let mut doors = vec![];
 
-    let mut mousexmv = 0.0;
+    let mut po = vec![];
 
     let mut lastmsmv = eng.control.xpos;
 
+    //let mut lastmsmvy = eng.control.ypos;
+
+    let mut mousexmv = 0.0;
+
+    //let mut mouseymv = 0.0;
+
     let mut interactingph = false;
+
+    let mut holdingph = false;
+
+    let mut active_object = -1;
 
     for i in 0..scn.objects.len(){
       if scn.objects[i].name.contains("door_"){
@@ -144,10 +154,14 @@ fn main() {
         scn.objects[i].physic_object.gravity = false;
         scn.objects[i].physic_object.pin_pos = true;
         doors.push((i, false, scn.objects[i].physic_object.rot.y, scn.objects[i].physic_object.rot.y));
-      }else if scn.objects[i].name.contains("nos_"){
-        scn.objects[i].physic_object.solid = false;
+      }else if scn.objects[i].name.contains("ph_"){
+        println!("vertices count for object {}: {}", scn.objects[i].name, scn.objects[i].physic_object.collider.vertices.len());
+        scn.objects[i].physic_object.is_static = false;
+        po.push(i);
       }
     }
+
+    eng.cameras[0].physic_object.collider.local_min.y = -1.5f32;
 
     while eng.work(){
         if tm > 0.0{
@@ -197,25 +211,59 @@ fn main() {
           }
           if !eng.control.mousebtn[2]{
             mousexmv = 0.0;
+            holdingph = false;
+            active_object = -1;
+            //mouseymv = 0.0;
             for i in 0..doors.len(){
               interactingph = false;
               doors[i].1 = false;
               doors[i].2 = scn.objects[doors[i].0].physic_object.rot.y;
-              scn.objects[doors[i].0].physic_object.rot.y = scn.objects[doors[i].0].physic_object.rot.y.clamp(doors[i].3 - 2.0943951, doors[i].3)
             }
           }else{
-            for i in 0..doors.len(){
-              if scn.objects[doors[i].0].is_looking_at || doors[i].1{
-                interactingph = true;
-                doors[i].1 = true;
-                let delta = lastmsmv - eng.control.xpos;
-                mousexmv += delta;
-                //scn.objects[doors[i].0].physic_object.rot.y = doors[i].2 - (mousexmv as f32)/1000.0;
-                scn.objects[doors[i].0].physic_object.angular_velocity.y = -(mousexmv as f32)/1000.0;
-                scn.objects[doors[i].0].physic_object.rot.y = scn.objects[doors[i].0].physic_object.rot.y.clamp(doors[i].3 - 2.0943951, doors[i].3)
+            if active_object == -1{
+              for i in 0..doors.len(){
+                if (scn.objects[doors[i].0].is_looking_at || doors[i].1) && !holdingph{
+                  interactingph = true;
+                  doors[i].1 = true;
+                  let delta = lastmsmv - eng.control.xpos;
+                  mousexmv += delta;
+                  //scn.objects[doors[i].0].physic_object.rot.y = doors[i].2 - (mousexmv as f32)/1000.0;
+                  scn.objects[doors[i].0].physic_object.angular_velocity.y = -(mousexmv as f32)/1000.0;
+                  break;
+                }
               }
+              for i in 0..po.len(){
+                if scn.objects[po[i]].is_looking_at && !interactingph{
+                  //scn.objects[po[i]].physic_object.acceleration.y = scn.objects[po[i]].physic_object.mass * (1.0+scn.objects[po[i]].physic_object.air_friction);
+                  //let deltay = lastmsmvy - eng.control.ypos;
+                  //mouseymv += deltay;
+                  //let deltax = lastmsmv - eng.control.xpos;
+                  //mousexmv += deltax;
+                  //scn.objects[po[i]].physic_object.acceleration.y += -(mouseymv as f32)/10.0;
+                  //scn.objects[po[i]].physic_object.acceleration.x = -(mousexmv as f32)/10.0;
+                  scn.objects[po[i]].physic_object.pos.y += 0.001;
+                  scn.objects[po[i]].physic_object.acceleration = Vec3{
+                    x: (eng.cameras[0].physic_object.pos.x + f32::sin(eng.cameras[0].physic_object.rot.y) - scn.objects[po[i]].physic_object.pos.x)*100.0,
+                    y: (eng.cameras[0].physic_object.pos.y + f32::sin(-eng.cameras[0].physic_object.rot.x) - scn.objects[po[i]].physic_object.pos.y)*100.0 + scn.objects[po[i]].physic_object.mass,
+                    z: (eng.cameras[0].physic_object.pos.z - f32::cos(eng.cameras[0].physic_object.rot.y) - scn.objects[po[i]].physic_object.pos.z)*100.0,
+                  };
+                  holdingph = true;
+                  active_object = i as i32;
+                  break;
+                }
+              }
+            }else{
+              scn.objects[po[active_object as usize]].physic_object.acceleration = Vec3{
+                x: (eng.cameras[0].physic_object.pos.x + f32::sin(eng.cameras[0].physic_object.rot.y) - scn.objects[po[active_object as usize]].physic_object.pos.x)*100.0,
+                y: (eng.cameras[0].physic_object.pos.y + f32::sin(-eng.cameras[0].physic_object.rot.x) - scn.objects[po[active_object as usize]].physic_object.pos.y)*100.0 + scn.objects[po[active_object as usize]].physic_object.mass,
+                z: (eng.cameras[0].physic_object.pos.z - f32::cos(eng.cameras[0].physic_object.rot.y) - scn.objects[po[active_object as usize]].physic_object.pos.z)*100.0,
+              };
+              holdingph = true;
             }
           }
+      }
+      for i in 0..doors.len(){
+        scn.objects[doors[i].0].physic_object.rot.y = scn.objects[doors[i].0].physic_object.rot.y.clamp(doors[i].3 - 2.0943951, doors[i].3)
       }
       if eng.control.get_key_state(49) && tm <= 0.0{
         eng.control.mouse_lock = !eng.control.mouse_lock;
@@ -258,6 +306,7 @@ fn main() {
         fcnt = 0;
       }
       lastmsmv = eng.control.xpos;
+      //lastmsmvy = eng.control.ypos;
     }
     eng.end();
 }

@@ -56,7 +56,7 @@ impl Object {
             draw: true,
             draw_shadow: true,
             draw_distance: 100f32,
-            view_reaction_distance: 5f32,
+            view_reaction_distance: 2f32,
             render_in_behind: true,
             name: "".to_string(),
             eng_ph_id: 0,
@@ -97,7 +97,7 @@ impl Object {
         }
     }
     fn in_range(v1: f32, v2: f32, p1: f32) -> bool{
-        return  p1>= v1 && p1 <= v2;
+        return  p1 >= v1 && p1 <= v2;
     }
     #[allow(dead_code)]
     fn getbgp(v: Vec<Vec4>) -> Vec3 {
@@ -187,14 +187,14 @@ impl Object {
                 mt.transpose();
 
                 let mut c1 = [
-                    lubm.vec4mul(Vec4{ x: self.physic_object.v1.x, y: self.physic_object.v1.y, z: self.physic_object.v1.z, w: 1.0}),
-                    lubm.vec4mul(Vec4{ x: self.physic_object.v1.x, y: self.physic_object.v2.y, z: self.physic_object.v1.z, w: 1.0}),
-                    lubm.vec4mul(Vec4{ x: self.physic_object.v2.x, y: self.physic_object.v2.y, z: self.physic_object.v1.z, w: 1.0}),
-                    lubm.vec4mul(Vec4{ x: self.physic_object.v2.x, y: self.physic_object.v1.y, z: self.physic_object.v1.z, w: 1.0}),
-                    lubm.vec4mul(Vec4{ x: self.physic_object.v2.x, y: self.physic_object.v2.y, z: self.physic_object.v2.z, w: 1.0}),
-                    lubm.vec4mul(Vec4{ x: self.physic_object.v1.x, y: self.physic_object.v2.y, z: self.physic_object.v2.z, w: 1.0}),
-                    lubm.vec4mul(Vec4{ x: self.physic_object.v1.x, y: self.physic_object.v1.y, z: self.physic_object.v2.z, w: 1.0}),
-                    lubm.vec4mul(Vec4{ x: self.physic_object.v2.x, y: self.physic_object.v1.y, z: self.physic_object.v2.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.collider.local_max.x, y: self.physic_object.collider.local_max.y, z: self.physic_object.collider.local_max.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.collider.local_max.x, y: self.physic_object.collider.local_min.y, z: self.physic_object.collider.local_max.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.collider.local_min.x, y: self.physic_object.collider.local_min.y, z: self.physic_object.collider.local_max.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.collider.local_min.x, y: self.physic_object.collider.local_max.y, z: self.physic_object.collider.local_max.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.collider.local_min.x, y: self.physic_object.collider.local_min.y, z: self.physic_object.collider.local_min.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.collider.local_max.x, y: self.physic_object.collider.local_min.y, z: self.physic_object.collider.local_min.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.collider.local_max.x, y: self.physic_object.collider.local_max.y, z: self.physic_object.collider.local_min.z, w: 1.0}),
+                    lubm.vec4mul(Vec4{ x: self.physic_object.collider.local_min.x, y: self.physic_object.collider.local_max.y, z: self.physic_object.collider.local_min.z, w: 1.0}),
                 ];
 
                 let bg = Self::getbgp(c1.to_vec());
@@ -220,7 +220,6 @@ impl Object {
                 let lbg = Self::getbgp(c1.to_vec());
                 let lsg = Self::getbsp(c1.to_vec());
 
-                let mut behind = false;
                 let cmp = eng.cameras[eng.primary_camera as usize].physic_object.pos;
                 let dst1 = f32::sqrt(f32::powi(bg.x-cmp.x, 2)+f32::powi(bg.y-cmp.y, 2)+f32::powi(bg.z-cmp.z, 2));
                 let dst2 = f32::sqrt(f32::powi(sg.x-cmp.x, 2)+f32::powi(sg.y-cmp.y, 2)+f32::powi(sg.z-cmp.z, 2));
@@ -229,7 +228,6 @@ impl Object {
                     self.mesh.draw = false;
                     self.mesh.keep_shadow = self.draw_shadow;
                     self.mesh.draw_shadow = self.draw_shadow;
-                    behind = true;
                 }else{
                     self.mesh.draw = self.draw;
                     self.mesh.keep_shadow = self.draw_shadow;
@@ -238,7 +236,7 @@ impl Object {
 
                 self.is_looking_at = false;
 
-                if Self::in_range(lsg.x, lbg.x, 0.0) && Self::in_range(lsg.y, lbg.y, 0.0) && !behind && fdst <= self.view_reaction_distance{
+                if Self::in_range(lsg.x, lbg.x, 0.0) && Self::in_range(lsg.y, lbg.y, 0.0) && Self::in_range(0.0, 1.0, lsg.z) && Self::in_range(0.0, 1.0, lbg.z) && fdst <= self.view_reaction_distance{
                     self.is_looking_at = true;
                 }
             }else if self.usage == MeshUsage::LightingPass || self.usage == MeshUsage::PostPass{

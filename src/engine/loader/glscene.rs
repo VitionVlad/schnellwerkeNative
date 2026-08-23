@@ -194,7 +194,6 @@ impl Glscene{
         if mesh.attributesu[i] == "POSITION"{
           sbf[mesh.attributes[i]].mu = Aus::INDICES;
           accu.push(Aus::POSITION);
-          posacc = i;
         }else if mesh.attributesu[i] == "NORMAL"{
           sbf[mesh.attributes[i]].mu = Aus::INDICES;
           accu.push(Aus::NORMAL);
@@ -227,6 +226,7 @@ impl Glscene{
             ii = acc[i];
           }else if accu[i] == Aus::POSITION{
             pi = acc[i];
+            posacc = pi;
           }else if accu[i] == Aus::UV{
             uvi = acc[i];
           }else if accu[i] == Aus::NORMAL{
@@ -259,6 +259,7 @@ impl Glscene{
         for i in 0..accu.len(){
           if accu[i] == Aus::POSITION{
             pi = acc[i];
+            posacc = pi;
           }else if accu[i] == Aus::UV{
             uvi = acc[i];
           }else if accu[i] == Aus::NORMAL{
