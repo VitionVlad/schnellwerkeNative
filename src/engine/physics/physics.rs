@@ -71,6 +71,9 @@ pub struct PhysicsObject{
     intersectionp: Vec2,
     pub hit: bool,
     pub pin_pos: bool,
+    ethalonrot: Vec3,
+    standing_on: bool,
+    pub compute_torque: bool,
 }
 
 impl PhysicsObject{
@@ -101,6 +104,9 @@ impl PhysicsObject{
             intersectionp: Vec2::new(),
             hit: false,
             pin_pos: false,
+            ethalonrot: Vec3::new(),
+            standing_on: false,
+            compute_torque: false,
         }
     }
     #[allow(dead_code)]
@@ -130,6 +136,9 @@ impl PhysicsObject{
             intersectionp: Vec2::new(),
             hit: false,
             pin_pos: false,
+            ethalonrot: Vec3::new(),
+            standing_on: false,
+            compute_torque: true,
         }
     }
     #[allow(dead_code)]
@@ -140,6 +149,9 @@ impl PhysicsObject{
             z: vec.x * m1.mat[8] + vec.y * m1.mat[9] + vec.z * m1.mat[10] + m1.mat[11], 
         }
     }
+    fn in_range(v1: f32, v2: f32, p1: f32) -> bool{
+        return  p1 >= v1 && p1 <= v2;
+    }
     #[allow(dead_code)]
     pub fn exec(&mut self, logic_frametime: f32){
         if !self.is_static{
@@ -148,8 +160,32 @@ impl PhysicsObject{
             self.oldrot = self.rot;
             self.oldscale = self.scale;
 
+            let mut lowest_corner = self.collider.corners[0];
+            let mut center = Vec3::new();
+
+            for i in 0..8{
+                center += self.collider.corners[i];
+                if lowest_corner.y > self.collider.corners[i].y{
+                    lowest_corner = self.collider.corners[i];
+                }
+            }
+
+            center /= Vec3{ x: 8.0, y: 8.0, z: 8.0};
+
             if self.gravity{
                 self.acceleration.y += -self.mass;
+                if self.compute_torque{
+                    let xsin = (self.rot.x + self.ethalonrot.x.asin()).sin();
+                    let zsin = (self.rot.z + self.ethalonrot.z.asin()).sin();
+                    if !Self::in_range(0.99, 1.0, xsin.abs())
+                    && !Self::in_range(0.0, 0.001, xsin.abs()){
+                        self.angular_acceleration.x += (center.z-lowest_corner.z)*self.mass;   
+                    }
+                    if !Self::in_range(0.99, 1.0, zsin.abs())
+                    && !Self::in_range(0.0, 0.001, zsin.abs()){
+                        self.angular_acceleration.z += (center.x-lowest_corner.x)*self.mass;    
+                    }
+                }
             }
 
             let decay = self.air_friction.powf(logic_frametime);
@@ -265,6 +301,12 @@ impl PhysicsObject{
     }
     #[allow(dead_code)]
     pub fn interact_with_other_object(&mut self, ph2: PhysicsObject){
+        self.standing_on = false;
+        self.ethalonrot = Vec3 { 
+            x: 0.0, 
+            y: 0.0, 
+            z: 0.0 
+        };
         if self.pin_pos {
             return;
         }
@@ -297,6 +339,12 @@ impl PhysicsObject{
                             self.speed.y = -self.speed.y * self.elasticity;
                         }
                         self.acceleration.y = 0.0;
+                        self.ethalonrot = Vec3 { 
+                            x: ph2.rot.x.sin(), 
+                            y: 0.0, 
+                            z: ph2.rot.z.sin() 
+                        };
+                        self.standing_on = true;
                     }
                     Axis::Z => {
                         self.pos.z += m.sign * (m.penetration + 0.001);
@@ -309,6 +357,12 @@ impl PhysicsObject{
             }
         } else {
             self.pos.y += ph2.collider.aabb_max.y - self.collider.aabb_min.y - 0.001;
+            self.ethalonrot = Vec3 { 
+                x: ph2.rot.x.sin(), 
+                y: 0.0, 
+                z: ph2.rot.z.sin() 
+            };
+            self.standing_on = true;
         }
     }
 }

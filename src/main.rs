@@ -135,15 +135,15 @@ fn main() {
 
     let mut lastmsmv = eng.control.xpos;
 
-    //let mut lastmsmvy = eng.control.ypos;
+    let mut lastmsmvy = eng.control.ypos;
 
     let mut mousexmv = 0.0;
-
-    //let mut mouseymv = 0.0;
 
     let mut interactingph = false;
 
     let mut holdingph = false;
+
+    let mut objrt = false;
 
     let mut active_object = -1;
 
@@ -175,7 +175,7 @@ fn main() {
         }
 
         if eng.control.mouse_lock{
-          if !interactingph{
+          if !interactingph && !objrt{
             eng.cameras[0].physic_object.rot.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
             eng.cameras[0].physic_object.rot.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - relpos.y;
             savpos.x = eng.cameras[0].physic_object.rot.x;
@@ -212,8 +212,8 @@ fn main() {
           if !eng.control.mousebtn[2]{
             mousexmv = 0.0;
             holdingph = false;
+            objrt = false;
             active_object = -1;
-            //mouseymv = 0.0;
             for i in 0..doors.len(){
               interactingph = false;
               doors[i].1 = false;
@@ -227,20 +227,12 @@ fn main() {
                   doors[i].1 = true;
                   let delta = lastmsmv - eng.control.xpos;
                   mousexmv += delta;
-                  //scn.objects[doors[i].0].physic_object.rot.y = doors[i].2 - (mousexmv as f32)/1000.0;
                   scn.objects[doors[i].0].physic_object.angular_velocity.y = -(mousexmv as f32)/1000.0;
                   break;
                 }
               }
               for i in 0..po.len(){
                 if scn.objects[po[i]].is_looking_at && !interactingph{
-                  //scn.objects[po[i]].physic_object.acceleration.y = scn.objects[po[i]].physic_object.mass * (1.0+scn.objects[po[i]].physic_object.air_friction);
-                  //let deltay = lastmsmvy - eng.control.ypos;
-                  //mouseymv += deltay;
-                  //let deltax = lastmsmv - eng.control.xpos;
-                  //mousexmv += deltax;
-                  //scn.objects[po[i]].physic_object.acceleration.y += -(mouseymv as f32)/10.0;
-                  //scn.objects[po[i]].physic_object.acceleration.x = -(mousexmv as f32)/10.0;
                   scn.objects[po[i]].physic_object.pos.y += 0.001;
                   scn.objects[po[i]].physic_object.acceleration = Vec3{
                     x: (eng.cameras[0].physic_object.pos.x + f32::sin(eng.cameras[0].physic_object.rot.y) - scn.objects[po[i]].physic_object.pos.x)*100.0,
@@ -259,6 +251,14 @@ fn main() {
                 z: (eng.cameras[0].physic_object.pos.z - f32::cos(eng.cameras[0].physic_object.rot.y) - scn.objects[po[active_object as usize]].physic_object.pos.z)*100.0,
               };
               holdingph = true;
+              objrt = false;
+              if eng.control.mousebtn[0]{
+                objrt = true;
+                let delta = lastmsmv - eng.control.xpos;
+                let deltay = lastmsmvy - eng.control.ypos;
+                scn.objects[po[active_object as usize]].physic_object.angular_velocity.y += deltay as f32/10.0;
+                scn.objects[po[active_object as usize]].physic_object.angular_velocity.x += delta as f32/10.0;
+              }
             }
           }
       }
@@ -306,7 +306,7 @@ fn main() {
         fcnt = 0;
       }
       lastmsmv = eng.control.xpos;
-      //lastmsmvy = eng.control.ypos;
+      lastmsmvy = eng.control.ypos;
     }
     eng.end();
 }
