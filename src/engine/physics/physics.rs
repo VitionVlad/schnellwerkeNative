@@ -230,10 +230,10 @@ impl PhysicsObject{
                 mmat = mmat.mul(t);
                 t = Mat4::new();
                 t.yrot(self.rot.y);
-                mmat =  mmat.mul(t);
+                mmat = mmat.mul(t);
                 t = Mat4::new();
                 t.zrot(self.rot.z);
-                mmat =  mmat.mul(t);
+                mmat = mmat.mul(t);
                 t = Mat4::new();
             }
             t.scale(self.scale);
@@ -247,13 +247,13 @@ impl PhysicsObject{
                 let mut t: Mat4 = Mat4::new();
                 if self.enable_rotation {
                     t.xrot(self.rot.x);
-                    mmat =  mmat.mul(t);
+                    mmat = mmat.mul(t);
                     t = Mat4::new();
                     t.yrot(self.rot.y);
-                    mmat =  mmat.mul(t);
+                    mmat = mmat.mul(t);
                     t = Mat4::new();
                     t.zrot(self.rot.z);
-                    mmat =  mmat.mul(t);
+                    mmat = mmat.mul(t);
                     t = Mat4::new();
                 }
                 t.scale(self.scale);
@@ -273,31 +273,6 @@ impl PhysicsObject{
     #[allow(dead_code)]
     pub fn reset_states(&mut self){
         self.is_interacting = false;
-    }
-    fn calclninter(&mut self, l1p1: Vec2, l1p2: Vec2, l2p1: Vec2, l2p2: Vec2){
-        self.hit = false;
-
-        let d1 = Vec2{ x: l1p2.x - l1p1.x, y: l1p2.y - l1p1.y}; 
-        let d2 = Vec2{ x: l2p2.x - l2p1.x, y: l2p2.y - l2p1.y}; 
-        let d3 = Vec2{ x: l2p1.x - l1p1.x, y: l2p1.y - l1p1.y}; 
-
-        let denom = Self::cross(d1, d2);
-
-        const EPS: f32 = 1e-9;
-        if denom.abs() < EPS {
-            return;
-        }
-
-        let t = Self::cross(d3, d2) / denom;
-        let s = Self::cross(d3, d1) / denom;
-
-        if t >= 0.0 && t <= 1.0 && s >= 0.0 && s <= 1.0 {
-            self.intersectionp = Vec2 {
-                x: l1p1.x + t * d1.x,
-                y: l1p1.y + t * d1.y,
-            };
-            self.hit = true;
-        }
     }
     #[allow(dead_code)]
     pub fn interact_with_other_object(&mut self, ph2: PhysicsObject){
@@ -323,7 +298,7 @@ impl PhysicsObject{
         self.acceleration.y = 0.0;
         self.speed.y = -self.speed.y * self.elasticity;
 
-        if self.collider.aabb_min.y + self.step_height <= ph2.collider.aabb_max.y {
+        if self.collider.aabb_min.y + self.step_height < ph2.collider.aabb_max.y {
             if let Some(m) = self.collider.narrow_phase(&ph2.collider) {
                 match m.axis {
                     Axis::X => {

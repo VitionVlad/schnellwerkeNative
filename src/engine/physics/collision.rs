@@ -95,7 +95,7 @@ impl Collider {
     fn overlap(min_a: f32, max_a: f32, min_b: f32, max_b: f32) -> bool {
         min_a <= max_b && min_b <= max_a
     }
-    pub fn narrow_phase(&self, other: &Collider) -> Option<Manifold> {
+     pub fn narrow_phase(&self, other: &Collider) -> Option<Manifold> {
         let footprint_a = self.footprint();
         let footprint_b = other.footprint();
 
@@ -131,14 +131,16 @@ impl Collider {
 
         Some(Manifold { axis, penetration, sign, contact_point })
     }
-    fn footprint(&self) -> [[Vec2; 2]; 4] {
+    fn footprint(&self) -> [[Vec2; 2]; 6] {
         let c = &self.corners;
         let flat = |v: Vec3| Vec2 { x: v.x, y: v.z };
         [
-            [flat(c[3]), flat(c[0])],
-            [flat(c[0]), flat(c[6])],
-            [flat(c[6]), flat(c[7])],
-            [flat(c[7]), flat(c[3])],
+            [flat(c[0]), flat(c[7])],
+            [flat(c[1]), flat(c[4])],
+            [flat(c[0]), flat(c[5])],
+            [flat(c[3]), flat(c[4])],
+            [flat(c[0]), flat(c[2])],
+            [flat(c[6]), flat(c[4])],
         ]
     }
     fn segment_intersection(l1p1: Vec2, l1p2: Vec2, l2p1: Vec2, l2p2: Vec2) -> Option<Vec2> {

@@ -60,7 +60,7 @@ impl Engine{
             self.cfps = 0;
             self.tmpassed = 0.0;
         }
-        self.logic_frametime = self.render.cpu_frametime/1000.0;
+        self.logic_frametime = (self.render.cpu_frametime/1000.0).min(1.0);
         self.render.camera_count = self.used_camera_count;
         self.render.lights_count = self.used_light_count;
         self.render.shadow_map_count = self.lights.iter().take(self.used_light_count as usize).filter(|l| l.shadow).count() as u32;
