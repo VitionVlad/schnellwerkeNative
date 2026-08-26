@@ -129,7 +129,7 @@ impl PhysicsObject{
             solid: true,
             mass: 25.0f32,
             enable_rotation: true,
-            step_height: 0.5f32,
+            step_height: 0.0f32,
             oldpos: Vec3::new(),
             oldrot: Vec3::new(),
             oldscale: Vec3::new(),
@@ -177,13 +177,13 @@ impl PhysicsObject{
                 if self.compute_torque{
                     let xsin = (self.rot.x + self.ethalonrot.x.asin()).sin();
                     let zsin = (self.rot.z + self.ethalonrot.z.asin()).sin();
-                    if !Self::in_range(0.99, 1.0, xsin.abs())
-                    && !Self::in_range(0.0, 0.001, xsin.abs()){
+                    if !Self::in_range(0.99999, 1.0, xsin.abs())
+                    && !Self::in_range(0.0, 0.00001, xsin.abs()){
                         self.angular_acceleration.x += (center.z-lowest_corner.z)*self.mass;   
                     }
-                    if !Self::in_range(0.99, 1.0, zsin.abs())
-                    && !Self::in_range(0.0, 0.001, zsin.abs()){
-                        self.angular_acceleration.z += (center.x-lowest_corner.x)*self.mass;    
+                    if !Self::in_range(0.99999, 1.0, zsin.abs())
+                    && !Self::in_range(0.0, 0.00001, zsin.abs()){
+                        self.angular_acceleration.z += (center.x-lowest_corner.x)*self.mass;
                     }
                 }
             }
@@ -298,46 +298,42 @@ impl PhysicsObject{
         self.acceleration.y = 0.0;
         self.speed.y = -self.speed.y * self.elasticity;
 
-        if self.collider.aabb_min.y + self.step_height < ph2.collider.aabb_max.y {
-            if let Some(m) = self.collider.narrow_phase(&ph2.collider) {
-                match m.axis {
-                    Axis::X => {
-                        self.pos.x += m.sign * (m.penetration + 0.001);
-                        if self.speed.x * m.sign < 0.0 {
-                            self.speed.x = -self.speed.x * self.elasticity;
-                        }
-                        self.acceleration.x = 0.0;
-                    }
-                    Axis::Y => {
-                        self.pos.y += m.sign * (m.penetration + 0.001);
-                        if self.speed.y * m.sign < 0.0 {
-                            self.speed.y = -self.speed.y * self.elasticity;
-                        }
-                        self.acceleration.y = 0.0;
-                        self.ethalonrot = Vec3 { 
-                            x: ph2.rot.x.sin(), 
-                            y: 0.0, 
-                            z: ph2.rot.z.sin() 
-                        };
-                        self.standing_on = true;
-                    }
-                    Axis::Z => {
-                        self.pos.z += m.sign * (m.penetration + 0.001);
-                        if self.speed.z * m.sign < 0.0 {
-                            self.speed.z = -self.speed.z * self.elasticity;
-                        }
-                        self.acceleration.z = 0.0;
-                    }
+        if let Some(m) = self.collider.narrow_phase(&ph2.collider) {
+            let n = Vec3 { x: -m.axis.x, y: -m.axis.y, z: -m.axis.z };
+            let self_bottom = self.collider.aabb_min.y;
+            let obstacle_top = ph2.collider.aabb_max.y;
+            let is_side_hit = n.y.abs() < std::f32::consts::FRAC_1_SQRT_2;
+            if is_side_hit && obstacle_top - self_bottom <= self.step_height {
+                self.pos.y += obstacle_top - self_bottom + 0.001;
+            } else {
+                self.pos.x -= m.axis.x * (m.penetration + 0.001);
+                self.pos.y -= m.axis.y * (m.penetration + 0.001);
+                self.pos.z -= m.axis.z * (m.penetration + 0.001);
+            
+                let v_along = self.speed.x * n.x + self.speed.y * n.y + self.speed.z * n.z;
+                if v_along < 0.0 {
+                    let j = (1.0 + self.elasticity) * v_along;
+                    self.speed.x -= n.x * j;
+                    self.speed.y -= n.y * j;
+                    self.speed.z -= n.z * j;
+                }
+            
+                let a_along = self.acceleration.x * n.x + self.acceleration.y * n.y + self.acceleration.z * n.z;
+                if a_along < 0.0 {
+                    self.acceleration.x -= n.x * a_along;
+                    self.acceleration.y -= n.y * a_along;
+                    self.acceleration.z -= n.z * a_along;
+                }
+            
+                if n.y > std::f32::consts::FRAC_1_SQRT_2 {
+                    self.standing_on = true;
+                    self.ethalonrot = Vec3 {
+                        x: ph2.rot.x.sin(),
+                        y: 0.0,
+                        z: ph2.rot.z.sin(),
+                    };
                 }
             }
-        } else {
-            self.pos.y += ph2.collider.aabb_max.y - self.collider.aabb_min.y - 0.001;
-            self.ethalonrot = Vec3 { 
-                x: ph2.rot.x.sin(), 
-                y: 0.0, 
-                z: ph2.rot.z.sin() 
-            };
-            self.standing_on = true;
         }
     }
 }

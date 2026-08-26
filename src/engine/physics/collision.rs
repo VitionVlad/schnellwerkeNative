@@ -10,10 +10,68 @@ pub enum Axis { X, Y, Z }
 #[allow(dead_code)]
 #[derive(Clone)]
 pub struct Manifold {
-    pub axis: Axis,
+    pub axis: Vec3,
     pub penetration: f32,
-    pub sign: f32,
-    pub contact_point: Vec2,
+}
+
+#[allow(dead_code)]
+#[derive(Clone)]
+pub struct Obb {
+    pub center: Vec3,
+    pub half_extents: Vec3,
+    pub axes: [Vec3; 3],
+}
+
+fn cross3(a: Vec3, b: Vec3) -> Vec3 {
+    Vec3 { x: a.y*b.z - a.z*b.y, y: a.z*b.x - a.x*b.z, z: a.x*b.y - a.y*b.x }
+}
+fn dot3(a: Vec3, b: Vec3) -> f32 { a.x*b.x + a.y*b.y + a.z*b.z }
+fn length3(v: Vec3) -> f32 { dot3(v, v).sqrt() }
+
+pub fn sat_test(a: &Obb, b: &Obb) -> Option<Manifold> {
+    let t = Vec3 { x: b.center.x - a.center.x, y: b.center.y - a.center.y, z: b.center.z - a.center.z };
+
+    let mut axes: Vec<Vec3> = Vec::with_capacity(15);
+    axes.extend_from_slice(&a.axes);
+    axes.extend_from_slice(&b.axes);
+    for ai in &a.axes {
+        for bi in &b.axes {
+            let c = cross3(*ai, *bi);
+            let len = length3(c);
+            if len > 1e-5 {
+                axes.push(Vec3 { x: c.x / len, y: c.y / len, z: c.z / len });
+            }
+        }
+    }
+
+    let mut best_axis = Vec3 { x: 0.0, y: 0.0, z: 0.0 };
+    let mut best_overlap = f32::MAX;
+
+    for axis in axes {
+        let ra = a.half_extents.x * dot3(a.axes[0], axis).abs()
+                + a.half_extents.y * dot3(a.axes[1], axis).abs()
+                + a.half_extents.z * dot3(a.axes[2], axis).abs();
+        let rb = b.half_extents.x * dot3(b.axes[0], axis).abs()
+                + b.half_extents.y * dot3(b.axes[1], axis).abs()
+                + b.half_extents.z * dot3(b.axes[2], axis).abs();
+
+        let separation = dot3(t, axis).abs();
+        let overlap = ra + rb - separation;
+
+        if overlap < 0.0 {
+            return None; // this axis separates them — no collision, bail out early
+        }
+        if overlap < best_overlap {
+            best_overlap = overlap;
+            best_axis = if dot3(t, axis) < 0.0 {
+                Vec3 { x: -axis.x, y: -axis.y, z: -axis.z }
+            } else {
+                axis
+            };
+        }
+    }
+
+    Some(Manifold { axis: best_axis, penetration: best_overlap })
 }
 
 #[allow(dead_code)]
@@ -25,6 +83,7 @@ pub struct Collider {
     pub corners: [Vec3; 8],
     pub aabb_min: Vec3,
     pub aabb_max: Vec3,
+    pub obb: Obb,
 }
 
 impl Collider {
@@ -36,6 +95,7 @@ impl Collider {
             corners: [Vec3::new(); 8],
             aabb_min: Vec3::new(),
             aabb_max: Vec3::new(),
+            obb: Obb { center: Vec3::new(), half_extents: Vec3::new(), axes: [Vec3::new(); 3] }
         }
     }
     pub fn new_mesh(local_min: Vec3, local_max: Vec3, vertices: Vec<Vec3>) -> Self {
@@ -46,6 +106,26 @@ impl Collider {
             corners: [Vec3::new(); 8],
             aabb_min: Vec3::new(),
             aabb_max: Vec3::new(),
+            obb: Obb { center: Vec3::new(), half_extents: Vec3::new(), axes: [Vec3::new(); 3] }
+        }
+    }
+    pub fn to_obb(&self) -> Obb {
+        let c0 = self.corners[0];
+        let sub = |p: Vec3| Vec3 { x: p.x - c0.x, y: p.y - c0.y, z: p.z - c0.z };
+        let norm = |v: Vec3| { let l = length3(v); (Vec3 { x: v.x/l, y: v.y/l, z: v.z/l }, l) };
+
+        let (ax, lx) = norm(sub(self.corners[3])); // v2.x edge
+        let (ay, ly) = norm(sub(self.corners[1])); // v2.y edge
+        let (az, lz) = norm(sub(self.corners[6])); // v2.z edge
+
+        Obb {
+            center: Vec3 {
+                x: (self.corners[0].x + self.corners[4].x) * 0.5,
+                y: (self.corners[0].y + self.corners[4].y) * 0.5,
+                z: (self.corners[0].z + self.corners[4].z) * 0.5,
+            },
+            half_extents: Vec3 { x: lx * 0.5, y: ly * 0.5, z: lz * 0.5 },
+            axes: [ax, ay, az],
         }
     }
     pub fn update(&mut self, mat: Mat4) {
@@ -61,6 +141,7 @@ impl Collider {
         ];
         self.aabb_max = Self::bounds_max(&self.corners);
         self.aabb_min = Self::bounds_min(&self.corners);
+        self.obb = self.to_obb();
     }
     fn transform(m: Mat4, v: Vec3) -> Vec3 {
         Vec3 {
@@ -96,40 +177,7 @@ impl Collider {
         min_a <= max_b && min_b <= max_a
     }
      pub fn narrow_phase(&self, other: &Collider) -> Option<Manifold> {
-        let footprint_a = self.footprint();
-        let footprint_b = other.footprint();
-
-        let mut contact = None;
-        'outer: for edge_a in footprint_a.iter() {
-            for edge_b in footprint_b.iter() {
-                if let Some(p) = Self::segment_intersection(edge_a[0], edge_a[1], edge_b[0], edge_b[1]) {
-                    contact = Some(p);
-                    break 'outer;
-                }
-            }
-        }
-        let contact_point = contact?;
-
-        let overlap_x_hi = self.aabb_max.x - other.aabb_min.x;
-        let overlap_x_lo = other.aabb_max.x - self.aabb_min.x;
-        let overlap_y_hi = self.aabb_max.y - other.aabb_min.y;
-        let overlap_y_lo = other.aabb_max.y - self.aabb_min.y;
-        let overlap_z_hi = self.aabb_max.z - other.aabb_min.z;
-        let overlap_z_lo = other.aabb_max.z - self.aabb_min.z;
-
-        let pen_x = overlap_x_hi.min(overlap_x_lo);
-        let pen_y = overlap_y_hi.min(overlap_y_lo);
-        let pen_z = overlap_z_hi.min(overlap_z_lo);
-
-        let (axis, penetration, sign) = if pen_x <= pen_y && pen_x <= pen_z {
-            (Axis::X, pen_x, if overlap_x_hi < overlap_x_lo { -1.0 } else { 1.0 })
-        } else if pen_y <= pen_z {
-            (Axis::Y, pen_y, if overlap_y_hi < overlap_y_lo { -1.0 } else { 1.0 })
-        } else {
-            (Axis::Z, pen_z, if overlap_z_hi < overlap_z_lo { -1.0 } else { 1.0 })
-        };
-
-        Some(Manifold { axis, penetration, sign, contact_point })
+        sat_test(&self.obb, &other.obb)
     }
     fn footprint(&self) -> [[Vec2; 2]; 6] {
         let c = &self.corners;
