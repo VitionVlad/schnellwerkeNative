@@ -1,5 +1,7 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
+use crate::engine::math::vec4::Vec4;
+
 #[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub struct Vec3{
@@ -49,6 +51,25 @@ impl Vec3{
     pub fn length_squared(self) -> f32{
         self.x*self.x + self.y*self.y + self.z*self.z
     }
+    #[allow(dead_code)]
+    pub fn to_quat(&self) -> Vec4 {
+        let cx = (self.x * 0.5).cos();
+        let sx = (self.x * 0.5).sin();
+
+        let cy = (self.y * 0.5).cos();
+        let sy = (self.y * 0.5).sin();
+
+        let cz = (self.z * 0.5).cos();
+        let sz = (self.z * 0.5).sin();
+
+        Vec4 {
+            x: sx * cy * cz - cx * sy * sz,
+            y: cx * sy * cz + sx * cy * sz,
+            z: cx * cy * sz - sx * sy * cz,
+            w: cx * cy * cz + sx * sy * sz,
+        }
+    }
+
 }
 
 impl Add for Vec3 {

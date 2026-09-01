@@ -1,5 +1,7 @@
 use core::f32;
 
+use crate::engine::math::vec4::Vec4;
+
 use super::{camera::Camera, math::vec3::Vec3, physics::physics::PhysicsObject};
 
 #[allow(dead_code)]
@@ -15,7 +17,7 @@ pub enum LightType{
 pub struct Light{
     pub light_type: LightType,
     pub pos: Vec3,
-    pub rot: Vec3,
+    pub rot: Vec4,
     pub color: Vec3,
     pub shadow: bool,
     pub direction: Vec3,
@@ -28,7 +30,7 @@ impl Light{
         Light{
             light_type: light_type,
             pos: Vec3::new(),
-            rot: Vec3::new(),
+            rot: Vec4::new(),
             color: Vec3{ x: 1f32, y: 1f32, z: 1f32},
             shadow: true,
             direction: Vec3::new(),

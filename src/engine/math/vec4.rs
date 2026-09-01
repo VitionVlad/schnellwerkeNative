@@ -14,6 +14,20 @@ impl Vec4{
     pub fn new() -> Vec4{
         Vec4 { x: 0.0f32, y: 0.0f32, z: 0.0f32, w: 0.0f32 }
     }
+    #[allow(dead_code)]
+    pub fn magnitude(self) -> f32{
+        (self.x*self.x + self.y*self.y + self.z*self.z + self.w*self.w).sqrt()
+    }
+    #[allow(dead_code)]
+    pub fn normalize(&mut self) {
+        let magnitude = self.magnitude();
+        if magnitude > f32::EPSILON {
+            self.x /= magnitude;
+            self.y /= magnitude;
+            self.z /= magnitude;
+            self.w /= magnitude;
+        }
+    }
 }
 
 impl Add for Vec4 {

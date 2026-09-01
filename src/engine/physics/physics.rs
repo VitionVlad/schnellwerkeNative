@@ -1,12 +1,19 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
-use std::ops::Mul;
-
 use crate::engine::math::vec2::Vec2;
 
+use crate::engine::math::vec4::Vec4;
 use crate::engine::math::{mat4::Mat4, vec3::Vec3};
 
 use crate::engine::physics::collision::*;
+
+const GRAVITATIONAL_ACCELERATION: f32 = 9.81f32;
+
+const TIE_EPS: f32 = 0.001;
+
+const ANGULAR_DAMPING: f32 = 2.0;
+
+const SETTLE_VEL_EPS: f32 = 0.01;
 
 #[allow(dead_code)]
 pub fn check_for_intersection(x1: f32, x2: f32, y1: f32, y2: f32) -> bool{
@@ -56,7 +63,7 @@ pub struct PhysicsObject{
     pub gravity: bool,
     pub air_friction: f32,
     pub pos: Vec3,
-    pub rot: Vec3,
+    pub rot: Vec4,
     pub angular_velocity: Vec3,
     pub angular_acceleration: Vec3,
     pub scale: Vec3,
@@ -66,12 +73,12 @@ pub struct PhysicsObject{
     pub enable_rotation: bool,
     pub step_height: f32,
     oldpos: Vec3,
-    oldrot: Vec3,
+    oldrot: Vec4,
     oldscale: Vec3,
     intersectionp: Vec2,
     pub hit: bool,
     pub pin_pos: bool,
-    ethalonrot: Vec3,
+    support_normal: Vec3,
     standing_on: bool,
     pub compute_torque: bool,
 }
@@ -89,7 +96,7 @@ impl PhysicsObject{
             gravity: true,
             air_friction: 0.005f32,
             pos: Vec3::new(),
-            rot: Vec3::new(),
+            rot: Vec4 { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
             angular_velocity: Vec3::new(),
             angular_acceleration: Vec3::new(),
             scale: Vec3{ x: 1f32, y: 1f32, z: 1f32},
@@ -99,12 +106,12 @@ impl PhysicsObject{
             enable_rotation: true,
             step_height: 0.5f32,
             oldpos: Vec3::new(),
-            oldrot: Vec3::new(),
+            oldrot: Vec4 { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
             oldscale: Vec3::new(),
             intersectionp: Vec2::new(),
             hit: false,
             pin_pos: false,
-            ethalonrot: Vec3::new(),
+            support_normal: Vec3::new(),
             standing_on: false,
             compute_torque: false,
         }
@@ -121,7 +128,7 @@ impl PhysicsObject{
             gravity: true,
             air_friction: 0.005f32,
             pos: Vec3::new(),
-            rot: Vec3::new(),
+            rot: Vec4 { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
             angular_velocity: Vec3::new(),
             angular_acceleration: Vec3::new(),
             scale: Vec3{ x: 1f32, y: 1f32, z: 1f32},
@@ -131,12 +138,12 @@ impl PhysicsObject{
             enable_rotation: true,
             step_height: 0.0f32,
             oldpos: Vec3::new(),
-            oldrot: Vec3::new(),
+            oldrot: Vec4 { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
             oldscale: Vec3::new(),
             intersectionp: Vec2::new(),
             hit: false,
             pin_pos: false,
-            ethalonrot: Vec3::new(),
+            support_normal: Vec3::new(),
             standing_on: false,
             compute_torque: true,
         }
@@ -160,32 +167,8 @@ impl PhysicsObject{
             self.oldrot = self.rot;
             self.oldscale = self.scale;
 
-            let mut lowest_corner = self.collider.corners[0];
-            let mut center = Vec3::new();
-
-            for i in 0..8{
-                center += self.collider.corners[i];
-                if lowest_corner.y > self.collider.corners[i].y{
-                    lowest_corner = self.collider.corners[i];
-                }
-            }
-
-            center /= Vec3{ x: 8.0, y: 8.0, z: 8.0};
-
             if self.gravity{
-                self.acceleration.y += -self.mass;
-                if self.compute_torque{
-                    let xsin = (self.rot.x + self.ethalonrot.x.asin()).sin();
-                    let zsin = (self.rot.z + self.ethalonrot.z.asin()).sin();
-                    if !Self::in_range(0.99999, 1.0, xsin.abs())
-                    && !Self::in_range(0.0, 0.00001, xsin.abs()){
-                        self.angular_acceleration.x += (center.z-lowest_corner.z)*self.mass;   
-                    }
-                    if !Self::in_range(0.99999, 1.0, zsin.abs())
-                    && !Self::in_range(0.0, 0.00001, zsin.abs()){
-                        self.angular_acceleration.z += (center.x-lowest_corner.x)*self.mass;
-                    }
-                }
+                self.acceleration.y += -GRAVITATIONAL_ACCELERATION;
             }
 
             let decay = self.air_friction.powf(logic_frametime);
@@ -210,6 +193,7 @@ impl PhysicsObject{
             self.angular_velocity.x += self.angular_acceleration.x*logic_frametime;
             self.angular_velocity.y += self.angular_acceleration.y*logic_frametime;
             self.angular_velocity.z += self.angular_acceleration.z*logic_frametime;
+
             self.angular_acceleration.x = 0.0;
             self.angular_acceleration.y = 0.0;
             self.angular_acceleration.z = 0.0;
@@ -218,26 +202,31 @@ impl PhysicsObject{
             self.angular_velocity.y *= decay;
             self.angular_velocity.z *= decay;
 
-            self.rot.x += self.angular_velocity.x*logic_frametime;
-            self.rot.y += self.angular_velocity.y*logic_frametime;
-            self.rot.z += self.angular_velocity.z*logic_frametime;
+            let (wx, wy, wz) = (self.angular_velocity.x, self.angular_velocity.y, self.angular_velocity.z);
+            let (qx, qy, qz, qw) = (self.rot.x, self.rot.y, self.rot.z, self.rot.w);
+
+            let dqx =  wx*qw + wy*qz - wz*qy;
+            let dqy = -wx*qz + wy*qw + wz*qx;
+            let dqz =  wx*qy - wy*qx + wz*qw;
+            let dqw = -(wx*qx + wy*qy + wz*qz);
+
+            self.rot.x += 0.5*dqx*logic_frametime;
+            self.rot.y += 0.5*dqy*logic_frametime;
+            self.rot.z += 0.5*dqz*logic_frametime;
+            self.rot.w += 0.5*dqw*logic_frametime;
+
+            self.rot.normalize();
 
             let mut mmat = Mat4::new();
             mmat.trans(self.pos);
             let mut t: Mat4 = Mat4::new();
             if self.enable_rotation {
-                t.xrot(self.rot.x);
-                mmat = mmat.mul(t);
-                t = Mat4::new();
-                t.yrot(self.rot.y);
-                mmat = mmat.mul(t);
-                t = Mat4::new();
-                t.zrot(self.rot.z);
-                mmat = mmat.mul(t);
+                t.quat_rot(self.rot);
+                mmat *= t;
                 t = Mat4::new();
             }
             t.scale(self.scale);
-            mmat =  mmat.mul(t);
+            mmat *= t;
             self.mat = mmat;
             self.collider.update(self.mat);
         }else{
@@ -246,18 +235,12 @@ impl PhysicsObject{
                 mmat.trans(self.pos);
                 let mut t: Mat4 = Mat4::new();
                 if self.enable_rotation {
-                    t.xrot(self.rot.x);
-                    mmat = mmat.mul(t);
-                    t = Mat4::new();
-                    t.yrot(self.rot.y);
-                    mmat = mmat.mul(t);
-                    t = Mat4::new();
-                    t.zrot(self.rot.z);
-                    mmat = mmat.mul(t);
+                    t.quat_rot(self.rot);
+                    mmat *= t;
                     t = Mat4::new();
                 }
                 t.scale(self.scale);
-                mmat =  mmat.mul(t);
+                mmat *= t;
                 self.mat = mmat;
                 self.oldpos = self.pos;
                 self.oldrot = self.rot;
@@ -277,11 +260,6 @@ impl PhysicsObject{
     #[allow(dead_code)]
     pub fn interact_with_other_object(&mut self, ph2: PhysicsObject){
         self.standing_on = false;
-        self.ethalonrot = Vec3 { 
-            x: 0.0, 
-            y: 0.0, 
-            z: 0.0 
-        };
         if self.pin_pos {
             return;
         }
@@ -316,6 +294,47 @@ impl PhysicsObject{
                     self.speed.x -= n.x * j;
                     self.speed.y -= n.y * j;
                     self.speed.z -= n.z * j;
+                    if self.compute_torque {
+                        let center = Vec3 {
+                            x: (self.collider.corners[0].x + self.collider.corners[4].x) * 0.5,
+                            y: (self.collider.corners[0].y + self.collider.corners[4].y) * 0.5,
+                            z: (self.collider.corners[0].z + self.collider.corners[4].z) * 0.5,
+                        };
+                    
+                        let depth = |c: &Vec3| -(c.x * n.x + c.y * n.y + c.z * n.z);
+                        let deepest = self.collider.corners.iter().map(depth).fold(f32::MIN, f32::max);
+                    
+                        const TIE_EPS: f32 = 0.001;
+                        let mut contact = Vec3::new();
+                        let mut tied = 0;
+                        for c in self.collider.corners.iter() {
+                            if deepest - depth(c) < TIE_EPS {
+                                contact += *c;
+                                tied += 1;
+                            }
+                        }
+                        contact /= Vec3 { x: tied as f32, y: tied as f32, z: tied as f32 };
+                    
+                        let r = Vec3 { x: contact.x - center.x, y: contact.y - center.y, z: contact.z - center.z };
+                        let cross_rn = Vec3 {
+                            x: r.y * n.z - r.z * n.y,
+                            y: r.z * n.x - r.x * n.z,
+                            z: r.x * n.y - r.y * n.x,
+                        };
+                    
+                        let he = Vec3 {
+                            x: (self.collider.local_max.x - self.collider.local_min.x) * 0.5,
+                            y: (self.collider.local_max.y - self.collider.local_min.y) * 0.5,
+                            z: (self.collider.local_max.z - self.collider.local_min.z) * 0.5,
+                        };
+                        let i_x = (he.y * he.y + he.z * he.z) / 3.0;
+                        let i_y = (he.x * he.x + he.z * he.z) / 3.0;
+                        let i_z = (he.x * he.x + he.y * he.y) / 3.0;
+                    
+                        self.angular_velocity.x -= j * cross_rn.x / i_x;
+                        self.angular_velocity.y -= j * cross_rn.y / i_y;
+                        self.angular_velocity.z -= j * cross_rn.z / i_z;
+                    }
                 }
             
                 let a_along = self.acceleration.x * n.x + self.acceleration.y * n.y + self.acceleration.z * n.z;
@@ -324,14 +343,10 @@ impl PhysicsObject{
                     self.acceleration.y -= n.y * a_along;
                     self.acceleration.z -= n.z * a_along;
                 }
-            
+
                 if n.y > std::f32::consts::FRAC_1_SQRT_2 {
                     self.standing_on = true;
-                    self.ethalonrot = Vec3 {
-                        x: ph2.rot.x.sin(),
-                        y: 0.0,
-                        z: ph2.rot.z.sin(),
-                    };
+                    self.support_normal = n;
                 }
             }
         }

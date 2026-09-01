@@ -22,13 +22,15 @@ impl Camera{
             ubm.orthographic(self.fov*aspect, -self.fov*aspect, self.fov, -self.fov, self.znear, self.zfar);
         }
         let mut t: Mat4 = Mat4::new();
-        t.xrot(self.physic_object.rot.x);
-        ubm *= t;
-        t = Mat4::new();
-        t.yrot(self.physic_object.rot.y);
-        ubm *= t;
-        t = Mat4::new();
-        t.zrot(self.physic_object.rot.z);
+        //t.xrot(self.physic_object.rot.x);
+        //ubm *= t;
+        //t = Mat4::new();
+        //t.yrot(self.physic_object.rot.y);
+        //ubm *= t;
+        //t = Mat4::new();
+        //t.zrot(self.physic_object.rot.z);
+        //ubm *= t;
+        t.quat_rot(self.physic_object.rot);
         ubm *= t;
         t = Mat4::new();
         t.trans(Vec3{ x: -self.physic_object.pos.x, y: -self.physic_object.pos.y, z: -self.physic_object.pos.z});

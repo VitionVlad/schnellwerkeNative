@@ -12,6 +12,18 @@ impl Vec2{
     pub fn new() -> Vec2{
         Vec2 { x: 0.0f32, y: 0.0f32 }
     }
+    #[allow(dead_code)]
+    pub fn dot(self, other: Vec2) -> f32 {
+        self.x*other.x + self.y*other.y
+    }
+    #[allow(dead_code)]
+    pub fn magnitude(self) -> f32 {
+        (self.x.powi(2)+self.y.powi(2)).sqrt()
+    }
+    #[allow(dead_code)]
+    pub fn vec_vec_angle(self, other: Vec2) -> f32 {
+        self.dot(other)/(self.magnitude()*other.magnitude())
+    }
 }
 
 impl Add for Vec2 {

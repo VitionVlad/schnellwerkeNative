@@ -63,7 +63,7 @@ pub struct Globject{
   pub rwvertices: Vec<Vec3>,
   pub position: Vec3,
   pub scale: Vec3,
-  pub rot: Vec3,
+  pub rot: Vec4,
   pub material: usize,
 }
 
@@ -296,7 +296,7 @@ impl Glscene{
         rwvertices: sbf[posacc].vec3.clone(),
         position: Vec3 { x: gobj.position.x, y: gobj.position.y, z: gobj.position.z },
         scale: Vec3 { x: gobj.scale.x, y: gobj.scale.y, z: gobj.scale.z },
-        rot: quat_to_euler(gobj.rotation),
+        rot: gobj.rotation,
         material: mesh.material,
       });
     }

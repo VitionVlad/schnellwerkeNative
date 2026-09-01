@@ -156,14 +156,8 @@ impl Object {
                 self.mesh.ubo[i] = ubm.mat[i];
             }
 
-            let mut t: Mat4 = Mat4::new();
             ubm = Mat4::new();
-            ubm.xrot(self.physic_object.rot.x);
-            t.yrot(self.physic_object.rot.y);
-            ubm *= t;
-            t = Mat4::new();
-            t.zrot(self.physic_object.rot.z);
-            ubm *= t;
+            ubm.quat_rot(self.physic_object.rot);
 
             lubm *= ubm;
 
