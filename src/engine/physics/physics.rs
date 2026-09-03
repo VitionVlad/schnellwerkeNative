@@ -78,7 +78,6 @@ pub struct PhysicsObject{
     intersectionp: Vec2,
     pub hit: bool,
     pub pin_pos: bool,
-    support_normal: Vec3,
     standing_on: bool,
     pub compute_torque: bool,
 }
@@ -111,7 +110,6 @@ impl PhysicsObject{
             intersectionp: Vec2::new(),
             hit: false,
             pin_pos: false,
-            support_normal: Vec3::new(),
             standing_on: false,
             compute_torque: false,
         }
@@ -143,7 +141,6 @@ impl PhysicsObject{
             intersectionp: Vec2::new(),
             hit: false,
             pin_pos: false,
-            support_normal: Vec3::new(),
             standing_on: false,
             compute_torque: true,
         }
@@ -154,6 +151,18 @@ impl PhysicsObject{
             x: vec.x * m1.mat[0] + vec.y * m1.mat[1] + vec.z * m1.mat[2] + m1.mat[3], 
             y: vec.x * m1.mat[4] + vec.y * m1.mat[5] + vec.z * m1.mat[6] + m1.mat[7], 
             z: vec.x * m1.mat[8] + vec.y * m1.mat[9] + vec.z * m1.mat[10] + m1.mat[11], 
+        }
+    }
+    fn rotated_up(q: Vec4) -> Vec3 {
+        let magnitude_squared = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
+        if magnitude_squared <= f32::EPSILON {
+            return Vec3 { x: 0.0, y: 1.0, z: 0.0 };
+        }
+
+        Vec3 {
+            x: 2.0 * (q.x * q.y + q.z * q.w) / magnitude_squared,
+            y: (1.0 - 2.0 * (q.x * q.x + q.z * q.z) / magnitude_squared),
+            z: 2.0 * (q.y * q.z - q.x * q.w) / magnitude_squared,
         }
     }
     fn in_range(v1: f32, v2: f32, p1: f32) -> bool{
@@ -202,7 +211,7 @@ impl PhysicsObject{
             self.angular_velocity.y *= decay;
             self.angular_velocity.z *= decay;
 
-            let (wx, wy, wz) = (self.angular_velocity.x, self.angular_velocity.y, self.angular_velocity.z);
+            let (wx, wy, wz) = (-self.angular_velocity.x, -self.angular_velocity.y, -self.angular_velocity.z);
             let (qx, qy, qz, qw) = (self.rot.x, self.rot.y, self.rot.z, self.rot.w);
 
             let dqx =  wx*qw + wy*qz - wz*qy;
@@ -294,47 +303,47 @@ impl PhysicsObject{
                     self.speed.x -= n.x * j;
                     self.speed.y -= n.y * j;
                     self.speed.z -= n.z * j;
-                    if self.compute_torque {
-                        let center = Vec3 {
-                            x: (self.collider.corners[0].x + self.collider.corners[4].x) * 0.5,
-                            y: (self.collider.corners[0].y + self.collider.corners[4].y) * 0.5,
-                            z: (self.collider.corners[0].z + self.collider.corners[4].z) * 0.5,
-                        };
-                    
-                        let depth = |c: &Vec3| -(c.x * n.x + c.y * n.y + c.z * n.z);
-                        let deepest = self.collider.corners.iter().map(depth).fold(f32::MIN, f32::max);
-                    
-                        const TIE_EPS: f32 = 0.001;
-                        let mut contact = Vec3::new();
-                        let mut tied = 0;
-                        for c in self.collider.corners.iter() {
-                            if deepest - depth(c) < TIE_EPS {
-                                contact += *c;
-                                tied += 1;
-                            }
-                        }
-                        contact /= Vec3 { x: tied as f32, y: tied as f32, z: tied as f32 };
-                    
-                        let r = Vec3 { x: contact.x - center.x, y: contact.y - center.y, z: contact.z - center.z };
-                        let cross_rn = Vec3 {
-                            x: r.y * n.z - r.z * n.y,
-                            y: r.z * n.x - r.x * n.z,
-                            z: r.x * n.y - r.y * n.x,
-                        };
-                    
-                        let he = Vec3 {
-                            x: (self.collider.local_max.x - self.collider.local_min.x) * 0.5,
-                            y: (self.collider.local_max.y - self.collider.local_min.y) * 0.5,
-                            z: (self.collider.local_max.z - self.collider.local_min.z) * 0.5,
-                        };
-                        let i_x = (he.y * he.y + he.z * he.z) / 3.0;
-                        let i_y = (he.x * he.x + he.z * he.z) / 3.0;
-                        let i_z = (he.x * he.x + he.y * he.y) / 3.0;
-                    
-                        self.angular_velocity.x -= j * cross_rn.x / i_x;
-                        self.angular_velocity.y -= j * cross_rn.y / i_y;
-                        self.angular_velocity.z -= j * cross_rn.z / i_z;
-                    }
+                    //if self.compute_torque {
+                    //    let center = Vec3 {
+                    //        x: (self.collider.corners[0].x + self.collider.corners[4].x) * 0.5,
+                    //        y: (self.collider.corners[0].y + self.collider.corners[4].y) * 0.5,
+                    //        z: (self.collider.corners[0].z + self.collider.corners[4].z) * 0.5,
+                    //    };
+                    //
+                    //    let depth = |c: &Vec3| -(c.x * n.x + c.y * n.y + c.z * n.z);
+                    //    let deepest = self.collider.corners.iter().map(depth).fold(f32::MIN, f32::max);
+                    //
+                    //    const TIE_EPS: f32 = 0.001;
+                    //    let mut contact = Vec3::new();
+                    //    let mut tied = 0;
+                    //    for c in self.collider.corners.iter() {
+                    //        if deepest - depth(c) < TIE_EPS {
+                    //            contact += *c;
+                    //            tied += 1;
+                    //        }
+                    //    }
+                    //    contact /= Vec3 { x: tied as f32, y: tied as f32, z: tied as f32 };
+                    //
+                    //    let r = Vec3 { x: contact.x - center.x, y: contact.y - center.y, z: contact.z - center.z };
+                    //    let cross_rn = Vec3 {
+                    //        x: r.y * n.z - r.z * n.y,
+                    //        y: r.z * n.x - r.x * n.z,
+                    //        z: r.x * n.y - r.y * n.x,
+                    //    };
+                    //
+                    //    let he = Vec3 {
+                    //        x: (self.collider.local_max.x - self.collider.local_min.x) * 0.5,
+                    //        y: (self.collider.local_max.y - self.collider.local_min.y) * 0.5,
+                    //        z: (self.collider.local_max.z - self.collider.local_min.z) * 0.5,
+                    //    };
+                    //    let i_x = (he.y * he.y + he.z * he.z) / 3.0;
+                    //    let i_y = (he.x * he.x + he.z * he.z) / 3.0;
+                    //    let i_z = (he.x * he.x + he.y * he.y) / 3.0;
+                    //
+                    //    self.angular_velocity.x -= j * cross_rn.x / i_x;
+                    //    self.angular_velocity.y -= j * cross_rn.y / i_y;
+                    //    self.angular_velocity.z -= j * cross_rn.z / i_z;
+                    //}
                 }
             
                 let a_along = self.acceleration.x * n.x + self.acceleration.y * n.y + self.acceleration.z * n.z;
@@ -346,7 +355,14 @@ impl PhysicsObject{
 
                 if n.y > std::f32::consts::FRAC_1_SQRT_2 {
                     self.standing_on = true;
-                    self.support_normal = n;
+
+                    if self.compute_torque{
+                        let sn = self.rot.quat_direction().normalize();
+                        let on = ph2.rot.quat_direction().normalize();
+                        let torque = sn.cross(on);
+                        //self.angular_acceleration.x += torque.x*100.0;
+                        //self.angular_acceleration.z += torque.z*100.0;
+                    }
                 }
             }
         }

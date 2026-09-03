@@ -155,7 +155,7 @@ fn main() {
         scn.objects[i].physic_object.is_static = false;
         scn.objects[i].physic_object.gravity = false;
         scn.objects[i].physic_object.pin_pos = true;
-        doors.push((i, false, scn.objects[i].physic_object.rot.y, scn.objects[i].physic_object.rot.y));
+        doors.push((i, false, scn.objects[i].physic_object.rot, scn.objects[i].physic_object.rot));
       }else if scn.objects[i].name.contains("ph_"){
         println!("vertices count for object {}: {}", scn.objects[i].name, scn.objects[i].physic_object.collider.vertices.len());
         scn.objects[i].physic_object.is_static = false;
@@ -220,7 +220,7 @@ fn main() {
             for i in 0..doors.len(){
               interactingph = false;
               doors[i].1 = false;
-              doors[i].2 = scn.objects[doors[i].0].physic_object.rot.y;
+              doors[i].2 = scn.objects[doors[i].0].physic_object.rot;
             }
           }else{
             if active_object == -1{
@@ -265,9 +265,19 @@ fn main() {
             }
           }
       }
-      //for i in 0..doors.len(){
-      //  scn.objects[doors[i].0].physic_object.rot.y = scn.objects[doors[i].0].physic_object.rot.y.clamp(doors[i].3 - 2.0943951, doors[i].3)
-      //}
+      for i in 0..doors.len(){
+        let original_euler = doors[i].2.to_euler();
+        let original_y = original_euler.y;
+        let max_y = original_y + 2.0943951;
+        let current_euler = scn.objects[doors[i].0].physic_object.rot.to_euler();
+        let clamped_y = current_euler.y.clamp(original_y, max_y);
+
+        if (current_euler.y - clamped_y).abs() > f32::EPSILON {
+          let mut clamped_euler = current_euler;
+          clamped_euler.y = clamped_y;
+          scn.objects[doors[i].0].physic_object.rot = clamped_euler.to_quat();
+        }
+      }
       if eng.control.get_key_state(49) && tm <= 0.0{
         eng.control.mouse_lock = !eng.control.mouse_lock;
         tm = 0.25;

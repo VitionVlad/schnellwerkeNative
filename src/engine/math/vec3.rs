@@ -69,7 +69,19 @@ impl Vec3{
             w: cx * cy * cz + sx * sy * sz,
         }
     }
-
+    #[allow(dead_code)]
+    pub fn normalize(&self) -> Vec3 {
+        let length = (self.x * self.x + self.y * self.y + self.z * self.z).sqrt();
+        if length == 0.0 {
+            Vec3 { x: 0.0, y: 0.0, z: 0.0 }
+        } else {
+            Vec3 {
+                x: self.x / length,
+                y: self.y / length,
+                z: self.z / length,
+            }
+        }
+    }
 }
 
 impl Add for Vec3 {
