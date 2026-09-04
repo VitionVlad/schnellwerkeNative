@@ -360,7 +360,7 @@ impl PhysicsObject{
                         let sn = self.rot.quat_direction().normalize();
                         let on = ph2.rot.quat_direction().normalize();
                         let ang = sn.dot(on);
-                        let apptorque = if ang.abs() < f32::EPSILON || ang.abs() > 1.0 - f32::EPSILON {false} else {true};
+                        let apptorque = if ang.abs() < 0.0001 || ang.abs() > 1.0 - 0.0001 {false} else {true};
                         if apptorque {
                             let mut lw = self.collider.corners[0];
                             let mut cm = self.collider.corners[0];
@@ -373,13 +373,15 @@ impl PhysicsObject{
                                 }
                                 cm += c;
                             }
-                            cm /= Vec3{x: 8.0, y: 8.0, z: 8.0};
+                            cm /= Vec3{
+                                x: self.collider.corners.len() as f32, 
+                                y: self.collider.corners.len() as f32, 
+                                z: self.collider.corners.len() as f32
+                            };
 
-                            self.angular_acceleration.x += cm.x - lw.x;
-                            self.angular_acceleration.z += cm.z - lw.z;
+                            self.angular_acceleration.x += (cm.z - lw.z)*GRAVITATIONAL_ACCELERATION;
+                            self.angular_acceleration.z -= (cm.x - lw.x)*GRAVITATIONAL_ACCELERATION;
                         }
-                        //self.angular_acceleration.x += torque.x*100.0;
-                        //self.angular_acceleration.z += torque.z*100.0;
                     }
                 }
             }
