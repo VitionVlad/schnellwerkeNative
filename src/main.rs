@@ -221,7 +221,6 @@ fn main() {
             for i in 0..doors.len(){
               interactingph = false;
               doors[i].1 = false;
-              doors[i].2 = scn.objects[doors[i].0].physic_object.rot;
             }
           }else{
             if active_object == -1{
@@ -268,7 +267,7 @@ fn main() {
       }
       for i in 0..doors.len(){
         let door = &mut scn.objects[doors[i].0].physic_object;
-        let relative_rot = door.rot.multiply(doors[i].2.conjugate());
+        let relative_rot = door.rot.multiply(doors[i].3.conjugate());
         let relative_length = relative_rot.magnitude();
 
         if relative_length > f32::EPSILON {
@@ -282,7 +281,7 @@ fn main() {
               Vec3 { x: 0.0, y: 1.0, z: 0.0 },
               clamped_angle,
             );
-            door.rot = clamped_rot.multiply(doors[i].2);
+            door.rot = clamped_rot.multiply(doors[i].3);
             door.angular_velocity = Vec3::new();
           }
         }

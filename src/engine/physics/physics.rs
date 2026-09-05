@@ -384,7 +384,7 @@ impl PhysicsObject{
                                 y: self.collider.corners.len() as f32,
                                 z: self.collider.corners.len() as f32
                             };
-                            const TIPPING_TORQUE_SCALE: f32 = 750.0;
+                            const TIPPING_TORQUE_SCALE: f32 = 2000.0;
                             self.angular_acceleration.x -= (lw.z - cm.z)*TIPPING_TORQUE_SCALE;
                             self.angular_acceleration.z += (lw.x - cm.x)*TIPPING_TORQUE_SCALE;
                         }
