@@ -1,6 +1,6 @@
 use std::println;
 
-use crate::engine::{engine::Engine, image::Image, loader::rw::readfs, material::Material, math::{vec2::Vec2, vec3::Vec3}, render::render::TextureFormat, scene::Scene, ui::{UIplane, UItext}};
+use crate::engine::{engine::Engine, image::Image, loader::rw::readfs, material::Material, math::{vec2::Vec2, vec3::Vec3, vec4::Vec4}, render::render::TextureFormat, scene::Scene, ui::{UIplane, UItext}};
 
 mod engine;
 
@@ -154,6 +154,7 @@ fn main() {
         println!("object {} is door", scn.objects[i].name);
         scn.objects[i].physic_object.is_static = false;
         scn.objects[i].physic_object.gravity = false;
+        scn.objects[i].physic_object.compute_torque = false;
         scn.objects[i].physic_object.pin_pos = true;
         doors.push((i, false, scn.objects[i].physic_object.rot, scn.objects[i].physic_object.rot));
       }else if scn.objects[i].name.contains("ph_"){
@@ -178,7 +179,7 @@ fn main() {
 
         if eng.control.mouse_lock{
           if !interactingph && !objrt{
-            eng.cameras[0].physic_object.rot = Vec3{x: -rawrt.x, y: -rawrt.y, z: rawrt.z}.to_quat();
+            eng.cameras[0].physic_object.rot = Vec3{x: -rawrt.x, y: -rawrt.y, z: -rawrt.z}.to_quat();
             rawrt.x = (eng.control.ypos) as f32/eng.render.resolution_y as f32 - relpos.x - relposx;
             rawrt.y = (eng.control.xpos) as f32/eng.render.resolution_x as f32 - relpos.y;
             savpos.x = rawrt.x;
@@ -266,16 +267,24 @@ fn main() {
           }
       }
       for i in 0..doors.len(){
-        let original_euler = doors[i].2.to_euler();
-        let original_y = original_euler.y;
-        let max_y = original_y + 2.0943951;
-        let current_euler = scn.objects[doors[i].0].physic_object.rot.to_euler();
-        let clamped_y = current_euler.y.clamp(original_y, max_y);
+        let door = &mut scn.objects[doors[i].0].physic_object;
+        let relative_rot = door.rot.multiply(doors[i].2.conjugate());
+        let relative_length = relative_rot.magnitude();
 
-        if (current_euler.y - clamped_y).abs() > f32::EPSILON {
-          let mut clamped_euler = current_euler;
-          clamped_euler.y = clamped_y;
-          scn.objects[doors[i].0].physic_object.rot = clamped_euler.to_quat();
+        if relative_length > f32::EPSILON {
+          let relative_w = relative_rot.w / relative_length;
+          let relative_y = relative_rot.y / relative_length;
+          let current_angle = 2.0 * relative_y.atan2(relative_w);
+          let clamped_angle = current_angle.clamp(-2.0943951, 0.0);
+
+          if (current_angle - clamped_angle).abs() > f32::EPSILON {
+            let clamped_rot = Vec4::from_axis_angle(
+              Vec3 { x: 0.0, y: 1.0, z: 0.0 },
+              clamped_angle,
+            );
+            door.rot = clamped_rot.multiply(doors[i].2);
+            door.angular_velocity = Vec3::new();
+          }
         }
       }
       if eng.control.get_key_state(49) && tm <= 0.0{

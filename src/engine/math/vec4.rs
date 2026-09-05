@@ -81,6 +81,57 @@ impl Vec4{
 
         Vec3 { x, y, z }
     }
+    #[allow(dead_code)]
+    pub fn quat_axis_angle(&self) -> (Vec3, f32) {
+        let magnitude = self.magnitude();
+        if magnitude <= f32::EPSILON {
+            return (Vec3::new(), 0.0);
+        }
+
+        let x = self.x / magnitude;
+        let y = self.y / magnitude;
+        let z = self.z / magnitude;
+        let w = self.w / magnitude;
+        let sin_half_angle = (x * x + y * y + z * z).sqrt();
+        let angle = 2.0 * sin_half_angle.atan2(w);
+
+        if sin_half_angle <= f32::EPSILON {
+            (Vec3::new(), 0.0)
+        } else {
+            (
+                Vec3 {
+                    x: x / sin_half_angle,
+                    y: y / sin_half_angle,
+                    z: z / sin_half_angle,
+                },
+                angle,
+            )
+        }
+    }
+    #[allow(dead_code)]
+    pub fn conjugate(self) -> Vec4 {
+        Vec4 { x: -self.x, y: -self.y, z: -self.z, w: self.w }
+    }
+    #[allow(dead_code)]
+    pub fn multiply(self, other: Vec4) -> Vec4 {
+        Vec4 {
+            x: self.w * other.x + self.x * other.w + self.y * other.z - self.z * other.y,
+            y: self.w * other.y - self.x * other.z + self.y * other.w + self.z * other.x,
+            z: self.w * other.z + self.x * other.y - self.y * other.x + self.z * other.w,
+            w: self.w * other.w - self.x * other.x - self.y * other.y - self.z * other.z,
+        }
+    }
+    #[allow(dead_code)]
+    pub fn from_axis_angle(axis: Vec3, angle: f32) -> Vec4 {
+        let half_angle = angle * 0.5;
+        let scale = half_angle.sin();
+        Vec4 {
+            x: axis.x * scale,
+            y: axis.y * scale,
+            z: axis.z * scale,
+            w: half_angle.cos(),
+        }
+    }
 }
 
 impl Add for Vec4 {

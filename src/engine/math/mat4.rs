@@ -240,13 +240,13 @@ impl Mat4{
         let z = q.z;
         let w = q.w;
         self.mat[0] = 1.0 - s * 2.0 * (y * y + z * z);
-        self.mat[1] = s * 2.0 * (x * y + z * w);
-        self.mat[2] = s * 2.0 * (x * z - y * w);
-        self.mat[4] = s * 2.0 * (x * y - z * w);
+        self.mat[1] = s * 2.0 * (x * y - z * w);
+        self.mat[2] = s * 2.0 * (x * z + y * w);
+        self.mat[4] = s * 2.0 * (x * y + z * w);
         self.mat[5] = 1.0 - s * 2.0 * (x * x + z * z);
-        self.mat[6] = s * 2.0 * (y * z + x * w);
-        self.mat[8] = s * 2.0 * (x * z + y * w);
-        self.mat[9] = s * 2.0 * (y * z - x * w);
+        self.mat[6] = s * 2.0 * (y * z - x * w);
+        self.mat[8] = s * 2.0 * (x * z - y * w);
+        self.mat[9] = s * 2.0 * (y * z + x * w);
         self.mat[10] = 1.0 - s * 2.0 * (x * x + y * y);
         self.mat[15] = 1.0;
     }

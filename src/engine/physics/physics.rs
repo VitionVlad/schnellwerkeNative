@@ -177,7 +177,7 @@ impl PhysicsObject{
             self.oldscale = self.scale;
 
             if self.gravity{
-                self.acceleration.y += -GRAVITATIONAL_ACCELERATION;
+                self.acceleration.y -= GRAVITATIONAL_ACCELERATION;
             }
 
             let decay = self.air_friction.powf(logic_frametime);
@@ -211,7 +211,7 @@ impl PhysicsObject{
             self.angular_velocity.y *= decay;
             self.angular_velocity.z *= decay;
 
-            let (wx, wy, wz) = (-self.angular_velocity.x, -self.angular_velocity.y, -self.angular_velocity.z);
+            let (wx, wy, wz) = (self.angular_velocity.x, self.angular_velocity.y, self.angular_velocity.z);
             let (qx, qy, qz, qw) = (self.rot.x, self.rot.y, self.rot.z, self.rot.w);
 
             let dqx =  wx*qw + wy*qz - wz*qy;
@@ -223,6 +223,12 @@ impl PhysicsObject{
             self.rot.y += 0.5*dqy*logic_frametime;
             self.rot.z += 0.5*dqz*logic_frametime;
             self.rot.w += 0.5*dqw*logic_frametime;
+
+            let len = (self.rot.x*self.rot.x + self.rot.y*self.rot.y + self.rot.z*self.rot.z + self.rot.w*self.rot.w).sqrt();
+            self.rot.x /= len;
+            self.rot.y /= len;
+            self.rot.z /= len;
+            self.rot.w /= len;
 
             self.rot.normalize();
 
@@ -303,47 +309,47 @@ impl PhysicsObject{
                     self.speed.x -= n.x * j;
                     self.speed.y -= n.y * j;
                     self.speed.z -= n.z * j;
-                    //if self.compute_torque {
-                    //    let center = Vec3 {
-                    //        x: (self.collider.corners[0].x + self.collider.corners[4].x) * 0.5,
-                    //        y: (self.collider.corners[0].y + self.collider.corners[4].y) * 0.5,
-                    //        z: (self.collider.corners[0].z + self.collider.corners[4].z) * 0.5,
-                    //    };
-                    //
-                    //    let depth = |c: &Vec3| -(c.x * n.x + c.y * n.y + c.z * n.z);
-                    //    let deepest = self.collider.corners.iter().map(depth).fold(f32::MIN, f32::max);
-                    //
-                    //    const TIE_EPS: f32 = 0.001;
-                    //    let mut contact = Vec3::new();
-                    //    let mut tied = 0;
-                    //    for c in self.collider.corners.iter() {
-                    //        if deepest - depth(c) < TIE_EPS {
-                    //            contact += *c;
-                    //            tied += 1;
-                    //        }
-                    //    }
-                    //    contact /= Vec3 { x: tied as f32, y: tied as f32, z: tied as f32 };
-                    //
-                    //    let r = Vec3 { x: contact.x - center.x, y: contact.y - center.y, z: contact.z - center.z };
-                    //    let cross_rn = Vec3 {
-                    //        x: r.y * n.z - r.z * n.y,
-                    //        y: r.z * n.x - r.x * n.z,
-                    //        z: r.x * n.y - r.y * n.x,
-                    //    };
-                    //
-                    //    let he = Vec3 {
-                    //        x: (self.collider.local_max.x - self.collider.local_min.x) * 0.5,
-                    //        y: (self.collider.local_max.y - self.collider.local_min.y) * 0.5,
-                    //        z: (self.collider.local_max.z - self.collider.local_min.z) * 0.5,
-                    //    };
-                    //    let i_x = (he.y * he.y + he.z * he.z) / 3.0;
-                    //    let i_y = (he.x * he.x + he.z * he.z) / 3.0;
-                    //    let i_z = (he.x * he.x + he.y * he.y) / 3.0;
-                    //
-                    //    self.angular_velocity.x -= j * cross_rn.x / i_x;
-                    //    self.angular_velocity.y -= j * cross_rn.y / i_y;
-                    //    self.angular_velocity.z -= j * cross_rn.z / i_z;
-                    //}
+                    if self.compute_torque {
+                        let center = Vec3 {
+                            x: (self.collider.corners[0].x + self.collider.corners[4].x) * 0.5,
+                            y: (self.collider.corners[0].y + self.collider.corners[4].y) * 0.5,
+                            z: (self.collider.corners[0].z + self.collider.corners[4].z) * 0.5,
+                        };
+                    
+                        let depth = |c: &Vec3| -(c.x * n.x + c.y * n.y + c.z * n.z);
+                        let deepest = self.collider.corners.iter().map(depth).fold(f32::MIN, f32::max);
+                    
+                        const TIE_EPS: f32 = 0.001;
+                        let mut contact = Vec3::new();
+                        let mut tied = 0;
+                        for c in self.collider.corners.iter() {
+                            if deepest - depth(c) < TIE_EPS {
+                                contact += *c;
+                                tied += 1;
+                            }
+                        }
+                        contact /= Vec3 { x: tied as f32, y: tied as f32, z: tied as f32 };
+                    
+                        let r = Vec3 { x: contact.x - center.x, y: contact.y - center.y, z: contact.z - center.z };
+                        let cross_rn = Vec3 {
+                            x: r.y * n.z - r.z * n.y,
+                            y: r.z * n.x - r.x * n.z,
+                            z: r.x * n.y - r.y * n.x,
+                        };
+                    
+                        let he = Vec3 {
+                            x: (self.collider.local_max.x - self.collider.local_min.x) * 0.5,
+                            y: (self.collider.local_max.y - self.collider.local_min.y) * 0.5,
+                            z: (self.collider.local_max.z - self.collider.local_min.z) * 0.5,
+                        };
+                        let i_x = (he.y * he.y + he.z * he.z) / 3.0;
+                        let i_y = (he.x * he.x + he.z * he.z) / 3.0;
+                        let i_z = (he.x * he.x + he.y * he.y) / 3.0;
+                    
+                        self.angular_velocity.x -= j * cross_rn.x / i_x;
+                        self.angular_velocity.y -= j * cross_rn.y / i_y;
+                        self.angular_velocity.z -= j * cross_rn.z / i_z;
+                    }
                 }
             
                 let a_along = self.acceleration.x * n.x + self.acceleration.y * n.y + self.acceleration.z * n.z;
@@ -374,13 +380,13 @@ impl PhysicsObject{
                                 cm += c;
                             }
                             cm /= Vec3{
-                                x: self.collider.corners.len() as f32, 
-                                y: self.collider.corners.len() as f32, 
+                                x: self.collider.corners.len() as f32,
+                                y: self.collider.corners.len() as f32,
                                 z: self.collider.corners.len() as f32
                             };
-
-                            self.angular_acceleration.x += (cm.z - lw.z)*GRAVITATIONAL_ACCELERATION;
-                            self.angular_acceleration.z -= (cm.x - lw.x)*GRAVITATIONAL_ACCELERATION;
+                            const TIPPING_TORQUE_SCALE: f32 = 750.0;
+                            self.angular_acceleration.x -= (lw.z - cm.z)*TIPPING_TORQUE_SCALE;
+                            self.angular_acceleration.z += (lw.x - cm.x)*TIPPING_TORQUE_SCALE;
                         }
                     }
                 }

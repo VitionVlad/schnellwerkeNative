@@ -1,3 +1,5 @@
+use crate::engine::math::vec4::Vec4;
+
 use super::{math::{mat4::Mat4, vec3::Vec3}, physics::physics::PhysicsObject};
 
 #[allow(dead_code)]
@@ -30,7 +32,14 @@ impl Camera{
         //t = Mat4::new();
         //t.zrot(self.physic_object.rot.z);
         //ubm *= t;
-        t.quat_rot(self.physic_object.rot);
+        let view_rot = Vec4 {
+            x: -self.physic_object.rot.x,
+            y: -self.physic_object.rot.y,
+            z: -self.physic_object.rot.z,
+            w:  self.physic_object.rot.w,
+        };
+        t.quat_rot(view_rot);
+        //t.quat_rot(self.physic_object.rot);
         ubm *= t;
         t = Mat4::new();
         t.trans(Vec3{ x: -self.physic_object.pos.x, y: -self.physic_object.pos.y, z: -self.physic_object.pos.z});
